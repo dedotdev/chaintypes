@@ -58,6 +58,8 @@ import type {
   XcmRuntimeApisConversionsError,
   HydradxTraitsOracleOraclePeriod,
   HydradxRuntimeEvmAaveTradeExecutorPoolData,
+  PalletIceRuntimeApiSolverInput,
+  PalletIceRuntimeApiLiquidityState,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -971,6 +973,89 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: AaveTradeExecutor_pools
      **/
     pools: GenericRuntimeApiMethod<() => Promise<Array<HydradxRuntimeEvmAaveTradeExecutorPoolData>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: IceSolverApi - 0x75fc5fbf0e9c71bc
+   **/
+  iceSolverApi: {
+    /**
+     *
+     * @callname: IceSolverApi_solver_input
+     **/
+    solverInput: GenericRuntimeApiMethod<() => Promise<PalletIceRuntimeApiSolverInput | undefined>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: LiquidityStateApi - 0x19b282cf72ef4b27
+   **/
+  liquidityStateApi: {
+    /**
+     *
+     * @callname: LiquidityStateApi_liquidity_state
+     **/
+    liquidityState: GenericRuntimeApiMethod<() => Promise<PalletIceRuntimeApiLiquidityState>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: UniswapV3Api - 0x6aa673a4e69ae9a5
+   **/
+  uniswapV3Api: {
+    /**
+     *
+     * @callname: UniswapV3Api_pool
+     * @param {number} asset_a
+     * @param {number} asset_b
+     * @param {number} fee
+     **/
+    pool: GenericRuntimeApiMethod<(assetA: number, assetB: number, fee: number) => Promise<H160 | undefined>>;
+
+    /**
+     *
+     * @callname: UniswapV3Api_quote_sell
+     * @param {number} asset_in
+     * @param {number} asset_out
+     * @param {number} fee
+     * @param {bigint} amount_in
+     **/
+    quoteSell: GenericRuntimeApiMethod<
+      (assetIn: number, assetOut: number, fee: number, amountIn: bigint) => Promise<bigint | undefined>
+    >;
+
+    /**
+     *
+     * @callname: UniswapV3Api_quote_buy
+     * @param {number} asset_in
+     * @param {number} asset_out
+     * @param {number} fee
+     * @param {bigint} amount_out
+     **/
+    quoteBuy: GenericRuntimeApiMethod<
+      (assetIn: number, assetOut: number, fee: number, amountOut: bigint) => Promise<bigint | undefined>
+    >;
+
+    /**
+     *
+     * @callname: UniswapV3Api_liquidity_depth
+     * @param {number} asset_in
+     * @param {number} asset_out
+     * @param {number} fee
+     **/
+    liquidityDepth: GenericRuntimeApiMethod<
+      (assetIn: number, assetOut: number, fee: number) => Promise<bigint | undefined>
+    >;
 
     /**
      * Generic runtime api call

@@ -11,6 +11,7 @@ import type {
   FixedBytes,
   Bytes,
   Perquintill,
+  H160,
 } from 'dedot/codecs';
 import type {
   SpConsensusGrandpaAppPublic,
@@ -2450,6 +2451,35 @@ export interface ChainEvents extends GenericChainEvents {
      * Related to bridge clearing on initialization of the second block in a new era.
      **/
     QueueReset: GenericPalletEvent<'GearEthBridge', 'QueueReset', null>;
+
+    /**
+     * Immutable source/destination lane was bound by governance.
+     **/
+    DestinationBound: GenericPalletEvent<
+      'GearEthBridge',
+      'DestinationBound',
+      {
+        /**
+         * Vara block-zero hash, preventing cross-network replay.
+         **/
+        sourceGenesis: H256;
+
+        /**
+         * Ethereum chain ID encoded as a big-endian 256-bit value.
+         **/
+        chainId: H256;
+
+        /**
+         * Only destination permitted to consume this lane's commitments.
+         **/
+        queue: H160;
+
+        /**
+         * Keccak commitment to the source genesis and destination.
+         **/
+        domain: H256;
+      }
+    >;
 
     /**
      * Generic pallet event

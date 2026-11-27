@@ -165,11 +165,6 @@ export interface ChainConsts extends GenericChainConsts {
     nativeAssetId: number;
 
     /**
-     * Polkadot Native Asset (DOT)
-     **/
-    polkadotNativeAssetId: number;
-
-    /**
      * EVM Asset
      **/
     evmAssetId: number;
@@ -304,87 +299,6 @@ export interface ChainConsts extends GenericChainConsts {
      * The maximum length of a username, including its suffix and any system-added delimiters.
      **/
     maxUsernameLength: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `Democracy`'s constants
-   **/
-  democracy: {
-    /**
-     * The period between a proposal being approved and enacted.
-     *
-     * It should generally be a little more than the unstake period to ensure that
-     * voting stakers have an opportunity to remove themselves from the system in the case
-     * where they are on the losing side of a vote.
-     **/
-    enactmentPeriod: number;
-
-    /**
-     * How often (in blocks) new public referenda are launched.
-     **/
-    launchPeriod: number;
-
-    /**
-     * How often (in blocks) to check for new votes.
-     **/
-    votingPeriod: number;
-
-    /**
-     * The minimum period of vote locking.
-     *
-     * It should be no shorter than enactment period to ensure that in the case of an approval,
-     * those successful voters are locked into the consequences that their votes entail.
-     **/
-    voteLockingPeriod: number;
-
-    /**
-     * The minimum amount to be used as a deposit for a public referendum proposal.
-     **/
-    minimumDeposit: bigint;
-
-    /**
-     * Indicator for whether an emergency origin is even allowed to happen. Some chains may
-     * want to set this permanently to `false`, others may want to condition it on things such
-     * as an upgrade having happened recently.
-     **/
-    instantAllowed: boolean;
-
-    /**
-     * Minimum voting period allowed for a fast-track referendum.
-     **/
-    fastTrackVotingPeriod: number;
-
-    /**
-     * Period in blocks where an external proposal may not be re-submitted after being vetoed.
-     **/
-    cooloffPeriod: number;
-
-    /**
-     * The maximum number of votes for an account.
-     *
-     * Also used to compute weight, an overly big value can
-     * lead to extrinsic with very big weight: see `delegate` for instance.
-     **/
-    maxVotes: number;
-
-    /**
-     * The maximum number of public proposals that can exist at any time.
-     **/
-    maxProposals: number;
-
-    /**
-     * The maximum number of deposits a public proposal may have at any time.
-     **/
-    maxDeposits: number;
-
-    /**
-     * The maximum number of items which can be blacklisted.
-     **/
-    maxBlacklisted: number;
 
     /**
      * Generic pallet constant
@@ -678,11 +592,6 @@ export interface ChainConsts extends GenericChainConsts {
      * The min length of a name or symbol stored on-chain.
      **/
     minStringLimit: number;
-
-    /**
-     * Weight multiplier for `register_external` extrinsic
-     **/
-    regExternalWeightMultiplier: bigint;
 
     /**
      * Generic pallet constant
@@ -1319,6 +1228,168 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `GigaHdx`'s constants
+   **/
+  gigaHdx: {
+    stHdxAssetId: number;
+
+    /**
+     * Pallet account id used as the gigapot (yield) account. Derived
+     * via `PalletId::into_account_truncating`.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * LockIdentifier under which user HDX (active stake + pending
+     * unstake) is locked.
+     **/
+    lockId: FixedBytes<8>;
+
+    /**
+     * Minimum HDX that can be staked in one call (anti-dust).
+     **/
+    minStake: bigint;
+
+    /**
+     * Cooldown period (in blocks) between `giga_unstake` and the
+     * matching `unlock` call.
+     **/
+    cooldownPeriod: number;
+
+    /**
+     * Maximum number of concurrent pending-unstake positions per account.
+     **/
+    maxPendingUnstakes: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `GigaHdxRewards`'s constants
+   **/
+  gigaHdxRewards: {
+    /**
+     * PalletId of the externally-funded accumulator pot. Source of
+     * every per-referendum allocation. The allocated-rewards pot is
+     * derived deterministically as a sub-account of this id.
+     **/
+    rewardPotPalletId: FrameSupportPalletId;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `LazyExecutor`'s constants
+   **/
+  lazyExecutor: {
+    /**
+     * The gas limit for the forwarded EVM call.
+     **/
+    gasLimit: bigint;
+
+    /**
+     * Configuration for unsigned transaction priority
+     **/
+    unsignedPriority: bigint;
+
+    /**
+     * Configuration for unsigned transaction longevity
+     **/
+    unsignedLongevity: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Intent`'s constants
+   **/
+  intent: {
+    /**
+     * Asset Id of hub asset
+     **/
+    hubAssetId: number;
+
+    /**
+     * Maximum deadline for intent in milliseconds.
+     **/
+    maxAllowedIntentDuration: bigint;
+
+    /**
+     * How far ahead of `now` an intent must still be valid to be offered to the
+     * solver, in milliseconds.
+     *
+     * A solution is built against one block and executed in the next, so an
+     * intent expiring in between would be rejected by `validate_resolve` and take
+     * the whole batch with it. One block of headroom matches that gap, which
+     * `longevity(1)` on the solution caps.
+     **/
+    solverDeadlineMargin: bigint;
+
+    /**
+     * Minimum DCA period in blocks.
+     **/
+    minDcaPeriod: number;
+
+    /**
+     * Upper bound on the slippage a DCA intent may set against the oracle price.
+     *
+     * The oracle floor is the oracle estimate less this slippage, so an unbounded
+     * value collapses the floor to the intent's own limit and removes the
+     * protection entirely.
+     **/
+    maxDcaSlippage: Permill;
+
+    /**
+     * Blocks before its slot within which a DCA trade may execute early against opposite flow.
+     * Capped at half the DCA's period.
+     **/
+    dcaEarlyWindow: number;
+
+    /**
+     * Maximum number of intents a single account can have at the same time.
+     **/
+    maxIntentsPerAccount: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `ICE`'s constants
+   **/
+  ice: {
+    /**
+     * Pallet id - used to create a holding account
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Default matched-volume protocol fee.
+     *
+     * Charged on the portion of every resolved intent's `amount_out` that
+     * was matched directly against other intents (intent-to-intent
+     * matching, no AMM hop). Volume routed through AMMs pays only pool
+     * fees and is untouched. The user always receives `resolve.amount_out`
+     * as the net amount — the solver bakes the fee into matched pricing so
+     * the slippage minimum is honored.
+     *
+     * Can be overridden via governance using `set_protocol_fee`.
+     **/
+    matchedFee: Permill;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Tokens`'s constants
    **/
   tokens: {
@@ -1532,11 +1603,6 @@ export interface ChainConsts extends GenericChainConsts {
      * Native Asset Id
      **/
     nativeAssetId: number;
-
-    /**
-     * Polkadot Native Asset Id (DOT)
-     **/
-    polkadotNativeAssetId: number;
 
     /**
      * Minimum budget to be able to schedule a DCA, specified in native currency
@@ -1906,6 +1972,35 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `Broadcast`'s constants
    **/
   broadcast: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `FeeProcessor`'s constants
+   **/
+  feeProcessor: {
+    /**
+     * Pallet ID for the fee accumulation account.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * HDX asset ID (target asset for conversions).
+     **/
+    hdxAssetId: number;
+
+    /**
+     * LRNA asset ID (hub asset, fees in LRNA are skipped).
+     **/
+    lrnaAssetId: number;
+
+    /**
+     * Maximum conversions per on_idle call.
+     **/
+    maxConversionsPerBlock: number;
+
     /**
      * Generic pallet constant
      **/

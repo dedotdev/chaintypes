@@ -33,7 +33,6 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
-  | { pallet: 'Democracy'; palletCall: PalletDemocracyCall }
   | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
@@ -64,8 +63,14 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Referrals'; palletCall: PalletReferralsCall }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCall }
   | { pallet: 'Hsm'; palletCall: PalletHsmCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Signet'; palletCall: PalletSignetCall }
   | { pallet: 'EthDispenser'; palletCall: PalletDispenserCall }
+  | { pallet: 'GigaHdx'; palletCall: PalletGigahdxCall }
+  | { pallet: 'GigaHdxRewards'; palletCall: PalletGigahdxRewardsCall }
+  | { pallet: 'LazyExecutor'; palletCall: PalletLazyExecutorCall }
+  | { pallet: 'Intent'; palletCall: PalletIntentCall }
+  | { pallet: 'Ice'; palletCall: PalletIceCall }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCall }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCall }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCall }
@@ -88,7 +93,8 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCall }
-  | { pallet: 'Broadcast'; palletCall: PalletBroadcastCall };
+  | { pallet: 'Broadcast'; palletCall: PalletBroadcastCall }
+  | { pallet: 'FeeProcessor'; palletCall: PalletFeeProcessorCall };
 
 export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -99,7 +105,6 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
-  | { pallet: 'Democracy'; palletCall: PalletDemocracyCallLike }
   | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
@@ -130,8 +135,14 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Referrals'; palletCall: PalletReferralsCallLike }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCallLike }
   | { pallet: 'Hsm'; palletCall: PalletHsmCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Signet'; palletCall: PalletSignetCallLike }
   | { pallet: 'EthDispenser'; palletCall: PalletDispenserCallLike }
+  | { pallet: 'GigaHdx'; palletCall: PalletGigahdxCallLike }
+  | { pallet: 'GigaHdxRewards'; palletCall: PalletGigahdxRewardsCallLike }
+  | { pallet: 'LazyExecutor'; palletCall: PalletLazyExecutorCallLike }
+  | { pallet: 'Intent'; palletCall: PalletIntentCallLike }
+  | { pallet: 'Ice'; palletCall: PalletIceCallLike }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCallLike }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCallLike }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCallLike }
@@ -154,7 +165,8 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCallLike }
-  | { pallet: 'Broadcast'; palletCall: PalletBroadcastCallLike };
+  | { pallet: 'Broadcast'; palletCall: PalletBroadcastCallLike }
+  | { pallet: 'FeeProcessor'; palletCall: PalletFeeProcessorCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -577,10 +589,14 @@ export type PalletTransactionMultiPaymentCall =
    **/
   | { name: 'ResetPaymentCurrency'; params: { accountId: AccountId32 } }
   /**
-   * Dispatch EVM permit.
-   * The main purpose of this function is to allow EVM accounts to pay for the transaction fee in non-native currency
-   * by allowing them to self-dispatch pre-signed permit.
-   * The EVM fee is paid in the currency set for the account.
+   * Dispatch a pre-signed EVM permit.
+   *
+   * Unsigned: the EVM account `from` pays for the dispatch via
+   * `withdraw_fee` in its chosen currency.
+   *
+   * Signed: the signer (paymaster) pays both the Substrate extrinsic
+   * fee and the EVM-side gas; `permit.from` is touched only by the
+   * inner call's effects. Root is rejected.
    **/
   | {
       name: 'DispatchPermit';
@@ -642,10 +658,14 @@ export type PalletTransactionMultiPaymentCallLike =
    **/
   | { name: 'ResetPaymentCurrency'; params: { accountId: AccountId32Like } }
   /**
-   * Dispatch EVM permit.
-   * The main purpose of this function is to allow EVM accounts to pay for the transaction fee in non-native currency
-   * by allowing them to self-dispatch pre-signed permit.
-   * The EVM fee is paid in the currency set for the account.
+   * Dispatch a pre-signed EVM permit.
+   *
+   * Unsigned: the EVM account `from` pays for the dispatch via
+   * `withdraw_fee` in its chosen currency.
+   *
+   * Signed: the signer (paymaster) pays both the Substrate extrinsic
+   * fee and the EVM-side gas; `permit.from` is touched only by the
+   * inner call's effects. Root is rejected.
    **/
   | {
       name: 'DispatchPermit';
@@ -1908,616 +1928,6 @@ export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
   | { type: 'Ecdsa'; value: FixedBytes<65> };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletDemocracyCall =
-  /**
-   * Propose a sensitive action to be taken.
-   *
-   * The dispatch origin of this call must be _Signed_ and the sender must
-   * have funds to cover the deposit.
-   *
-   * - `proposal_hash`: The hash of the proposal preimage.
-   * - `value`: The amount of deposit (must be at least `MinimumDeposit`).
-   *
-   * Emits `Proposed`.
-   **/
-  | { name: 'Propose'; params: { proposal: FrameSupportPreimagesBounded; value: bigint } }
-  /**
-   * Signals agreement with a particular proposal.
-   *
-   * The dispatch origin of this call must be _Signed_ and the sender
-   * must have funds to cover the deposit, equal to the original deposit.
-   *
-   * - `proposal`: The index of the proposal to second.
-   **/
-  | { name: 'Second'; params: { proposal: number } }
-  /**
-   * Vote in a referendum. If `vote.is_aye()`, the vote is to enact the proposal;
-   * otherwise it is a vote to keep the status quo.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `ref_index`: The index of the referendum to vote for.
-   * - `vote`: The vote configuration.
-   **/
-  | { name: 'Vote'; params: { refIndex: number; vote: PalletDemocracyVoteAccountVote } }
-  /**
-   * Schedule an emergency cancellation of a referendum. Cannot happen twice to the same
-   * referendum.
-   *
-   * The dispatch origin of this call must be `CancellationOrigin`.
-   *
-   * -`ref_index`: The index of the referendum to cancel.
-   *
-   * Weight: `O(1)`.
-   **/
-  | { name: 'EmergencyCancel'; params: { refIndex: number } }
-  /**
-   * Schedule a referendum to be tabled once it is legal to schedule an external
-   * referendum.
-   *
-   * The dispatch origin of this call must be `ExternalOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal.
-   **/
-  | { name: 'ExternalPropose'; params: { proposal: FrameSupportPreimagesBounded } }
-  /**
-   * Schedule a majority-carries referendum to be tabled next once it is legal to schedule
-   * an external referendum.
-   *
-   * The dispatch of this call must be `ExternalMajorityOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal.
-   *
-   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-   * pre-scheduled `external_propose` call.
-   *
-   * Weight: `O(1)`
-   **/
-  | { name: 'ExternalProposeMajority'; params: { proposal: FrameSupportPreimagesBounded } }
-  /**
-   * Schedule a negative-turnout-bias referendum to be tabled next once it is legal to
-   * schedule an external referendum.
-   *
-   * The dispatch of this call must be `ExternalDefaultOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal.
-   *
-   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-   * pre-scheduled `external_propose` call.
-   *
-   * Weight: `O(1)`
-   **/
-  | { name: 'ExternalProposeDefault'; params: { proposal: FrameSupportPreimagesBounded } }
-  /**
-   * Schedule the currently externally-proposed majority-carries referendum to be tabled
-   * immediately. If there is no externally-proposed referendum currently, or if there is one
-   * but it is not a majority-carries referendum then it fails.
-   *
-   * The dispatch of this call must be `FastTrackOrigin`.
-   *
-   * - `proposal_hash`: The hash of the current external proposal.
-   * - `voting_period`: The period that is allowed for voting on this proposal. Increased to
-   * Must be always greater than zero.
-   * For `FastTrackOrigin` must be equal or greater than `FastTrackVotingPeriod`.
-   * - `delay`: The number of block after voting has ended in approval and this should be
-   * enacted. This doesn't have a minimum amount.
-   *
-   * Emits `Started`.
-   *
-   * Weight: `O(1)`
-   **/
-  | { name: 'FastTrack'; params: { proposalHash: H256; votingPeriod: number; delay: number } }
-  /**
-   * Veto and blacklist the external proposal hash.
-   *
-   * The dispatch origin of this call must be `VetoOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal to veto and blacklist.
-   *
-   * Emits `Vetoed`.
-   *
-   * Weight: `O(V + log(V))` where V is number of `existing vetoers`
-   **/
-  | { name: 'VetoExternal'; params: { proposalHash: H256 } }
-  /**
-   * Remove a referendum.
-   *
-   * The dispatch origin of this call must be _Root_.
-   *
-   * - `ref_index`: The index of the referendum to cancel.
-   *
-   * # Weight: `O(1)`.
-   **/
-  | { name: 'CancelReferendum'; params: { refIndex: number } }
-  /**
-   * Delegate the voting power (with some given conviction) of the sending account.
-   *
-   * The balance delegated is locked for as long as it's delegated, and thereafter for the
-   * time appropriate for the conviction's lock period.
-   *
-   * The dispatch origin of this call must be _Signed_, and the signing account must either:
-   * - be delegating already; or
-   * - have no voting activity (if there is, then it will need to be removed/consolidated
-   * through `reap_vote` or `unvote`).
-   *
-   * - `to`: The account whose voting the `target` account's voting power will follow.
-   * - `conviction`: The conviction that will be attached to the delegated votes. When the
-   * account is undelegated, the funds will be locked for the corresponding period.
-   * - `balance`: The amount of the account's balance to be used in delegating. This must not
-   * be more than the account's current balance.
-   *
-   * Emits `Delegated`.
-   *
-   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-   * voted on. Weight is charged as if maximum votes.
-   **/
-  | { name: 'Delegate'; params: { to: AccountId32; conviction: PalletDemocracyConviction; balance: bigint } }
-  /**
-   * Undelegate the voting power of the sending account.
-   *
-   * Tokens may be unlocked following once an amount of time consistent with the lock period
-   * of the conviction with which the delegation was issued.
-   *
-   * The dispatch origin of this call must be _Signed_ and the signing account must be
-   * currently delegating.
-   *
-   * Emits `Undelegated`.
-   *
-   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-   * voted on. Weight is charged as if maximum votes.
-   **/
-  | { name: 'Undelegate' }
-  /**
-   * Clears all public proposals.
-   *
-   * The dispatch origin of this call must be _Root_.
-   *
-   * Weight: `O(1)`.
-   **/
-  | { name: 'ClearPublicProposals' }
-  /**
-   * Unlock tokens that have an expired lock.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account to remove the lock on.
-   *
-   * Weight: `O(R)` with R number of vote of target.
-   **/
-  | { name: 'Unlock'; params: { target: AccountId32 } }
-  /**
-   * Remove a vote for a referendum.
-   *
-   * If:
-   * - the referendum was cancelled, or
-   * - the referendum is ongoing, or
-   * - the referendum has ended such that
-   * - the vote of the account was in opposition to the result; or
-   * - there was no conviction to the account's vote; or
-   * - the account made a split vote
-   * ...then the vote is removed cleanly and a following call to `unlock` may result in more
-   * funds being available.
-   *
-   * If, however, the referendum has ended and:
-   * - it finished corresponding to the vote of the account, and
-   * - the account made a standard vote with conviction, and
-   * - the lock period of the conviction is not over
-   * ...then the lock will be aggregated into the overall account's lock, which may involve
-   * *overlocking* (where the two locks are combined into a single lock that is the maximum
-   * of both the amount locked and the time is it locked for).
-   *
-   * The dispatch origin of this call must be _Signed_, and the signer must have a vote
-   * registered for referendum `index`.
-   *
-   * - `index`: The index of referendum of the vote to be removed.
-   *
-   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveVote'; params: { index: number } }
-  /**
-   * Remove a vote for a referendum.
-   *
-   * If the `target` is equal to the signer, then this function is exactly equivalent to
-   * `remove_vote`. If not equal to the signer, then the vote must have expired,
-   * either because the referendum was cancelled, because the voter lost the referendum or
-   * because the conviction period is over.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account of the vote to be removed; this account must have voted for
-   * referendum `index`.
-   * - `index`: The index of referendum of the vote to be removed.
-   *
-   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveOtherVote'; params: { target: AccountId32; index: number } }
-  /**
-   * Permanently place a proposal into the blacklist. This prevents it from ever being
-   * proposed again.
-   *
-   * If called on a queued public or external proposal, then this will result in it being
-   * removed. If the `ref_index` supplied is an active referendum with the proposal hash,
-   * then it will be cancelled.
-   *
-   * The dispatch origin of this call must be `BlacklistOrigin`.
-   *
-   * - `proposal_hash`: The proposal hash to blacklist permanently.
-   * - `ref_index`: An ongoing referendum whose hash is `proposal_hash`, which will be
-   * cancelled.
-   *
-   * Weight: `O(p)` (though as this is an high-privilege dispatch, we assume it has a
-   * reasonable value).
-   **/
-  | { name: 'Blacklist'; params: { proposalHash: H256; maybeRefIndex?: number | undefined } }
-  /**
-   * Remove a proposal.
-   *
-   * The dispatch origin of this call must be `CancelProposalOrigin`.
-   *
-   * - `prop_index`: The index of the proposal to cancel.
-   *
-   * Weight: `O(p)` where `p = PublicProps::<T>::decode_len()`
-   **/
-  | { name: 'CancelProposal'; params: { propIndex: number } }
-  /**
-   * Set or clear a metadata of a proposal or a referendum.
-   *
-   * Parameters:
-   * - `origin`: Must correspond to the `MetadataOwner`.
-   * - `ExternalOrigin` for an external proposal with the `SuperMajorityApprove`
-   * threshold.
-   * - `ExternalDefaultOrigin` for an external proposal with the `SuperMajorityAgainst`
-   * threshold.
-   * - `ExternalMajorityOrigin` for an external proposal with the `SimpleMajority`
-   * threshold.
-   * - `Signed` by a creator for a public proposal.
-   * - `Signed` to clear a metadata for a finished referendum.
-   * - `Root` to set a metadata for an ongoing referendum.
-   * - `owner`: an identifier of a metadata owner.
-   * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
-   **/
-  | { name: 'SetMetadata'; params: { owner: PalletDemocracyMetadataOwner; maybeHash?: H256 | undefined } }
-  /**
-   * Allow to force remove a vote for a referendum.
-   *
-   * Same as `remove_other_vote`, except the scope is overriden by forced flag.
-   * The dispatch origin of this call must be `VoteRemovalOrigin`.
-   *
-   * Only allowed if the referendum is finished.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account of the vote to be removed; this account must have voted for
-   * referendum `index`.
-   * - `index`: The index of referendum of the vote to be removed.
-   *
-   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'ForceRemoveVote'; params: { target: AccountId32; index: number } };
-
-export type PalletDemocracyCallLike =
-  /**
-   * Propose a sensitive action to be taken.
-   *
-   * The dispatch origin of this call must be _Signed_ and the sender must
-   * have funds to cover the deposit.
-   *
-   * - `proposal_hash`: The hash of the proposal preimage.
-   * - `value`: The amount of deposit (must be at least `MinimumDeposit`).
-   *
-   * Emits `Proposed`.
-   **/
-  | { name: 'Propose'; params: { proposal: FrameSupportPreimagesBounded; value: bigint } }
-  /**
-   * Signals agreement with a particular proposal.
-   *
-   * The dispatch origin of this call must be _Signed_ and the sender
-   * must have funds to cover the deposit, equal to the original deposit.
-   *
-   * - `proposal`: The index of the proposal to second.
-   **/
-  | { name: 'Second'; params: { proposal: number } }
-  /**
-   * Vote in a referendum. If `vote.is_aye()`, the vote is to enact the proposal;
-   * otherwise it is a vote to keep the status quo.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `ref_index`: The index of the referendum to vote for.
-   * - `vote`: The vote configuration.
-   **/
-  | { name: 'Vote'; params: { refIndex: number; vote: PalletDemocracyVoteAccountVote } }
-  /**
-   * Schedule an emergency cancellation of a referendum. Cannot happen twice to the same
-   * referendum.
-   *
-   * The dispatch origin of this call must be `CancellationOrigin`.
-   *
-   * -`ref_index`: The index of the referendum to cancel.
-   *
-   * Weight: `O(1)`.
-   **/
-  | { name: 'EmergencyCancel'; params: { refIndex: number } }
-  /**
-   * Schedule a referendum to be tabled once it is legal to schedule an external
-   * referendum.
-   *
-   * The dispatch origin of this call must be `ExternalOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal.
-   **/
-  | { name: 'ExternalPropose'; params: { proposal: FrameSupportPreimagesBounded } }
-  /**
-   * Schedule a majority-carries referendum to be tabled next once it is legal to schedule
-   * an external referendum.
-   *
-   * The dispatch of this call must be `ExternalMajorityOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal.
-   *
-   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-   * pre-scheduled `external_propose` call.
-   *
-   * Weight: `O(1)`
-   **/
-  | { name: 'ExternalProposeMajority'; params: { proposal: FrameSupportPreimagesBounded } }
-  /**
-   * Schedule a negative-turnout-bias referendum to be tabled next once it is legal to
-   * schedule an external referendum.
-   *
-   * The dispatch of this call must be `ExternalDefaultOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal.
-   *
-   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-   * pre-scheduled `external_propose` call.
-   *
-   * Weight: `O(1)`
-   **/
-  | { name: 'ExternalProposeDefault'; params: { proposal: FrameSupportPreimagesBounded } }
-  /**
-   * Schedule the currently externally-proposed majority-carries referendum to be tabled
-   * immediately. If there is no externally-proposed referendum currently, or if there is one
-   * but it is not a majority-carries referendum then it fails.
-   *
-   * The dispatch of this call must be `FastTrackOrigin`.
-   *
-   * - `proposal_hash`: The hash of the current external proposal.
-   * - `voting_period`: The period that is allowed for voting on this proposal. Increased to
-   * Must be always greater than zero.
-   * For `FastTrackOrigin` must be equal or greater than `FastTrackVotingPeriod`.
-   * - `delay`: The number of block after voting has ended in approval and this should be
-   * enacted. This doesn't have a minimum amount.
-   *
-   * Emits `Started`.
-   *
-   * Weight: `O(1)`
-   **/
-  | { name: 'FastTrack'; params: { proposalHash: H256; votingPeriod: number; delay: number } }
-  /**
-   * Veto and blacklist the external proposal hash.
-   *
-   * The dispatch origin of this call must be `VetoOrigin`.
-   *
-   * - `proposal_hash`: The preimage hash of the proposal to veto and blacklist.
-   *
-   * Emits `Vetoed`.
-   *
-   * Weight: `O(V + log(V))` where V is number of `existing vetoers`
-   **/
-  | { name: 'VetoExternal'; params: { proposalHash: H256 } }
-  /**
-   * Remove a referendum.
-   *
-   * The dispatch origin of this call must be _Root_.
-   *
-   * - `ref_index`: The index of the referendum to cancel.
-   *
-   * # Weight: `O(1)`.
-   **/
-  | { name: 'CancelReferendum'; params: { refIndex: number } }
-  /**
-   * Delegate the voting power (with some given conviction) of the sending account.
-   *
-   * The balance delegated is locked for as long as it's delegated, and thereafter for the
-   * time appropriate for the conviction's lock period.
-   *
-   * The dispatch origin of this call must be _Signed_, and the signing account must either:
-   * - be delegating already; or
-   * - have no voting activity (if there is, then it will need to be removed/consolidated
-   * through `reap_vote` or `unvote`).
-   *
-   * - `to`: The account whose voting the `target` account's voting power will follow.
-   * - `conviction`: The conviction that will be attached to the delegated votes. When the
-   * account is undelegated, the funds will be locked for the corresponding period.
-   * - `balance`: The amount of the account's balance to be used in delegating. This must not
-   * be more than the account's current balance.
-   *
-   * Emits `Delegated`.
-   *
-   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-   * voted on. Weight is charged as if maximum votes.
-   **/
-  | { name: 'Delegate'; params: { to: AccountId32Like; conviction: PalletDemocracyConviction; balance: bigint } }
-  /**
-   * Undelegate the voting power of the sending account.
-   *
-   * Tokens may be unlocked following once an amount of time consistent with the lock period
-   * of the conviction with which the delegation was issued.
-   *
-   * The dispatch origin of this call must be _Signed_ and the signing account must be
-   * currently delegating.
-   *
-   * Emits `Undelegated`.
-   *
-   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-   * voted on. Weight is charged as if maximum votes.
-   **/
-  | { name: 'Undelegate' }
-  /**
-   * Clears all public proposals.
-   *
-   * The dispatch origin of this call must be _Root_.
-   *
-   * Weight: `O(1)`.
-   **/
-  | { name: 'ClearPublicProposals' }
-  /**
-   * Unlock tokens that have an expired lock.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account to remove the lock on.
-   *
-   * Weight: `O(R)` with R number of vote of target.
-   **/
-  | { name: 'Unlock'; params: { target: AccountId32Like } }
-  /**
-   * Remove a vote for a referendum.
-   *
-   * If:
-   * - the referendum was cancelled, or
-   * - the referendum is ongoing, or
-   * - the referendum has ended such that
-   * - the vote of the account was in opposition to the result; or
-   * - there was no conviction to the account's vote; or
-   * - the account made a split vote
-   * ...then the vote is removed cleanly and a following call to `unlock` may result in more
-   * funds being available.
-   *
-   * If, however, the referendum has ended and:
-   * - it finished corresponding to the vote of the account, and
-   * - the account made a standard vote with conviction, and
-   * - the lock period of the conviction is not over
-   * ...then the lock will be aggregated into the overall account's lock, which may involve
-   * *overlocking* (where the two locks are combined into a single lock that is the maximum
-   * of both the amount locked and the time is it locked for).
-   *
-   * The dispatch origin of this call must be _Signed_, and the signer must have a vote
-   * registered for referendum `index`.
-   *
-   * - `index`: The index of referendum of the vote to be removed.
-   *
-   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveVote'; params: { index: number } }
-  /**
-   * Remove a vote for a referendum.
-   *
-   * If the `target` is equal to the signer, then this function is exactly equivalent to
-   * `remove_vote`. If not equal to the signer, then the vote must have expired,
-   * either because the referendum was cancelled, because the voter lost the referendum or
-   * because the conviction period is over.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account of the vote to be removed; this account must have voted for
-   * referendum `index`.
-   * - `index`: The index of referendum of the vote to be removed.
-   *
-   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveOtherVote'; params: { target: AccountId32Like; index: number } }
-  /**
-   * Permanently place a proposal into the blacklist. This prevents it from ever being
-   * proposed again.
-   *
-   * If called on a queued public or external proposal, then this will result in it being
-   * removed. If the `ref_index` supplied is an active referendum with the proposal hash,
-   * then it will be cancelled.
-   *
-   * The dispatch origin of this call must be `BlacklistOrigin`.
-   *
-   * - `proposal_hash`: The proposal hash to blacklist permanently.
-   * - `ref_index`: An ongoing referendum whose hash is `proposal_hash`, which will be
-   * cancelled.
-   *
-   * Weight: `O(p)` (though as this is an high-privilege dispatch, we assume it has a
-   * reasonable value).
-   **/
-  | { name: 'Blacklist'; params: { proposalHash: H256; maybeRefIndex?: number | undefined } }
-  /**
-   * Remove a proposal.
-   *
-   * The dispatch origin of this call must be `CancelProposalOrigin`.
-   *
-   * - `prop_index`: The index of the proposal to cancel.
-   *
-   * Weight: `O(p)` where `p = PublicProps::<T>::decode_len()`
-   **/
-  | { name: 'CancelProposal'; params: { propIndex: number } }
-  /**
-   * Set or clear a metadata of a proposal or a referendum.
-   *
-   * Parameters:
-   * - `origin`: Must correspond to the `MetadataOwner`.
-   * - `ExternalOrigin` for an external proposal with the `SuperMajorityApprove`
-   * threshold.
-   * - `ExternalDefaultOrigin` for an external proposal with the `SuperMajorityAgainst`
-   * threshold.
-   * - `ExternalMajorityOrigin` for an external proposal with the `SimpleMajority`
-   * threshold.
-   * - `Signed` by a creator for a public proposal.
-   * - `Signed` to clear a metadata for a finished referendum.
-   * - `Root` to set a metadata for an ongoing referendum.
-   * - `owner`: an identifier of a metadata owner.
-   * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
-   **/
-  | { name: 'SetMetadata'; params: { owner: PalletDemocracyMetadataOwner; maybeHash?: H256 | undefined } }
-  /**
-   * Allow to force remove a vote for a referendum.
-   *
-   * Same as `remove_other_vote`, except the scope is overriden by forced flag.
-   * The dispatch origin of this call must be `VoteRemovalOrigin`.
-   *
-   * Only allowed if the referendum is finished.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account of the vote to be removed; this account must have voted for
-   * referendum `index`.
-   * - `index`: The index of referendum of the vote to be removed.
-   *
-   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'ForceRemoveVote'; params: { target: AccountId32Like; index: number } };
-
-export type FrameSupportPreimagesBounded =
-  | { type: 'Legacy'; value: { hash: H256 } }
-  | { type: 'Inline'; value: Bytes }
-  | { type: 'Lookup'; value: { hash: H256; len: number } };
-
-export type SpRuntimeBlakeTwo256 = {};
-
-export type PalletDemocracyVoteAccountVote =
-  | { type: 'Standard'; value: { vote: PalletDemocracyVote; balance: bigint } }
-  | { type: 'Split'; value: { aye: bigint; nay: bigint } };
-
-export type PalletDemocracyVote = number;
-
-export type PalletDemocracyConviction =
-  | 'None'
-  | 'Locked1x'
-  | 'Locked2x'
-  | 'Locked3x'
-  | 'Locked4x'
-  | 'Locked5x'
-  | 'Locked6x';
-
-export type PalletDemocracyMetadataOwner =
-  | { type: 'External' }
-  | { type: 'Proposal'; value: number }
-  | { type: 'Referendum'; value: number };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5069,6 +4479,13 @@ export type PalletReferendaCallLike =
    **/
   | { name: 'SetMetadata'; params: { index: number; maybeHash?: H256 | undefined } };
 
+export type FrameSupportPreimagesBounded =
+  | { type: 'Legacy'; value: { hash: H256 } }
+  | { type: 'Inline'; value: Bytes }
+  | { type: 'Lookup'; value: { hash: H256; len: number } };
+
+export type SpRuntimeBlakeTwo256 = {};
+
 export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | { type: 'After'; value: number };
 
 /**
@@ -5249,7 +4666,6 @@ export type PalletAssetRegistryCall =
         location?: HydradxRuntimeXcmAssetLocation | undefined;
       };
     }
-  | { name: 'RegisterExternal'; params: { location: HydradxRuntimeXcmAssetLocation } }
   | { name: 'BanAsset'; params: { assetId: number } }
   | { name: 'UnbanAsset'; params: { assetId: number } };
 
@@ -5308,7 +4724,6 @@ export type PalletAssetRegistryCallLike =
         location?: HydradxRuntimeXcmAssetLocation | undefined;
       };
     }
-  | { name: 'RegisterExternal'; params: { location: HydradxRuntimeXcmAssetLocation } }
   | { name: 'BanAsset'; params: { assetId: number } }
   | { name: 'UnbanAsset'; params: { assetId: number } };
 
@@ -7378,7 +6793,8 @@ export type HydradxTraitsRouterPoolType =
   | { type: 'Stableswap'; value: number }
   | { type: 'Omnipool' }
   | { type: 'Aave' }
-  | { type: 'Hsm' };
+  | { type: 'Hsm' }
+  | { type: 'UniswapV3'; value: number };
 
 export type HydradxTraitsRouterAssetPair = { assetIn: number; assetOut: number };
 
@@ -8933,7 +8349,7 @@ export type PalletReferralsCallLike =
 
 export type PalletReferralsLevel = 'None' | 'Tier0' | 'Tier1' | 'Tier2' | 'Tier3' | 'Tier4';
 
-export type PalletReferralsFeeDistribution = { referrer: Permill; trader: Permill; external: Permill };
+export type PalletReferralsFeeDistribution = { referrer: Permill; trader: Permill };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8946,6 +8362,17 @@ export type PalletLiquidationCall =
    * Performs a flash loan to get funds to pay for the debt.
    * Received collateral is swapped and the profit is transferred to `FeeReceiver`.
    *
+   * Permissionless and caller-supplied `route` are intentional. This call exists
+   * only to keep the money market solvent: the goal is that the position is
+   * liquidated, not that the protocol captures the surplus. A caller can pick a
+   * `route` that prices the collateral so that little or no profit reaches
+   * `FeeReceiver` — that is acceptable. It is not an exploit: anyone can already
+   * liquidate the same position by calling Aave's `liquidationCall` directly and
+   * keep the entire bonus themselves. So reports framing the open origin or the
+   * attacker-chosen route as a fund-redirection vulnerability are out of scope by
+   * design; the only invariant that matters here is that unhealthy positions can
+   * always be closed.
+   *
    * Parameters:
    * - `origin`: Signed origin.
    * - `collateral_asset`: Asset ID used as collateral in the MM position.
@@ -8970,7 +8397,48 @@ export type PalletLiquidationCall =
   /**
    * Set the borrowing market contract address.
    **/
-  | { name: 'SetBorrowingContract'; params: { contract: H160 } };
+  | { name: 'SetBorrowingContract'; params: { contract: H160 } }
+  /**
+   * Liquidates an existing money market position, addressing the market's pool explicitly.
+   *
+   * Behaves exactly like `liquidate`; the extra `pool` parameter is a consistency
+   * assertion, not a router: it must equal the pool contract the liquidation path
+   * resolves on its own (the gigahdx pool for GIGAHDX-collateral positions, the
+   * borrowing contract otherwise), or the call fails with `PoolAddressMismatch`.
+   * This lets a multi-money-market worker state which market a decision was made
+   * against and guarantees the liquidation can never execute against a different one.
+   *
+   * Unlike `liquidate`, this call is not publicly dispatchable: the origin must be
+   * none, and `ValidateUnsigned` rejects externally received transactions, so only
+   * a collator's own liquidation worker can submit it. The public permissionless
+   * path remains `liquidate`.
+   *
+   * Parameters:
+   * - `origin`: Must be none (unsigned transaction).
+   * - `pool`: EVM address of the money-market pool this liquidation targets.
+   * - `collateral_asset`: Asset ID used as collateral in the MM position.
+   * - `debt_asset`: Asset ID used as debt in the MM position.
+   * - `user`: EVM address of the MM position that we want to liquidate.
+   * - `debt_to_cover`: Amount of debt we want to liquidate.
+   * - `route`: The route we trade against. Required for the fee calculation.
+   * - `unsigned_priority`: Optional priority added on top of `BASE_UNSIGNED_LIQUIDATION_PRIORITY` for
+   * unsigned liquidation extrinsics.
+   *
+   * Emits `Liquidated` event when successful.
+   *
+   **/
+  | {
+      name: 'LiquidateWithPool';
+      params: {
+        pool: H160;
+        collateralAsset: number;
+        debtAsset: number;
+        user: H160;
+        debtToCover: bigint;
+        route: Array<HydradxTraitsRouterTrade>;
+        unsignedPriority?: bigint | undefined;
+      };
+    };
 
 export type PalletLiquidationCallLike =
   /**
@@ -8980,6 +8448,17 @@ export type PalletLiquidationCallLike =
    * Performs a flash loan to get funds to pay for the debt.
    * Received collateral is swapped and the profit is transferred to `FeeReceiver`.
    *
+   * Permissionless and caller-supplied `route` are intentional. This call exists
+   * only to keep the money market solvent: the goal is that the position is
+   * liquidated, not that the protocol captures the surplus. A caller can pick a
+   * `route` that prices the collateral so that little or no profit reaches
+   * `FeeReceiver` — that is acceptable. It is not an exploit: anyone can already
+   * liquidate the same position by calling Aave's `liquidationCall` directly and
+   * keep the entire bonus themselves. So reports framing the open origin or the
+   * attacker-chosen route as a fund-redirection vulnerability are out of scope by
+   * design; the only invariant that matters here is that unhealthy positions can
+   * always be closed.
+   *
    * Parameters:
    * - `origin`: Signed origin.
    * - `collateral_asset`: Asset ID used as collateral in the MM position.
@@ -9004,7 +8483,48 @@ export type PalletLiquidationCallLike =
   /**
    * Set the borrowing market contract address.
    **/
-  | { name: 'SetBorrowingContract'; params: { contract: H160 } };
+  | { name: 'SetBorrowingContract'; params: { contract: H160 } }
+  /**
+   * Liquidates an existing money market position, addressing the market's pool explicitly.
+   *
+   * Behaves exactly like `liquidate`; the extra `pool` parameter is a consistency
+   * assertion, not a router: it must equal the pool contract the liquidation path
+   * resolves on its own (the gigahdx pool for GIGAHDX-collateral positions, the
+   * borrowing contract otherwise), or the call fails with `PoolAddressMismatch`.
+   * This lets a multi-money-market worker state which market a decision was made
+   * against and guarantees the liquidation can never execute against a different one.
+   *
+   * Unlike `liquidate`, this call is not publicly dispatchable: the origin must be
+   * none, and `ValidateUnsigned` rejects externally received transactions, so only
+   * a collator's own liquidation worker can submit it. The public permissionless
+   * path remains `liquidate`.
+   *
+   * Parameters:
+   * - `origin`: Must be none (unsigned transaction).
+   * - `pool`: EVM address of the money-market pool this liquidation targets.
+   * - `collateral_asset`: Asset ID used as collateral in the MM position.
+   * - `debt_asset`: Asset ID used as debt in the MM position.
+   * - `user`: EVM address of the MM position that we want to liquidate.
+   * - `debt_to_cover`: Amount of debt we want to liquidate.
+   * - `route`: The route we trade against. Required for the fee calculation.
+   * - `unsigned_priority`: Optional priority added on top of `BASE_UNSIGNED_LIQUIDATION_PRIORITY` for
+   * unsigned liquidation extrinsics.
+   *
+   * Emits `Liquidated` event when successful.
+   *
+   **/
+  | {
+      name: 'LiquidateWithPool';
+      params: {
+        pool: H160;
+        collateralAsset: number;
+        debtAsset: number;
+        user: H160;
+        debtToCover: bigint;
+        route: Array<HydradxTraitsRouterTrade>;
+        unsignedPriority?: bigint | undefined;
+      };
+    };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9420,6 +8940,231 @@ export type PalletHsmArbitrage = { type: 'HollarOut'; value: bigint } | { type: 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletParametersCall =
+  /**
+   * Point the Uniswap v3 router venue at a deployment.
+   *
+   * These three addresses are the only link between the runtime and the
+   * Uniswap contracts: `UniswapV3TradeExecutor` resolves every pool through
+   * `factory`, quotes through `quoter`, and swaps through `swap_router`.
+   * Until they are set the venue is inert — every trade returns
+   * "factory not configured" rather than reaching the EVM.
+   *
+   * They cannot be constants. Each deployment lands its contracts at
+   * different addresses (plain CREATE, so one extra transaction shifts every
+   * one of them), and the chain id does not disambiguate — a fork reports the
+   * same id as the chain it forked. Off-chain consumers should read this
+   * storage rather than hardcode, for the same reason.
+   *
+   * Setting a wrong address is not loud: `getPool` against an address holding
+   * no code simply finds no pool, so the venue goes quiet instead of failing.
+   * Verify against the deployment artefacts after enactment.
+   *
+   * Weight: three unconditional storage writes, no reads, no iteration.
+   **/
+  | { name: 'SetUniswapV3Addresses'; params: { factory: H160; swapRouter: H160; quoter: H160 } }
+  /**
+   * Override the EVM gas limits the Aave trade executor caps its calls with.
+   *
+   * `None` restores the built-in defaults. The limits are ceilings, but `trade`
+   * and `view` also feed the router's declared weight for every Aave trade, so a
+   * value large enough to exceed the block weight limit makes those trades
+   * unincludable rather than failing loudly.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   * - `limits`: The gas limits to apply, or `None` to fall back to the defaults
+   *
+   * Emits `AaveGasLimitsSet` event when successful.
+   *
+   **/
+  | { name: 'SetAaveGasLimits'; params: { limits?: PalletParametersAaveGasLimits | undefined } }
+  /**
+   * Suspend all outbound XCM.
+   *
+   * The runtime's XCM router refuses every message while suspended, so user transfers fail
+   * and roll back, and sends made while executing inbound XCM fail with the assets
+   * left in the asset trap.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmSendSuspended` event when successful.
+   *
+   **/
+  | { name: 'SuspendXcmSend' }
+  /**
+   * Resume outbound XCM.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmSendResumed` event when successful.
+   *
+   **/
+  | { name: 'ResumeXcmSend' }
+  /**
+   * Suspend execution of all inbound XCM, from the relay chain and from siblings.
+   *
+   * Messages are not dropped: they stay queued and execute once execution is resumed.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmExecutionSuspended` event when successful.
+   *
+   **/
+  | { name: 'SuspendXcmExecution' }
+  /**
+   * Resume execution of inbound XCM, including messages queued while suspended.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmExecutionResumed` event when successful.
+   *
+   **/
+  | { name: 'ResumeXcmExecution' }
+  /**
+   * Emergency stop: suspend both outbound and inbound XCM.
+   *
+   * Succeeds even if either side is already suspended, so it can always be used in an emergency.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::EmergencyOrigin`
+   *
+   * Emits `XcmSuspended` event when successful.
+   *
+   **/
+  | { name: 'SuspendXcm' }
+  /**
+   * Resume both outbound and inbound XCM.
+   *
+   * Succeeds even if either side is already resumed.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmResumed` event when successful.
+   *
+   **/
+  | { name: 'ResumeXcm' };
+
+export type PalletParametersCallLike =
+  /**
+   * Point the Uniswap v3 router venue at a deployment.
+   *
+   * These three addresses are the only link between the runtime and the
+   * Uniswap contracts: `UniswapV3TradeExecutor` resolves every pool through
+   * `factory`, quotes through `quoter`, and swaps through `swap_router`.
+   * Until they are set the venue is inert — every trade returns
+   * "factory not configured" rather than reaching the EVM.
+   *
+   * They cannot be constants. Each deployment lands its contracts at
+   * different addresses (plain CREATE, so one extra transaction shifts every
+   * one of them), and the chain id does not disambiguate — a fork reports the
+   * same id as the chain it forked. Off-chain consumers should read this
+   * storage rather than hardcode, for the same reason.
+   *
+   * Setting a wrong address is not loud: `getPool` against an address holding
+   * no code simply finds no pool, so the venue goes quiet instead of failing.
+   * Verify against the deployment artefacts after enactment.
+   *
+   * Weight: three unconditional storage writes, no reads, no iteration.
+   **/
+  | { name: 'SetUniswapV3Addresses'; params: { factory: H160; swapRouter: H160; quoter: H160 } }
+  /**
+   * Override the EVM gas limits the Aave trade executor caps its calls with.
+   *
+   * `None` restores the built-in defaults. The limits are ceilings, but `trade`
+   * and `view` also feed the router's declared weight for every Aave trade, so a
+   * value large enough to exceed the block weight limit makes those trades
+   * unincludable rather than failing loudly.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   * - `limits`: The gas limits to apply, or `None` to fall back to the defaults
+   *
+   * Emits `AaveGasLimitsSet` event when successful.
+   *
+   **/
+  | { name: 'SetAaveGasLimits'; params: { limits?: PalletParametersAaveGasLimits | undefined } }
+  /**
+   * Suspend all outbound XCM.
+   *
+   * The runtime's XCM router refuses every message while suspended, so user transfers fail
+   * and roll back, and sends made while executing inbound XCM fail with the assets
+   * left in the asset trap.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmSendSuspended` event when successful.
+   *
+   **/
+  | { name: 'SuspendXcmSend' }
+  /**
+   * Resume outbound XCM.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmSendResumed` event when successful.
+   *
+   **/
+  | { name: 'ResumeXcmSend' }
+  /**
+   * Suspend execution of all inbound XCM, from the relay chain and from siblings.
+   *
+   * Messages are not dropped: they stay queued and execute once execution is resumed.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmExecutionSuspended` event when successful.
+   *
+   **/
+  | { name: 'SuspendXcmExecution' }
+  /**
+   * Resume execution of inbound XCM, including messages queued while suspended.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmExecutionResumed` event when successful.
+   *
+   **/
+  | { name: 'ResumeXcmExecution' }
+  /**
+   * Emergency stop: suspend both outbound and inbound XCM.
+   *
+   * Succeeds even if either side is already suspended, so it can always be used in an emergency.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::EmergencyOrigin`
+   *
+   * Emits `XcmSuspended` event when successful.
+   *
+   **/
+  | { name: 'SuspendXcm' }
+  /**
+   * Resume both outbound and inbound XCM.
+   *
+   * Succeeds even if either side is already resumed.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`
+   *
+   * Emits `XcmResumed` event when successful.
+   *
+   **/
+  | { name: 'ResumeXcm' };
+
+export type PalletParametersAaveGasLimits = { trade: bigint; view: bigint; reservesList: bigint };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletSignetCall =
   /**
    * Set or update the signet configuration.
@@ -9714,6 +9459,701 @@ export type PalletDispenserEvmTransactionParams = {
   nonce: bigint;
   chainId: bigint;
 };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletGigahdxCall =
+  /**
+   * Lock HDX in the caller's account, mint stHDX, and supply it to the money market.
+   *
+   * The pallet locks `amount` HDX in the caller's account under `Config::LockId`
+   * (so it remains voteable via `LockableCurrency` semantics), mints stHDX at the
+   * current exchange rate, and supplies the stHDX to the money market. The money
+   * market mints GIGAHDX (aToken) to the caller's EVM-mapped address.
+   *
+   * `Stakes[caller].gigahdx` records the **actual** aToken amount returned by the
+   * money market (may differ from the requested mint amount by rounding).
+   *
+   * Fails with `BelowMinStake` if `amount < Config::MinStake`, with
+   * `BlockedByExternalLock` if `Config::ExternalClaims::on(caller) > 0`
+   * (the caller holds a non-allowed lock — strict policy rejects
+   * stake admission entirely), with `InsufficientFreeBalance` if
+   * `free_balance − own_gigahdx_commitment < amount`, with
+   * `StHdxMintFailed` if stHDX minting fails, or with
+   * `MoneyMarketSupplyFailed` if the AAVE `Pool.supply` call reverts.
+   *
+   * Parameters:
+   * - `amount`: HDX amount to stake. Must be at least `Config::MinStake`.
+   *
+   * Emits `Staked` event when successful.
+   *
+   **/
+  | { name: 'GigaStake'; params: { amount: bigint } }
+  /**
+   * Unstake the caller's GIGAHDX and open a pending-unstake position.
+   *
+   * Burns `gigahdx_amount` of the caller's GIGAHDX through the money market, which
+   * returns stHDX to the caller; the pallet then burns that stHDX. The HDX value
+   * (current rate × `gigahdx_amount`) is moved into a single pending-unstake
+   * position with a cooldown of `Config::CooldownPeriod`. Any portion of the payout
+   * that exceeds the user's active stake principal is paid as yield from the
+   * gigapot account.
+   *
+   * At most one pending position per account — the caller must `unlock` an existing
+   * position before calling again, otherwise `PendingUnstakeAlreadyExists` is
+   * returned.
+   *
+   * Implementation detail (must match `LockableAToken.sol`): the lock-manager
+   * precompile (`0x0806`) reads `Stakes[who].gigahdx` and treats it as the user's
+   * locked GIGAHDX. The aToken contract rejects burns where
+   * `amount > balance - locked`, so the pallet **pre-decrements `gigahdx` by
+   * `gigahdx_amount` before the money-market call**. The dispatchable runs in a
+   * storage layer so any failure rolls back the pre-decrement atomically.
+   *
+   * Fails with `NoStake` if the caller has no active stake, `ZeroAmount` if
+   * `gigahdx_amount == 0`, `InsufficientStake` if `gigahdx_amount` exceeds the
+   * caller's `Stakes.gigahdx`, or `MoneyMarketWithdrawFailed` if the AAVE
+   * `Pool.withdraw` call reverts.
+   *
+   * Parameters:
+   * - `gigahdx_amount`: GIGAHDX (aToken) amount to unstake. Must be greater than
+   * zero and not exceed the caller's `Stakes.gigahdx`.
+   *
+   * Emits `Unstaked` event when successful.
+   *
+   **/
+  | { name: 'GigaUnstake'; params: { gigahdxAmount: bigint } }
+  /**
+   * Set the AAVE V3 Pool contract address used by the money-market adapter.
+   *
+   * Refuses to swap the pool while gigahdx (aToken / stHDX) is still in
+   * circulation — a swap mid-flight would route subsequent `giga_unstake`
+   * calls to a pool that doesn't hold the user's atokens, reverting the
+   * burn and leaving HDX permanently locked. Returns `OutstandingStake`
+   * when total stHDX supply is non-zero.
+   *
+   * Note: it is not enough to check `TotalLocked == 0` (the sum of
+   * `Stakes.hdx`). When an unstake payout exceeds the user's active
+   * stake, the active stake is drained but `Stakes.gigahdx` (and the
+   * corresponding aToken balance) can stay non-zero — those tokens
+   * remain bound to the current pool.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`.
+   * - `contract`: H160 address of the new AAVE V3 Pool contract.
+   *
+   * Emits `PoolContractUpdated` event when successful.
+   *
+   **/
+  | { name: 'SetPoolContract'; params: { contract: H160 } }
+  /**
+   * Release a single pending-unstake position whose cooldown has elapsed.
+   *
+   * Fails with `PendingUnstakeNotFound` if no position with `position_id`
+   * exists, or `CooldownNotElapsed` if the targeted position is still cooling.
+   *
+   * Parameters:
+   * - `position_id`: id of the position to release (as recorded in the
+   * `Unstaked` event for the originating unstake).
+   *
+   * Emits `Unlocked` event when successful.
+   *
+   **/
+  | { name: 'Unlock'; params: { positionId: number } }
+  /**
+   * Cancel a single pending-unstake position, folding its `amount` HDX
+   * back into the active stake at the current exchange rate.
+   *
+   * The pending HDX is already locked in the caller's account; this
+   * extrinsic relabels it as active stake and mints fresh aTokens at
+   * today's rate. The number of aTokens minted may differ from the
+   * amount burned at unstake time if the exchange rate moved.
+   *
+   * Cooldown is not a gate — cancellation is valid throughout the
+   * pending window, until the caller invokes `unlock`.
+   *
+   * Fails with `PendingUnstakeNotFound` if `position_id` is not present.
+   *
+   * Parameters:
+   * - `position_id`: id of the position to cancel.
+   *
+   * Emits `UnstakeCancelled` event when successful.
+   *
+   **/
+  | { name: 'CancelUnstake'; params: { positionId: number } }
+  /**
+   * Migrate the caller's legacy NFT staking position into gigahdx.
+   *
+   * Atomically: destroys the legacy position via `LegacyStaking::
+   * force_unstake` (paying out 100% of rewards — no sigmoid slash, no
+   * unclaimable-period penalty), then re-stakes the freed HDX under
+   * the same admission gate as `giga_stake`. Refuses partial migration
+   * — the legacy position is consumed whole or not at all.
+   *
+   * Admission runs *after* `force_unstake` so the legacy lock is no
+   * longer counted against `ExternalClaims`.
+   *
+   * Fails with `BelowMinStake` if the legacy position unlocks less
+   * than `Config::MinStake`, with `BlockedByExternalLock` if the
+   * caller still carries another non-overlap-whitelisted lock, with
+   * `InsufficientFreeBalance` if the post-unstake balance can't cover
+   * the new gigahdx claim, or with whatever error `force_unstake`
+   * raises (e.g. ongoing referendum vote, no legacy position).
+   *
+   * Emits `MigratedFromLegacy` event when successful.
+   **/
+  | { name: 'Migrate' }
+  /**
+   * Realize the caller's accrued yield into their locked stake principal.
+   *
+   * Moves the HDX value the caller's GIGAHDX has gained since it was last
+   * reconciled (`rate × gigahdx − Stakes[who].hdx`) from the gigapot into
+   * the caller's account, folds it into `Stakes[who].hdx`, and refreshes
+   * the lock. GIGAHDX balance and the exchange rate are unchanged. A
+   * caller with no accrued yield (or no stake) is a successful no-op.
+   *
+   * Emits `YieldRealized` event when there was yield to realize.
+   *
+   **/
+  | { name: 'RealizeYield' };
+
+export type PalletGigahdxCallLike =
+  /**
+   * Lock HDX in the caller's account, mint stHDX, and supply it to the money market.
+   *
+   * The pallet locks `amount` HDX in the caller's account under `Config::LockId`
+   * (so it remains voteable via `LockableCurrency` semantics), mints stHDX at the
+   * current exchange rate, and supplies the stHDX to the money market. The money
+   * market mints GIGAHDX (aToken) to the caller's EVM-mapped address.
+   *
+   * `Stakes[caller].gigahdx` records the **actual** aToken amount returned by the
+   * money market (may differ from the requested mint amount by rounding).
+   *
+   * Fails with `BelowMinStake` if `amount < Config::MinStake`, with
+   * `BlockedByExternalLock` if `Config::ExternalClaims::on(caller) > 0`
+   * (the caller holds a non-allowed lock — strict policy rejects
+   * stake admission entirely), with `InsufficientFreeBalance` if
+   * `free_balance − own_gigahdx_commitment < amount`, with
+   * `StHdxMintFailed` if stHDX minting fails, or with
+   * `MoneyMarketSupplyFailed` if the AAVE `Pool.supply` call reverts.
+   *
+   * Parameters:
+   * - `amount`: HDX amount to stake. Must be at least `Config::MinStake`.
+   *
+   * Emits `Staked` event when successful.
+   *
+   **/
+  | { name: 'GigaStake'; params: { amount: bigint } }
+  /**
+   * Unstake the caller's GIGAHDX and open a pending-unstake position.
+   *
+   * Burns `gigahdx_amount` of the caller's GIGAHDX through the money market, which
+   * returns stHDX to the caller; the pallet then burns that stHDX. The HDX value
+   * (current rate × `gigahdx_amount`) is moved into a single pending-unstake
+   * position with a cooldown of `Config::CooldownPeriod`. Any portion of the payout
+   * that exceeds the user's active stake principal is paid as yield from the
+   * gigapot account.
+   *
+   * At most one pending position per account — the caller must `unlock` an existing
+   * position before calling again, otherwise `PendingUnstakeAlreadyExists` is
+   * returned.
+   *
+   * Implementation detail (must match `LockableAToken.sol`): the lock-manager
+   * precompile (`0x0806`) reads `Stakes[who].gigahdx` and treats it as the user's
+   * locked GIGAHDX. The aToken contract rejects burns where
+   * `amount > balance - locked`, so the pallet **pre-decrements `gigahdx` by
+   * `gigahdx_amount` before the money-market call**. The dispatchable runs in a
+   * storage layer so any failure rolls back the pre-decrement atomically.
+   *
+   * Fails with `NoStake` if the caller has no active stake, `ZeroAmount` if
+   * `gigahdx_amount == 0`, `InsufficientStake` if `gigahdx_amount` exceeds the
+   * caller's `Stakes.gigahdx`, or `MoneyMarketWithdrawFailed` if the AAVE
+   * `Pool.withdraw` call reverts.
+   *
+   * Parameters:
+   * - `gigahdx_amount`: GIGAHDX (aToken) amount to unstake. Must be greater than
+   * zero and not exceed the caller's `Stakes.gigahdx`.
+   *
+   * Emits `Unstaked` event when successful.
+   *
+   **/
+  | { name: 'GigaUnstake'; params: { gigahdxAmount: bigint } }
+  /**
+   * Set the AAVE V3 Pool contract address used by the money-market adapter.
+   *
+   * Refuses to swap the pool while gigahdx (aToken / stHDX) is still in
+   * circulation — a swap mid-flight would route subsequent `giga_unstake`
+   * calls to a pool that doesn't hold the user's atokens, reverting the
+   * burn and leaving HDX permanently locked. Returns `OutstandingStake`
+   * when total stHDX supply is non-zero.
+   *
+   * Note: it is not enough to check `TotalLocked == 0` (the sum of
+   * `Stakes.hdx`). When an unstake payout exceeds the user's active
+   * stake, the active stake is drained but `Stakes.gigahdx` (and the
+   * corresponding aToken balance) can stay non-zero — those tokens
+   * remain bound to the current pool.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`.
+   * - `contract`: H160 address of the new AAVE V3 Pool contract.
+   *
+   * Emits `PoolContractUpdated` event when successful.
+   *
+   **/
+  | { name: 'SetPoolContract'; params: { contract: H160 } }
+  /**
+   * Release a single pending-unstake position whose cooldown has elapsed.
+   *
+   * Fails with `PendingUnstakeNotFound` if no position with `position_id`
+   * exists, or `CooldownNotElapsed` if the targeted position is still cooling.
+   *
+   * Parameters:
+   * - `position_id`: id of the position to release (as recorded in the
+   * `Unstaked` event for the originating unstake).
+   *
+   * Emits `Unlocked` event when successful.
+   *
+   **/
+  | { name: 'Unlock'; params: { positionId: number } }
+  /**
+   * Cancel a single pending-unstake position, folding its `amount` HDX
+   * back into the active stake at the current exchange rate.
+   *
+   * The pending HDX is already locked in the caller's account; this
+   * extrinsic relabels it as active stake and mints fresh aTokens at
+   * today's rate. The number of aTokens minted may differ from the
+   * amount burned at unstake time if the exchange rate moved.
+   *
+   * Cooldown is not a gate — cancellation is valid throughout the
+   * pending window, until the caller invokes `unlock`.
+   *
+   * Fails with `PendingUnstakeNotFound` if `position_id` is not present.
+   *
+   * Parameters:
+   * - `position_id`: id of the position to cancel.
+   *
+   * Emits `UnstakeCancelled` event when successful.
+   *
+   **/
+  | { name: 'CancelUnstake'; params: { positionId: number } }
+  /**
+   * Migrate the caller's legacy NFT staking position into gigahdx.
+   *
+   * Atomically: destroys the legacy position via `LegacyStaking::
+   * force_unstake` (paying out 100% of rewards — no sigmoid slash, no
+   * unclaimable-period penalty), then re-stakes the freed HDX under
+   * the same admission gate as `giga_stake`. Refuses partial migration
+   * — the legacy position is consumed whole or not at all.
+   *
+   * Admission runs *after* `force_unstake` so the legacy lock is no
+   * longer counted against `ExternalClaims`.
+   *
+   * Fails with `BelowMinStake` if the legacy position unlocks less
+   * than `Config::MinStake`, with `BlockedByExternalLock` if the
+   * caller still carries another non-overlap-whitelisted lock, with
+   * `InsufficientFreeBalance` if the post-unstake balance can't cover
+   * the new gigahdx claim, or with whatever error `force_unstake`
+   * raises (e.g. ongoing referendum vote, no legacy position).
+   *
+   * Emits `MigratedFromLegacy` event when successful.
+   **/
+  | { name: 'Migrate' }
+  /**
+   * Realize the caller's accrued yield into their locked stake principal.
+   *
+   * Moves the HDX value the caller's GIGAHDX has gained since it was last
+   * reconciled (`rate × gigahdx − Stakes[who].hdx`) from the gigapot into
+   * the caller's account, folds it into `Stakes[who].hdx`, and refreshes
+   * the lock. GIGAHDX balance and the exchange rate are unchanged. A
+   * caller with no accrued yield (or no stake) is a successful no-op.
+   *
+   * Emits `YieldRealized` event when there was yield to realize.
+   *
+   **/
+  | { name: 'RealizeYield' };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletGigahdxRewardsCall =
+  /**
+   * Convert the caller's accumulated HDX rewards into GIGAHDX by staking
+   * them on the caller's behalf.
+   *
+   * The full `PendingRewards[who]` sum is taken atomically. The HDX is
+   * transferred from the allocated-rewards pot to the caller's free
+   * balance, then `pallet_gigahdx::do_stake` is called to mint GIGAHDX
+   * into the caller's stake position.
+   *
+   * Parameters:
+   * - `origin`: signed by the user claiming.
+   *
+   * Emits `RewardsClaimed` event when successful.
+   **/
+  'ClaimRewards';
+
+export type PalletGigahdxRewardsCallLike =
+  /**
+   * Convert the caller's accumulated HDX rewards into GIGAHDX by staking
+   * them on the caller's behalf.
+   *
+   * The full `PendingRewards[who]` sum is taken atomically. The HDX is
+   * transferred from the allocated-rewards pot to the caller's free
+   * balance, then `pallet_gigahdx::do_stake` is called to mint GIGAHDX
+   * into the caller's stake position.
+   *
+   * Parameters:
+   * - `origin`: signed by the user claiming.
+   *
+   * Emits `RewardsClaimed` event when successful.
+   **/
+  'ClaimRewards';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletLazyExecutorCall =
+  /**
+   * Extrinsic executes the top forward from the queue.
+   *
+   * This is called from OCW.
+   *
+   * Emits:
+   * - `Executed` when successful
+   **/
+  { name: 'DispatchTop'; params: { id: bigint } };
+
+export type PalletLazyExecutorCallLike =
+  /**
+   * Extrinsic executes the top forward from the queue.
+   *
+   * This is called from OCW.
+   *
+   * Emits:
+   * - `Executed` when successful
+   **/
+  { name: 'DispatchTop'; params: { id: bigint } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletIntentCall =
+  /**
+   * Submit an intent and reserve the funds for its execution.
+   *
+   * Parameters:
+   * - `intent`: the intent's data, deadline and optional `on_resolved` forward. A
+   * `MatchFirstSwap` is offered to the solver only against opposite flow until its
+   * `match_window` (ms) has elapsed, then behaves like a plain `Swap`.
+   *
+   * Emits `IntentSubmitted` event when successful.
+   *
+   **/
+  | { name: 'SubmitIntent'; params: { intent: PalletIntentIntentInput } }
+  /**
+   * Extrinsic unlocks reserved funds and removes intent.
+   *
+   * Only intent's owner can cancel intent.
+   *
+   * Parameters:
+   * - `id`: id of intent to be canceled.
+   *
+   * Emits:
+   * - `IntentCanceled` when successful
+   *
+   **/
+  | { name: 'RemoveIntent'; params: { id: bigint } }
+  /**
+   * Extrinsic removes expired intent, queue intent's on failure callback and unlocks funds.
+   *
+   * Failure to queue callback for future execution doesn't fail clean up function.
+   * This is called automatically from OCW to remove expired intents but it can be called also
+   * called by any users.
+   *
+   * Parameters:
+   * - `id`: id of intent to be cleaned up from storage.
+   *
+   * Emits:
+   * - `FailedToQueueCallback` when callback's queuing fails
+   * - `IntentExpired` when successful
+   **/
+  | { name: 'CleanupIntent'; params: { id: bigint } };
+
+export type PalletIntentCallLike =
+  /**
+   * Submit an intent and reserve the funds for its execution.
+   *
+   * Parameters:
+   * - `intent`: the intent's data, deadline and optional `on_resolved` forward. A
+   * `MatchFirstSwap` is offered to the solver only against opposite flow until its
+   * `match_window` (ms) has elapsed, then behaves like a plain `Swap`.
+   *
+   * Emits `IntentSubmitted` event when successful.
+   *
+   **/
+  | { name: 'SubmitIntent'; params: { intent: PalletIntentIntentInput } }
+  /**
+   * Extrinsic unlocks reserved funds and removes intent.
+   *
+   * Only intent's owner can cancel intent.
+   *
+   * Parameters:
+   * - `id`: id of intent to be canceled.
+   *
+   * Emits:
+   * - `IntentCanceled` when successful
+   *
+   **/
+  | { name: 'RemoveIntent'; params: { id: bigint } }
+  /**
+   * Extrinsic removes expired intent, queue intent's on failure callback and unlocks funds.
+   *
+   * Failure to queue callback for future execution doesn't fail clean up function.
+   * This is called automatically from OCW to remove expired intents but it can be called also
+   * called by any users.
+   *
+   * Parameters:
+   * - `id`: id of intent to be cleaned up from storage.
+   *
+   * Emits:
+   * - `FailedToQueueCallback` when callback's queuing fails
+   * - `IntentExpired` when successful
+   **/
+  | { name: 'CleanupIntent'; params: { id: bigint } };
+
+export type PalletIntentIntentInput = {
+  data: IceSupportIntentDataInput;
+  deadline?: bigint | undefined;
+  onResolved?: PalletIntentOnResolved | undefined;
+};
+
+export type IceSupportIntentDataInput =
+  | { type: 'Swap'; value: IceSupportSwapParams }
+  | { type: 'Dca'; value: IceSupportDcaParams }
+  | { type: 'MatchFirstSwap'; value: { swap: IceSupportSwapParams; matchWindow: bigint } };
+
+export type IceSupportSwapParams = {
+  assetIn: number;
+  assetOut: number;
+  amountIn: bigint;
+  amountOut: bigint;
+  partial: boolean;
+};
+
+export type IceSupportDcaParams = {
+  assetIn: number;
+  assetOut: number;
+  amountIn: bigint;
+  amountOut: bigint;
+  slippage: Permill;
+  budget?: bigint | undefined;
+  period: number;
+};
+
+export type PalletIntentOnResolved = { type: 'Forward'; value: { contract: H160; data: Bytes } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletIceCall =
+  /**
+   * Execute `solution` submitted by OCW.
+   *
+   * Under `SolverMode::V4` the solution is executed as a whole: claimed amounts are
+   * binding and any failure aborts the batch. Under `SolverMode::Passthrough` the
+   * claimed amounts and `score` are advisory — each intent is executed on its own,
+   * bound by the limit re-derived from its stored state, and a failing intent is
+   * skipped instead of failing the batch.
+   *
+   * Parameters:
+   * - `solution`: solution to execute
+   *
+   * Emits:
+   * - `SolutionExecuted`when `solution` was executed successfully
+   *
+   **/
+  | { name: 'SubmitSolution'; params: { solution: IceSupportSolution } }
+  /**
+   * Set the matched-volume protocol fee.
+   *
+   * If `fee` matches the default constant (`T::MatchedFee`), the storage
+   * override is removed — there is no need to store the default value.
+   *
+   * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+   *
+   * Emits `ProtocolFeeSet`.
+   **/
+  | { name: 'SetProtocolFee'; params: { fee: Permill } }
+  /**
+   * Select the active solver mode.
+   *
+   * If `mode` is the default variant, the storage override is removed — there is
+   * no need to store the default value.
+   *
+   * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+   *
+   * Parameters:
+   * - `mode`: solver mode to activate
+   *
+   * Emits `SolverModeSet` event when successful.
+   *
+   **/
+  | { name: 'SetSolverMode'; params: { mode: IceSupportSolverMode } }
+  /**
+   * Set, or clear, one routing rule.
+   *
+   * `Some(Included)` registers the target, `Some(Excluded)` vetoes it, and `None`
+   * removes the entry. Storage is exactly what is set here — a veto is only
+   * temporary if it is later cleared with `None`.
+   *
+   * A batch target registers every venue it names under one key. It is bounded
+   * per key, not in total: register another batch when one is full. Excluding one
+   * member of a batch is done with a single-target `Excluded` entry, which wins
+   * over any batch that lists it.
+   *
+   * Asset pairs and batches are normalised, so a target cannot end up under two
+   * keys.
+   *
+   * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+   *
+   * Parameters:
+   * - `target`: the pool, pool asset, wrap or batch of them the rule applies to
+   * - `state`: `None` removes the rule
+   *
+   * Emits `RoutingUpdated` event when successful.
+   *
+   **/
+  | { name: 'UpdateRouting'; params: { target: IceSupportRoutingTarget; state?: IceSupportRoutingState | undefined } };
+
+export type PalletIceCallLike =
+  /**
+   * Execute `solution` submitted by OCW.
+   *
+   * Under `SolverMode::V4` the solution is executed as a whole: claimed amounts are
+   * binding and any failure aborts the batch. Under `SolverMode::Passthrough` the
+   * claimed amounts and `score` are advisory — each intent is executed on its own,
+   * bound by the limit re-derived from its stored state, and a failing intent is
+   * skipped instead of failing the batch.
+   *
+   * Parameters:
+   * - `solution`: solution to execute
+   *
+   * Emits:
+   * - `SolutionExecuted`when `solution` was executed successfully
+   *
+   **/
+  | { name: 'SubmitSolution'; params: { solution: IceSupportSolution } }
+  /**
+   * Set the matched-volume protocol fee.
+   *
+   * If `fee` matches the default constant (`T::MatchedFee`), the storage
+   * override is removed — there is no need to store the default value.
+   *
+   * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+   *
+   * Emits `ProtocolFeeSet`.
+   **/
+  | { name: 'SetProtocolFee'; params: { fee: Permill } }
+  /**
+   * Select the active solver mode.
+   *
+   * If `mode` is the default variant, the storage override is removed — there is
+   * no need to store the default value.
+   *
+   * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+   *
+   * Parameters:
+   * - `mode`: solver mode to activate
+   *
+   * Emits `SolverModeSet` event when successful.
+   *
+   **/
+  | { name: 'SetSolverMode'; params: { mode: IceSupportSolverMode } }
+  /**
+   * Set, or clear, one routing rule.
+   *
+   * `Some(Included)` registers the target, `Some(Excluded)` vetoes it, and `None`
+   * removes the entry. Storage is exactly what is set here — a veto is only
+   * temporary if it is later cleared with `None`.
+   *
+   * A batch target registers every venue it names under one key. It is bounded
+   * per key, not in total: register another batch when one is full. Excluding one
+   * member of a batch is done with a single-target `Excluded` entry, which wins
+   * over any batch that lists it.
+   *
+   * Asset pairs and batches are normalised, so a target cannot end up under two
+   * keys.
+   *
+   * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+   *
+   * Parameters:
+   * - `target`: the pool, pool asset, wrap or batch of them the rule applies to
+   * - `state`: `None` removes the rule
+   *
+   * Emits `RoutingUpdated` event when successful.
+   *
+   **/
+  | { name: 'UpdateRouting'; params: { target: IceSupportRoutingTarget; state?: IceSupportRoutingState | undefined } };
+
+export type IceSupportSolution = {
+  resolvedIntents: Array<IceSupportIntent>;
+  trades: Array<IceSupportPoolTrade>;
+  score: bigint;
+  builtAt: number;
+};
+
+export type IceSupportIntent = { id: bigint; data: IceSupportIntentData };
+
+export type IceSupportIntentData =
+  | { type: 'Swap'; value: IceSupportSwapData }
+  | { type: 'Dca'; value: IceSupportDcaData }
+  | { type: 'MatchFirstSwap'; value: { swap: IceSupportSwapData; matchUntil: bigint } };
+
+export type IceSupportSwapData = {
+  assetIn: number;
+  assetOut: number;
+  amountIn: bigint;
+  amountOut: bigint;
+  partial: IceSupportPartial;
+};
+
+export type IceSupportPartial = { type: 'No' } | { type: 'Yes'; value: bigint };
+
+export type IceSupportDcaData = {
+  assetIn: number;
+  assetOut: number;
+  amountIn: bigint;
+  amountOut: bigint;
+  slippage: Permill;
+  budget?: bigint | undefined;
+  remainingBudget: bigint;
+  period: number;
+  lastExecutionBlock: number;
+};
+
+export type IceSupportPoolTrade = {
+  direction: IceSupportSwapType;
+  amountIn: bigint;
+  amountOut: bigint;
+  route: Array<HydradxTraitsRouterTrade>;
+};
+
+export type IceSupportSwapType = 'ExactIn' | 'ExactOut';
+
+export type IceSupportSolverMode = 'V4' | 'Passthrough' | 'Disabled';
+
+export type IceSupportRoutingTarget =
+  | { type: 'OmnipoolAsset'; value: number }
+  | { type: 'StableswapPool'; value: number }
+  | { type: 'XykPool'; value: [number, number] }
+  | { type: 'AaveWrap'; value: [number, number] }
+  | { type: 'UniswapV3Pool'; value: H160 }
+  | { type: 'AaveWraps'; value: Array<[number, number]> }
+  | { type: 'XykPools'; value: Array<[number, number]> }
+  | { type: 'UniswapV3Pools'; value: Array<H160> };
+
+export type IceSupportRoutingState = 'Included' | 'Excluded';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10245,7 +10685,30 @@ export type PalletEvmAccountsCall =
    *
    * Emits `AccountClaimed` event when successful.
    **/
-  | { name: 'ClaimAccount'; params: { account: AccountId32; assetId: number; signature: SpRuntimeMultiSignature } };
+  | { name: 'ClaimAccount'; params: { account: AccountId32; assetId: number; signature: SpRuntimeMultiSignature } }
+  /**
+   * Sets the NTT minter for an asset. The minter is the only EVM address allowed to
+   * mint/burn the asset via the MultiCurrency precompile.
+   *
+   * Parameters:
+   * - `origin`: Must be `ControllerOrigin`.
+   * - `asset_id`: Asset whose minter is set.
+   * - `minter`: EVM address of the NTT spoke manager.
+   *
+   * Emits `NttMinterSet` event when successful.
+   **/
+  | { name: 'SetNttMinter'; params: { assetId: number; minter: H160 } }
+  /**
+   * Clears the NTT minter for an asset, stopping all mint/burn via the precompile.
+   * Acts as an emergency stop, therefore it is gated by the faster `NttEmergencyOrigin`.
+   *
+   * Parameters:
+   * - `origin`: Must be `NttEmergencyOrigin`.
+   * - `asset_id`: Asset whose minter is cleared.
+   *
+   * Emits `NttMinterCleared` event when successful.
+   **/
+  | { name: 'ClearNttMinter'; params: { assetId: number } };
 
 export type PalletEvmAccountsCallLike =
   /**
@@ -10328,7 +10791,30 @@ export type PalletEvmAccountsCallLike =
    *
    * Emits `AccountClaimed` event when successful.
    **/
-  | { name: 'ClaimAccount'; params: { account: AccountId32Like; assetId: number; signature: SpRuntimeMultiSignature } };
+  | { name: 'ClaimAccount'; params: { account: AccountId32Like; assetId: number; signature: SpRuntimeMultiSignature } }
+  /**
+   * Sets the NTT minter for an asset. The minter is the only EVM address allowed to
+   * mint/burn the asset via the MultiCurrency precompile.
+   *
+   * Parameters:
+   * - `origin`: Must be `ControllerOrigin`.
+   * - `asset_id`: Asset whose minter is set.
+   * - `minter`: EVM address of the NTT spoke manager.
+   *
+   * Emits `NttMinterSet` event when successful.
+   **/
+  | { name: 'SetNttMinter'; params: { assetId: number; minter: H160 } }
+  /**
+   * Clears the NTT minter for an asset, stopping all mint/burn via the precompile.
+   * Acts as an emergency stop, therefore it is gated by the faster `NttEmergencyOrigin`.
+   *
+   * Parameters:
+   * - `origin`: Must be `NttEmergencyOrigin`.
+   * - `asset_id`: Asset whose minter is cleared.
+   *
+   * Emits `NttMinterCleared` event when successful.
+   **/
+  | { name: 'ClearNttMinter'; params: { assetId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11000,6 +11486,10 @@ export type PalletDcaCall =
    * Creates a new DCA (Dollar-Cost Averaging) schedule and plans the next execution
    * for the specified block.
    *
+   * Only `Order::Sell` schedules can be created. Buy orders are rejected with
+   * `NoLongerSupported`; buy schedules already stored keep executing until they complete
+   * or are terminated.
+   *
    * If the block is not specified, the execution is planned for the next block.
    * If the given block is full, the execution will be planned in the subsequent block.
    *
@@ -11053,13 +11543,48 @@ export type PalletDcaCall =
    * Emits `ReserveUnlocked` event when successful.
    *
    **/
-  | { name: 'UnlockReserves'; params: { who: AccountId32; assetId: number } };
+  | { name: 'UnlockReserves'; params: { who: AccountId32; assetId: number } }
+  /**
+   * Enables or disables the conversion of DCA schedules into DCA intents.
+   *
+   * While enabled, a schedule is converted - or cancelled and refunded when it cannot be
+   * converted - as soon as its execution slot arrives, instead of being traded. That
+   * execution is skipped: the resulting intent trades one period later. Creating new
+   * schedules is blocked for as long as the flag is set.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::TerminateOrigin`
+   * - `enabled`: whether schedules convert when their execution slot arrives
+   *
+   * Emits `MigrationEnabledSet` event when successful.
+   *
+   **/
+  | { name: 'SetMigrationEnabled'; params: { enabled: boolean } }
+  /**
+   * Cancels the given schedules and refunds their reserves.
+   *
+   * Escape hatch for schedules the migration cannot reach - an entry left without a planned
+   * execution block never comes up in `on_initialize` and would otherwise keep the old
+   * pallet alive indefinitely. Unknown ids are skipped rather than rejected.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::TerminateOrigin`
+   * - `schedule_ids`: the schedules to cancel
+   *
+   * Emits `MigrationCancelled` event for each cancelled schedule.
+   *
+   **/
+  | { name: 'ForceCancelSchedules'; params: { scheduleIds: Array<number> } };
 
 export type PalletDcaCallLike =
   /**
    * Creates a new DCA (Dollar-Cost Averaging) schedule and plans the next execution
    * for the specified block.
    *
+   * Only `Order::Sell` schedules can be created. Buy orders are rejected with
+   * `NoLongerSupported`; buy schedules already stored keep executing until they complete
+   * or are terminated.
+   *
    * If the block is not specified, the execution is planned for the next block.
    * If the given block is full, the execution will be planned in the subsequent block.
    *
@@ -11113,7 +11638,38 @@ export type PalletDcaCallLike =
    * Emits `ReserveUnlocked` event when successful.
    *
    **/
-  | { name: 'UnlockReserves'; params: { who: AccountId32Like; assetId: number } };
+  | { name: 'UnlockReserves'; params: { who: AccountId32Like; assetId: number } }
+  /**
+   * Enables or disables the conversion of DCA schedules into DCA intents.
+   *
+   * While enabled, a schedule is converted - or cancelled and refunded when it cannot be
+   * converted - as soon as its execution slot arrives, instead of being traded. That
+   * execution is skipped: the resulting intent trades one period later. Creating new
+   * schedules is blocked for as long as the flag is set.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::TerminateOrigin`
+   * - `enabled`: whether schedules convert when their execution slot arrives
+   *
+   * Emits `MigrationEnabledSet` event when successful.
+   *
+   **/
+  | { name: 'SetMigrationEnabled'; params: { enabled: boolean } }
+  /**
+   * Cancels the given schedules and refunds their reserves.
+   *
+   * Escape hatch for schedules the migration cannot reach - an entry left without a planned
+   * execution block never comes up in `on_initialize` and would otherwise keep the old
+   * pallet alive indefinitely. Unknown ids are skipped rather than rejected.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::TerminateOrigin`
+   * - `schedule_ids`: the schedules to cancel
+   *
+   * Emits `MigrationCancelled` event for each cancelled schedule.
+   *
+   **/
+  | { name: 'ForceCancelSchedules'; params: { scheduleIds: Array<number> } };
 
 export type PalletDcaSchedule = {
   owner: AccountId32;
@@ -13794,6 +14350,21 @@ export type PalletBroadcastCall = null;
 
 export type PalletBroadcastCallLike = null;
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletFeeProcessorCall =
+  /**
+   * Manual conversion trigger. Permissionless.
+   **/
+  { name: 'Convert'; params: { assetId: number } };
+
+export type PalletFeeProcessorCallLike =
+  /**
+   * Manual conversion trigger. Permissionless.
+   **/
+  { name: 'Convert'; params: { assetId: number } };
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -13850,7 +14421,6 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
-  | { pallet: 'Democracy'; palletEvent: PalletDemocracyEvent }
   | { pallet: 'TechnicalCommittee'; palletEvent: PalletCollectiveEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
@@ -13882,8 +14452,14 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'Referrals'; palletEvent: PalletReferralsEvent }
   | { pallet: 'Liquidation'; palletEvent: PalletLiquidationEvent }
   | { pallet: 'Hsm'; palletEvent: PalletHsmEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Signet'; palletEvent: PalletSignetEvent }
   | { pallet: 'EthDispenser'; palletEvent: PalletDispenserEvent }
+  | { pallet: 'GigaHdx'; palletEvent: PalletGigahdxEvent }
+  | { pallet: 'GigaHdxRewards'; palletEvent: PalletGigahdxRewardsEvent }
+  | { pallet: 'LazyExecutor'; palletEvent: PalletLazyExecutorEvent }
+  | { pallet: 'Intent'; palletEvent: PalletIntentEvent }
+  | { pallet: 'Ice'; palletEvent: PalletIceEvent }
   | { pallet: 'Tokens'; palletEvent: OrmlTokensModuleEvent }
   | { pallet: 'Currencies'; palletEvent: PalletCurrenciesModuleEvent }
   | { pallet: 'Vesting'; palletEvent: OrmlVestingModuleEvent }
@@ -13907,7 +14483,8 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'EmaOracle'; palletEvent: PalletEmaOracleEvent }
-  | { pallet: 'Broadcast'; palletEvent: PalletBroadcastEvent };
+  | { pallet: 'Broadcast'; palletEvent: PalletBroadcastEvent }
+  | { pallet: 'FeeProcessor'; palletEvent: PalletFeeProcessorEvent };
 
 /**
  * Event for the System pallet.
@@ -14119,7 +14696,54 @@ export type PalletTransactionMultiPaymentEvent =
         nonNativeFeeAmount: bigint;
         destinationAccountId: AccountId32;
       };
+    }
+  /**
+   * Signed-branch dispatch permit fee payer
+   **/
+  | { name: 'FeeSponsored'; data: { from: H160; feePayer: AccountId32 } }
+  /**
+   * The EVM call dispatched by a permit did not succeed; the permit nonce is spent either way.
+   **/
+  | {
+      name: 'EvmPermitCallFailed';
+      data: { from: H160; to: H160; nonce: U256; reason: EvmCoreErrorExitReason; output: Bytes };
     };
+
+export type EvmCoreErrorExitReason =
+  | { type: 'Succeed'; value: EvmCoreErrorExitSucceed }
+  | { type: 'Error'; value: EvmCoreErrorExitError }
+  | { type: 'Revert'; value: EvmCoreErrorExitRevert }
+  | { type: 'Fatal'; value: EvmCoreErrorExitFatal };
+
+export type EvmCoreErrorExitSucceed = 'Stopped' | 'Returned' | 'Suicided';
+
+export type EvmCoreErrorExitError =
+  | { type: 'StackUnderflow' }
+  | { type: 'StackOverflow' }
+  | { type: 'InvalidJump' }
+  | { type: 'InvalidRange' }
+  | { type: 'DesignatedInvalid' }
+  | { type: 'CallTooDeep' }
+  | { type: 'CreateCollision' }
+  | { type: 'CreateContractLimit' }
+  | { type: 'InvalidCode'; value: EvmCoreOpcode }
+  | { type: 'OutOfOffset' }
+  | { type: 'OutOfGas' }
+  | { type: 'OutOfFund' }
+  | { type: 'PcUnderflow' }
+  | { type: 'CreateEmpty' }
+  | { type: 'Other'; value: string }
+  | { type: 'MaxNonce' };
+
+export type EvmCoreOpcode = number;
+
+export type EvmCoreErrorExitRevert = 'Reverted';
+
+export type EvmCoreErrorExitFatal =
+  | { type: 'NotSupported' }
+  | { type: 'UnhandledInterrupt' }
+  | { type: 'CallErrorAsFatal'; value: EvmCoreErrorExitError }
+  | { type: 'Other'; value: string };
 
 /**
  * The `Event` enum of this pallet
@@ -14334,125 +14958,6 @@ export type PalletIdentityEvent =
    * A username has been killed.
    **/
   | { name: 'UsernameKilled'; data: { username: Bytes } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletDemocracyEvent =
-  /**
-   * A motion has been proposed by a public account.
-   **/
-  | { name: 'Proposed'; data: { proposalIndex: number; deposit: bigint } }
-  /**
-   * A public proposal has been tabled for referendum vote.
-   **/
-  | { name: 'Tabled'; data: { proposalIndex: number; deposit: bigint } }
-  /**
-   * An external proposal has been tabled.
-   **/
-  | { name: 'ExternalTabled' }
-  /**
-   * A referendum has begun.
-   **/
-  | { name: 'Started'; data: { refIndex: number; threshold: PalletDemocracyVoteThreshold } }
-  /**
-   * A proposal has been approved by referendum.
-   **/
-  | { name: 'Passed'; data: { refIndex: number } }
-  /**
-   * A proposal has been rejected by referendum.
-   **/
-  | { name: 'NotPassed'; data: { refIndex: number } }
-  /**
-   * A referendum has been cancelled.
-   **/
-  | { name: 'Cancelled'; data: { refIndex: number } }
-  /**
-   * An account has delegated their vote to another account.
-   **/
-  | { name: 'Delegated'; data: { who: AccountId32; target: AccountId32 } }
-  /**
-   * An account has cancelled a previous delegation operation.
-   **/
-  | { name: 'Undelegated'; data: { account: AccountId32 } }
-  /**
-   * An external proposal has been vetoed.
-   **/
-  | { name: 'Vetoed'; data: { who: AccountId32; proposalHash: H256; until: number } }
-  /**
-   * A proposal_hash has been blacklisted permanently.
-   **/
-  | { name: 'Blacklisted'; data: { proposalHash: H256 } }
-  /**
-   * An account has voted in a referendum
-   **/
-  | { name: 'Voted'; data: { voter: AccountId32; refIndex: number; vote: PalletDemocracyVoteAccountVote } }
-  /**
-   * An account has secconded a proposal
-   **/
-  | { name: 'Seconded'; data: { seconder: AccountId32; propIndex: number } }
-  /**
-   * A proposal got canceled.
-   **/
-  | { name: 'ProposalCanceled'; data: { propIndex: number } }
-  /**
-   * Metadata for a proposal or a referendum has been set.
-   **/
-  | {
-      name: 'MetadataSet';
-      data: {
-        /**
-         * Metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      };
-    }
-  /**
-   * Metadata for a proposal or a referendum has been cleared.
-   **/
-  | {
-      name: 'MetadataCleared';
-      data: {
-        /**
-         * Metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      };
-    }
-  /**
-   * Metadata has been transferred to new owner.
-   **/
-  | {
-      name: 'MetadataTransferred';
-      data: {
-        /**
-         * Previous metadata owner.
-         **/
-        prevOwner: PalletDemocracyMetadataOwner;
-
-        /**
-         * New metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      };
-    };
-
-export type PalletDemocracyVoteThreshold = 'SuperMajorityApprove' | 'SuperMajorityAgainst' | 'SimpleMajority';
 
 /**
  * The `Event` enum of this pallet
@@ -15163,11 +15668,6 @@ export type PalletDispatcherEvent =
  **/
 export type PalletAssetRegistryEvent =
   /**
-   * Existential deposit for insufficinet asset was paid.
-   * `SufficiencyCheck` triggers this event.
-   **/
-  | { name: 'ExistentialDepositPaid'; data: { who: AccountId32; feeAsset: number; amount: bigint } }
-  /**
    * Asset was registered.
    **/
   | {
@@ -15688,7 +16188,15 @@ export type PalletStakingEvent =
   /**
    * Staking's `accumulated_reward_per_stake` was updated.
    **/
-  | { name: 'AccumulatedRpsUpdated'; data: { accumulatedRps: FixedU128; totalStake: bigint } };
+  | { name: 'AccumulatedRpsUpdated'; data: { accumulatedRps: FixedU128; totalStake: bigint } }
+  /**
+   * Position was force-unstaked through the GIGAHDX migration helper.
+   * Distinct from `Unstaked` because no rewards were forfeited.
+   **/
+  | {
+      name: 'ForceUnstaked';
+      data: { who: AccountId32; positionId: bigint; stake: bigint; lockedRewards: bigint; paidRewards: bigint };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -15988,6 +16496,10 @@ export type PalletReferralsEvent =
    **/
   | { name: 'Converted'; data: { from: PalletReferralsAssetAmount; to: PalletReferralsAssetAmount } }
   /**
+   * A pending asset could not be converted; skipped, not blocking.
+   **/
+  | { name: 'ConversionFailed'; data: { assetId: number; reason: DispatchError } }
+  /**
    * Rewards claimed.
    **/
   | { name: 'Claimed'; data: { who: AccountId32; referrerRewards: bigint; tradeRewards: bigint } }
@@ -16012,7 +16524,14 @@ export type PalletLiquidationEvent =
   /**
    * Money market position has been liquidated
    **/
-  { name: 'Liquidated'; data: { user: H160; collateralAsset: number; debtAsset: number; profit: bigint } };
+  | { name: 'Liquidated'; data: { user: H160; collateralAsset: number; debtAsset: number; profit: bigint } }
+  /**
+   * A gigahdx Money Market position was liquidated by the protocol.
+   * `hdx_seized` is the matching HDX moved from the borrower to
+   * the gigahdx liquidation account; `gigahdx_seized` is the aToken
+   * amount transferred out of the borrower's gigahdx position.
+   **/
+  | { name: 'GigaHdxLiquidated'; data: { user: H160; debtRepaid: bigint; hdxSeized: bigint; gigahdxSeized: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -16084,6 +16603,31 @@ export type PalletHsmEvent =
    * - `flash_minter`: The EVM address of the flash minter contract
    **/
   | { name: 'FlashMinterSet'; data: { flashMinter: H160 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletParametersEvent =
+  /**
+   * The Uniswap v3 contract addresses the router venue resolves through were set.
+   **/
+  | { name: 'UniswapV3AddressesSet'; data: { factory: H160; swapRouter: H160; quoter: H160 } }
+  /**
+   * The Aave trade executor gas limits were set, or cleared back to the built-in defaults.
+   **/
+  | { name: 'AaveGasLimitsSet'; data: { limits?: PalletParametersAaveGasLimits | undefined } }
+  | { name: 'XcmSendSuspended' }
+  | { name: 'XcmSendResumed' }
+  | { name: 'XcmExecutionSuspended' }
+  | { name: 'XcmExecutionResumed' }
+  /**
+   * Both outbound and inbound XCM were suspended.
+   **/
+  | { name: 'XcmSuspended' }
+  /**
+   * Both outbound and inbound XCM were resumed.
+   **/
+  | { name: 'XcmResumed' };
 
 /**
  * The `Event` enum of this pallet
@@ -16224,6 +16768,161 @@ export type PalletDispenserEvent =
         amount: bigint;
       };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletGigahdxEvent =
+  | { name: 'Staked'; data: { who: AccountId32; amount: bigint; gigahdx: bigint } }
+  | {
+      name: 'Unstaked';
+      data: {
+        who: AccountId32;
+        positionId: number;
+        gigahdxAmount: bigint;
+        payout: bigint;
+        yieldShare: bigint;
+        expiresAt: number;
+      };
+    }
+  | { name: 'Unlocked'; data: { who: AccountId32; positionId: number; amount: bigint } }
+  | { name: 'UnstakeCancelled'; data: { who: AccountId32; positionId: number; amount: bigint; gigahdx: bigint } }
+  | { name: 'PoolContractUpdated'; data: { contract: H160 } }
+  /**
+   * Caller migrated their legacy NFT staking position into gigahdx.
+   * `hdx_unlocked` is the sum of legacy stake + previously locked
+   * rewards + freshly paid rewards; `gigahdx_received` is the aToken
+   * amount actually credited by the money market.
+   **/
+  | { name: 'MigratedFromLegacy'; data: { who: AccountId32; hdxUnlocked: bigint; gigahdxReceived: bigint } }
+  /**
+   * Accrued yield was moved from the gigapot into the caller's locked
+   * stake principal. `amount` is the HDX transferred and added to
+   * `Stakes[who].hdx`; `gigahdx` and the exchange rate are unchanged.
+   **/
+  | { name: 'YieldRealized'; data: { who: AccountId32; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletGigahdxRewardsEvent =
+  /**
+   * Rewards for a completed referendum have been allocated from the
+   * accumulator pot.
+   **/
+  | {
+      name: 'RewardPoolAllocated';
+      data: {
+        refIndex: number;
+        trackId: number;
+        totalReward: bigint;
+        totalWeightedVotes: bigint;
+        votersRemaining: number;
+      };
+    }
+  /**
+   * A user's share of a referendum's reward pool was added to their
+   * `PendingRewards`.
+   **/
+  | { name: 'UserRewardRecorded'; data: { who: AccountId32; refIndex: number; rewardAmount: bigint } }
+  /**
+   * A user converted their accumulated HDX rewards into GIGAHDX via
+   * `claim_rewards`.
+   **/
+  | { name: 'RewardsClaimed'; data: { who: AccountId32; totalHdx: bigint; gigahdxReceived: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletLazyExecutorEvent =
+  /**
+   * Forward was queued for execution.
+   **/
+  | { name: 'Queued'; data: { id: bigint; src: HydradxTraitsLazyExecutorSource; who: AccountId32; fees: bigint } }
+  /**
+   * Forward was executed. `result` is `Ok` only on EVM success with the correct ack.
+   **/
+  | { name: 'Executed'; data: { id: bigint; result: Result<[], DispatchError> } };
+
+export type HydradxTraitsLazyExecutorSource = { type: 'Ice'; value: bigint };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletIntentEvent =
+  /**
+   * New intent was submitted.
+   **/
+  | { name: 'IntentSubmitted'; data: { id: bigint; owner: AccountId32; intent: PalletIntentIntent } }
+  /**
+   * Intent was resolved as part of ICE solution execution.
+   **/
+  | { name: 'IntentResolved'; data: { id: bigint; amountIn: bigint; amountOut: bigint } }
+  /**
+   * Portion of intent was resolved as part of ICE solution execution.
+   **/
+  | { name: 'IntentResovedPartially'; data: { id: bigint; amountIn: bigint; amountOut: bigint } }
+  /**
+   * Intent was canceled.
+   **/
+  | { name: 'IntentCanceled'; data: { id: bigint } }
+  /**
+   * Intent expired.
+   **/
+  | { name: 'IntentExpired'; data: { id: bigint } }
+  /**
+   * Failed to add intent's callback to queue for execution.
+   **/
+  | { name: 'FailedToQueueCallback'; data: { id: bigint; error: DispatchError } }
+  /**
+   * A single DCA trade was executed; intent stays in storage for the next period.
+   **/
+  | { name: 'DcaTradeExecuted'; data: { id: bigint; amountIn: bigint; amountOut: bigint; remainingBudget: bigint } }
+  /**
+   * DCA intent completed (budget exhausted). Intent removed from storage.
+   **/
+  | { name: 'DcaCompleted'; data: { id: bigint } };
+
+export type PalletIntentIntent = {
+  data: IceSupportIntentData;
+  deadline?: bigint | undefined;
+  onResolved?: PalletIntentOnResolved | undefined;
+};
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletIceEvent =
+  /**
+   * Solution has been executed.
+   **/
+  | {
+      name: 'SolutionExecuted';
+      data: {
+        intentsExecuted: bigint;
+        tradesExecuted: bigint;
+        score: bigint;
+
+        /**
+         * Block the solution was built against — subtract from the block
+         * carrying this event to get submit-to-execution drift.
+         **/
+        builtAt: number;
+      };
+    }
+  /**
+   * Protocol fee has been updated.
+   **/
+  | { name: 'ProtocolFeeSet'; data: { fee: Permill } }
+  /**
+   * Active solver mode has been updated.
+   **/
+  | { name: 'SolverModeSet'; data: { mode: IceSupportSolverMode } }
+  /**
+   * A routing rule has been updated. `None` means the entry was removed and
+   * the target went back to its default.
+   **/
+  | { name: 'RoutingUpdated'; data: { target: IceSupportRoutingTarget; state?: IceSupportRoutingState | undefined } };
 
 /**
  * The `Event` enum of this pallet
@@ -16383,42 +17082,6 @@ export type PalletEthereumEvent =
     data: { from: H160; to: H160; transactionHash: H256; exitReason: EvmCoreErrorExitReason; extraData: Bytes };
   };
 
-export type EvmCoreErrorExitReason =
-  | { type: 'Succeed'; value: EvmCoreErrorExitSucceed }
-  | { type: 'Error'; value: EvmCoreErrorExitError }
-  | { type: 'Revert'; value: EvmCoreErrorExitRevert }
-  | { type: 'Fatal'; value: EvmCoreErrorExitFatal };
-
-export type EvmCoreErrorExitSucceed = 'Stopped' | 'Returned' | 'Suicided';
-
-export type EvmCoreErrorExitError =
-  | { type: 'StackUnderflow' }
-  | { type: 'StackOverflow' }
-  | { type: 'InvalidJump' }
-  | { type: 'InvalidRange' }
-  | { type: 'DesignatedInvalid' }
-  | { type: 'CallTooDeep' }
-  | { type: 'CreateCollision' }
-  | { type: 'CreateContractLimit' }
-  | { type: 'InvalidCode'; value: EvmCoreOpcode }
-  | { type: 'OutOfOffset' }
-  | { type: 'OutOfGas' }
-  | { type: 'OutOfFund' }
-  | { type: 'PcUnderflow' }
-  | { type: 'CreateEmpty' }
-  | { type: 'Other'; value: string }
-  | { type: 'MaxNonce' };
-
-export type EvmCoreOpcode = number;
-
-export type EvmCoreErrorExitRevert = 'Reverted';
-
-export type EvmCoreErrorExitFatal =
-  | { type: 'NotSupported' }
-  | { type: 'UnhandledInterrupt' }
-  | { type: 'CallErrorAsFatal'; value: EvmCoreErrorExitError }
-  | { type: 'Other'; value: string };
-
 /**
  * The `Event` enum of this pallet
  **/
@@ -16446,7 +17109,15 @@ export type PalletEvmAccountsEvent =
   /**
    * Account was claimed.
    **/
-  | { name: 'AccountClaimed'; data: { account: AccountId32; assetId: number } };
+  | { name: 'AccountClaimed'; data: { account: AccountId32; assetId: number } }
+  /**
+   * NTT minter was set for an asset.
+   **/
+  | { name: 'NttMinterSet'; data: { assetId: number; minter: H160 } }
+  /**
+   * NTT minter was cleared for an asset.
+   **/
+  | { name: 'NttMinterCleared'; data: { assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -16648,7 +17319,29 @@ export type PalletDcaEvent =
   /**
    * DCA reserve for the given asset have been unlocked for a user
    **/
-  | { name: 'ReserveUnlocked'; data: { who: AccountId32; assetId: number } };
+  | { name: 'ReserveUnlocked'; data: { who: AccountId32; assetId: number } }
+  /**
+   * The DCA schedule has been converted into a DCA intent
+   **/
+  | { name: 'Migrated'; data: { id: number; who: AccountId32; intentId: bigint } }
+  /**
+   * The DCA schedule has been cancelled by the migration and its reserve refunded
+   **/
+  | {
+      name: 'MigrationCancelled';
+      data: { id: number; who: AccountId32; asset: number; refunded: bigint; reason: PalletDcaCancelReason };
+    }
+  /**
+   * The migration switch has been flipped
+   **/
+  | { name: 'MigrationEnabledSet'; data: { enabled: boolean } };
+
+export type PalletDcaCancelReason =
+  | { type: 'BuyOrder' }
+  | { type: 'BudgetBelowTrade' }
+  | { type: 'UnreserveRemainder' }
+  | { type: 'IntentCreationFailed'; value: DispatchError }
+  | { type: 'ForceCancelled' };
 
 /**
  * Events type.
@@ -17394,7 +18087,8 @@ export type PalletBroadcastFiller =
   | { type: 'Lbp' }
   | { type: 'Otc'; value: number }
   | { type: 'Aave' }
-  | { type: 'Hsm' };
+  | { type: 'Hsm' }
+  | { type: 'UniswapV3' };
 
 export type PalletBroadcastTradeOperation = 'ExactIn' | 'ExactOut' | 'Limit' | 'LiquidityAdd' | 'LiquidityRemove';
 
@@ -17411,6 +18105,23 @@ export type PalletBroadcastExecutionType =
   | { type: 'Omnipool'; value: number }
   | { type: 'XcmExchange'; value: number }
   | { type: 'Xcm'; value: [FixedBytes<32>, number] };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletFeeProcessorEvent =
+  /**
+   * Fee received from trade.
+   **/
+  | { name: 'FeeReceived'; data: { asset: number; amount: bigint; trader?: AccountId32 | undefined } }
+  /**
+   * Asset converted to HDX and distributed to pots.
+   **/
+  | { name: 'Converted'; data: { assetId: number; amountIn: bigint; hdxOut: bigint } }
+  /**
+   * Conversion failed (logged but not blocking).
+   **/
+  | { name: 'ConversionFailed'; data: { assetId: number; reason: DispatchError } };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -17915,146 +18626,6 @@ export type PalletIdentityError =
    * trying to unbind a username provided by the system).
    **/
   | 'InsufficientPrivileges';
-
-export type PalletDemocracyReferendumInfo =
-  | { type: 'Ongoing'; value: PalletDemocracyReferendumStatus }
-  | { type: 'Finished'; value: { approved: boolean; end: number } };
-
-export type PalletDemocracyReferendumStatus = {
-  end: number;
-  proposal: FrameSupportPreimagesBounded;
-  threshold: PalletDemocracyVoteThreshold;
-  delay: number;
-  tally: PalletDemocracyTally;
-};
-
-export type PalletDemocracyTally = { ayes: bigint; nays: bigint; turnout: bigint };
-
-export type PalletDemocracyVoteVoting =
-  | {
-      type: 'Direct';
-      value: {
-        votes: Array<[number, PalletDemocracyVoteAccountVote]>;
-        delegations: PalletDemocracyDelegations;
-        prior: PalletDemocracyVotePriorLock;
-      };
-    }
-  | {
-      type: 'Delegating';
-      value: {
-        balance: bigint;
-        target: AccountId32;
-        conviction: PalletDemocracyConviction;
-        delegations: PalletDemocracyDelegations;
-        prior: PalletDemocracyVotePriorLock;
-      };
-    };
-
-export type PalletDemocracyDelegations = { votes: bigint; capital: bigint };
-
-export type PalletDemocracyVotePriorLock = [number, bigint];
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletDemocracyError =
-  /**
-   * Value too low
-   **/
-  | 'ValueLow'
-  /**
-   * Proposal does not exist
-   **/
-  | 'ProposalMissing'
-  /**
-   * Cannot cancel the same proposal twice
-   **/
-  | 'AlreadyCanceled'
-  /**
-   * Proposal already made
-   **/
-  | 'DuplicateProposal'
-  /**
-   * Proposal still blacklisted
-   **/
-  | 'ProposalBlacklisted'
-  /**
-   * Next external proposal not simple majority
-   **/
-  | 'NotSimpleMajority'
-  /**
-   * Invalid hash
-   **/
-  | 'InvalidHash'
-  /**
-   * No external proposal
-   **/
-  | 'NoProposal'
-  /**
-   * Identity may not veto a proposal twice
-   **/
-  | 'AlreadyVetoed'
-  /**
-   * Vote given for invalid referendum
-   **/
-  | 'ReferendumInvalid'
-  /**
-   * No proposals waiting
-   **/
-  | 'NoneWaiting'
-  /**
-   * The given account did not vote on the referendum.
-   **/
-  | 'NotVoter'
-  /**
-   * The actor has no permission to conduct the action.
-   **/
-  | 'NoPermission'
-  /**
-   * The account is already delegating.
-   **/
-  | 'AlreadyDelegating'
-  /**
-   * Too high a balance was provided that the account cannot afford.
-   **/
-  | 'InsufficientFunds'
-  /**
-   * The account is not currently delegating.
-   **/
-  | 'NotDelegating'
-  /**
-   * The account currently has votes attached to it and the operation cannot succeed until
-   * these are removed, either through `unvote` or `reap_vote`.
-   **/
-  | 'VotesExist'
-  /**
-   * The instant referendum origin is currently disallowed.
-   **/
-  | 'InstantNotAllowed'
-  /**
-   * Delegation to oneself makes no sense.
-   **/
-  | 'Nonsense'
-  /**
-   * Invalid upper bound.
-   **/
-  | 'WrongUpperBound'
-  /**
-   * Maximum number of votes reached.
-   **/
-  | 'MaxVotesReached'
-  /**
-   * Maximum number of items reached.
-   **/
-  | 'TooMany'
-  /**
-   * Voting period too low
-   **/
-  | 'VotingPeriodLow'
-  /**
-   * The preimage does not exist.
-   **/
-  | 'PreimageNotExist';
 
 export type PalletCollectiveVotes = {
   index: number;
@@ -18597,7 +19168,9 @@ export type PalletDispatcherError =
   /**
    * Aave - the reserve is paused and no operations are allowed
    **/
-  | 'AaveReservePaused';
+  | 'AaveReservePaused'
+  | 'UniswapV3InsufficientLiquidity'
+  | 'UniswapV3SwapFailed';
 
 export type PalletAssetRegistryAssetDetails = {
   name?: Bytes | undefined;
@@ -19399,6 +19972,18 @@ export type PalletStakingError =
    **/
   | { name: 'ExistingProcessedVotes' }
   /**
+   * Retained for API/error-index stability. No longer emitted: migration
+   * (`force_unstake`) now refuses any registered vote with `ExistingVotes`,
+   * matching the regular `unstake` precondition.
+   **/
+  | { name: 'ActiveVotesOngoing' }
+  /**
+   * Caller's HDX is claimed by another pallet (e.g. `ghdxlock`).
+   * Strict policy: legacy staking refuses any HDX backing that overlaps
+   * with a non-whitelisted lock elsewhere.
+   **/
+  | { name: 'BlockedByExternalLock' }
+  /**
    * Action cannot be completed because unexpected error has occurred. This should be reported
    * to protocol maintainers.
    **/
@@ -19559,7 +20144,15 @@ export type PalletStableswapError =
   /**
    * Invariant check failed inside a trade or liquidity operation.
    **/
-  | 'InvariantError';
+  | 'InvariantError'
+  /**
+   * Attempt to burn more shares than the pool's tracked share issuance.
+   **/
+  | 'InsufficientShareIssuance'
+  /**
+   * Total issuance of pool shares exceeds the pallet-tracked issuance - shares were minted outside the pallet.
+   **/
+  | 'UnaccountedShareIssuance';
 
 /**
  * The `Error` enum of this pallet.
@@ -19909,7 +20502,54 @@ export type PalletLiquidationError =
   /**
    * Invalid liquidation data provided
    **/
-  | 'InvalidLiquidationData';
+  | 'InvalidLiquidationData'
+  /**
+   * Gigahdx liquidation only supports HOLLAR debt.
+   **/
+  | 'UnsupportedDebtAsset'
+  /**
+   * Borrower has no active gigahdx position.
+   **/
+  | 'NoGigaHdxPosition'
+  /**
+   * Realizing the borrower's accrued gigahdx yield before the seize failed.
+   **/
+  | 'RealizeYieldFailed'
+  /**
+   * The gigahdx liquidation account is not bound to its EVM address, so
+   * the seized aToken would land in a different account than the ledger.
+   **/
+  | 'LiquidationAccountNotBound'
+  /**
+   * Selective vote clearing failed before seize.
+   **/
+  | 'ClearVotingLocksFailed'
+  /**
+   * Treasury's HOLLAR borrow against the GIGAHDX pool reverted.
+   **/
+  | 'BorrowFailed'
+  /**
+   * Final state move (HDX transfer + lock refresh) failed.
+   **/
+  | 'SeizeFailed'
+  /**
+   * GIGAHDX pool contract address not set in `pallet_gigahdx`.
+   **/
+  | 'GigaHdxPoolNotSet'
+  /**
+   * Borrower has no `debt_asset` debt on the GIGAHDX pool, so there is
+   * nothing to liquidate.
+   **/
+  | 'NoPoolDebt'
+  /**
+   * Repaying the unconsumed protocol-borrowed HOLLAR surplus reverted.
+   **/
+  | 'RepayFailed'
+  /**
+   * The `pool` provided to `liquidate_with_pool` is not the pool this liquidation
+   * would execute against.
+   **/
+  | 'PoolAddressMismatch';
 
 export type PalletHsmCollateralInfo = {
   poolId: number;
@@ -20045,6 +20685,11 @@ export type PalletHsmError =
    **/
   | 'InvalidArbitrageData';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletParametersError = 'AlreadySuspended' | 'AlreadyResumed';
+
 export type PalletSignetSignetConfigData = {
   paused: boolean;
   signatureDeposit: bigint;
@@ -20157,6 +20802,325 @@ export type PalletDispenserError =
    **/
   | 'InvalidConfig';
 
+export type PalletGigahdxStakeRecord = { hdx: bigint; gigahdx: bigint; unstaking: bigint; unstakingCount: number };
+
+export type PalletGigahdxPendingUnstake = { amount: bigint };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletGigahdxError =
+  /**
+   * Stake amount is below `Config::MinStake`.
+   **/
+  | 'BelowMinStake'
+  /**
+   * Caller doesn't have enough unencumbered HDX to back the stake
+   * after subtracting their existing gigahdx commitment.
+   **/
+  | 'InsufficientFreeBalance'
+  /**
+   * Caller holds a non-overlapping lock (legacy staking, vesting, …)
+   * reported by `Config::ExternalClaims`. Strict policy: gigahdx
+   * admission requires the caller to have no claims on their HDX
+   * other than those the runtime explicitly allows to coexist
+   * (e.g. `pyconvot`). Release the conflicting lock before staking.
+   **/
+  | 'BlockedByExternalLock'
+  /**
+   * Unstake amount exceeds the caller's `Stakes.gigahdx`.
+   **/
+  | 'InsufficientStake'
+  /**
+   * Caller has no active stake record.
+   **/
+  | 'NoStake'
+  /**
+   * Amount must be strictly greater than zero.
+   **/
+  | 'ZeroAmount'
+  /**
+   * stHDX mint failed (asset not registered, max issuance hit, or
+   * other `fungibles::Mutate::mint_into` precondition violated).
+   * Distinct from `MoneyMarketSupplyFailed` — this is a substrate-side
+   * asset-registry error, not an AAVE-side revert.
+   **/
+  | 'StHdxMintFailed'
+  /**
+   * AAVE `Pool.supply` reverted — typical causes: caller's EVM address
+   * is not bound, the asset reserve is misconfigured, or `Pool` is
+   * paused.
+   **/
+  | 'MoneyMarketSupplyFailed'
+  /**
+   * AAVE `Pool.withdraw` reverted.
+   **/
+  | 'MoneyMarketWithdrawFailed'
+  /**
+   * Arithmetic overflow during rate, lock, or storage update math.
+   **/
+  | 'Overflow'
+  /**
+   * The cooldown period has not yet elapsed for the targeted position.
+   **/
+  | 'CooldownNotElapsed'
+  /**
+   * No pending unstake position with the supplied id exists for the caller.
+   **/
+  | 'PendingUnstakeNotFound'
+  /**
+   * Caller has reached `Config::MaxPendingUnstakes` concurrent positions.
+   **/
+  | 'TooManyPendingUnstakes'
+  /**
+   * `set_pool_contract` was called while gigahdx (aToken / stHDX) is
+   * still in circulation. The pool is settable only when total stHDX
+   * supply is zero.
+   **/
+  | 'OutstandingStake'
+  /**
+   * Unstake would drop `Stakes[who].hdx` below the HDX backing the
+   * caller's active votes (`T::VotingCommitment`); remove the relevant
+   * conviction votes first.
+   **/
+  | 'StakeFrozen'
+  /**
+   * `slash` fallback could not extract the full `seize_hdx` from the
+   * borrower's account (e.g. existential-deposit constraint).
+   **/
+  | 'SeizeFailed'
+  /**
+   * The gigapot lacks the HDX to cover the caller's accrued yield.
+   * Only reachable in a drained/floored state, not normal operation.
+   **/
+  | 'GigapotInsufficient';
+
+export type PalletGigahdxRewardsReferendumLiveTally = { totalWeighted: bigint; votersCount: number };
+
+export type PalletGigahdxRewardsReferendaReward = {
+  trackId: number;
+  totalReward: bigint;
+  totalWeightedVotes: bigint;
+  votersRemaining: number;
+  remainingReward: bigint;
+};
+
+export type PalletGigahdxRewardsUserVoteRecord = {
+  stakedVoteAmount: bigint;
+  conviction: PalletConvictionVotingConviction;
+  weighted: bigint;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletGigahdxRewardsError =
+  /**
+   * `PendingRewards[who]` is zero.
+   **/
+  | 'NoPendingRewards'
+  /**
+   * Not enough rewards in the allocated pot to cover the amount owed.
+   **/
+  | 'PotInsufficient'
+  /**
+   * Arithmetic overflow during share computation.
+   **/
+  | 'Overflow';
+
+export type PalletLazyExecutorStoredForward = { owner: AccountId32; action: HydradxTraitsLazyExecutorForwardAction };
+
+export type HydradxTraitsLazyExecutorForwardAction = {
+  contract: H160;
+  intentId: bigint;
+  assetIn: number;
+  amountIn: bigint;
+  assetOut: number;
+  amountOut: bigint;
+  data: Bytes;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletLazyExecutorError =
+  /**
+   * `id` reached max. value.
+   **/
+  | 'IdOverflow'
+  /**
+   * Arithmetic or type conversion overflow
+   **/
+  | 'Overflow'
+  /**
+   * User failed to pay fees for future execution.
+   **/
+  | 'FailedToPayFees'
+  /**
+   * Failed to deposit collected fees.
+   **/
+  | 'FailedToDepositFees'
+  /**
+   * Queue is empty.
+   **/
+  | 'EmptyQueue'
+  /**
+   * Forward's weight is bigger than max allowed weight.
+   **/
+  | 'Overweight'
+  /**
+   * The forwarded EVM call reverted or returned a wrong/missing ack.
+   **/
+  | 'ForwardFailed';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletIntentError =
+  /**
+   * Invalid deadline
+   **/
+  | 'InvalidDeadline'
+  /**
+   * Invalid intent parameters
+   **/
+  | 'InvalidIntent'
+  /**
+   * `on_resolved` forward names the zero contract address.
+   **/
+  | 'InvalidForwardContract'
+  /**
+   * Referenced intent doesn't exist.
+   **/
+  | 'IntentNotFound'
+  /**
+   * Referenced intent has expired.
+   **/
+  | 'IntentExpired'
+  /**
+   * Referenced intent is still active.
+   **/
+  | 'IntentActive'
+  /**
+   * Intent's resolution doesn't match intent's parameters.
+   **/
+  | 'ResolveMismatch'
+  /**
+   * Resolution violates intent's limits.
+   **/
+  | 'LimitViolation'
+  /**
+   * Calculation overflow.
+   **/
+  | 'ArithmeticOverflow'
+  /**
+   * Referenced intent's owner doesn't exist.
+   **/
+  | 'IntentOwnerNotFound'
+  /**
+   * Account is not intent's owner.
+   **/
+  | 'InvalidOwner'
+  /**
+   * User doesn't have enough reserved funds.
+   **/
+  | 'InsufficientReservedBalance'
+  /**
+   * Partial intents are not supported at the moment.
+   **/
+  | 'NotImplemented'
+  /**
+   * Asset with specified id doesn't exists.
+   **/
+  | 'AssetNotFound'
+  /**
+   * DCA period is below minimum.
+   **/
+  | 'InvalidDcaPeriod'
+  /**
+   * DCA budget is less than a single trade amount.
+   **/
+  | 'InvalidDcaBudget'
+  /**
+   * DCA intent must not have a deadline.
+   **/
+  | 'InvalidDcaDeadline'
+  /**
+   * DCA slippage exceeds `MaxDcaSlippage`.
+   **/
+  | 'InvalidDcaSlippage'
+  /**
+   * Nothing can settle intents right now, so new ones are not accepted.
+   **/
+  | 'SettlementDisabled'
+  /**
+   * Account has reached the maximum number of allowed intents.
+   **/
+  | 'MaxIntentsReached'
+  /**
+   * Match window is zero or does not end before the deadline, when one is set.
+   **/
+  | 'InvalidMatchWindow';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletIceError =
+  /**
+   * Provided solution is not valid.
+   **/
+  | 'InvalidSolution'
+  /**
+   * Referenced intent doesn't exist.
+   **/
+  | 'IntentNotFound'
+  /**
+   * Referenced intent's owner doesn't exist.
+   **/
+  | 'IntentOwnerNotFound'
+  /**
+   * Resolution violates user's limit.
+   **/
+  | 'LimitViolation'
+  /**
+   * Trade price doesn't match execution price.
+   **/
+  | 'PriceInconsistency'
+  /**
+   * Intent was referenced multiple times.
+   **/
+  | 'DuplicateIntent'
+  /**
+   * Trade's route is invalid.
+   **/
+  | 'InvalidRoute'
+  /**
+   * Provided score doesn't match execution score.
+   **/
+  | 'ScoreMismatch'
+  /**
+   * Intent's kind is not supported.
+   **/
+  | 'UnsupportedIntentKind'
+  /**
+   * Calculation overflow.
+   **/
+  | 'ArithmeticOverflow'
+  /**
+   * Asset with specified id doesn't exists.
+   **/
+  | 'AssetNotFound'
+  /**
+   * Traded amount is bellow limit.
+   **/
+  | 'InvalidAmount'
+  /**
+   * Holding-pot residual for some asset does not cover the expected
+   * matched-volume protocol fee — the solver under-priced matched
+   * volume, or claimed more matched volume than the trades support.
+   **/
+  | 'FeeMismatch';
+
 export type OrmlTokensBalanceLock = { id: FixedBytes<8>; amount: bigint };
 
 export type OrmlTokensAccountData = { free: bigint; reserved: bigint; frozen: bigint };
@@ -20216,7 +21180,11 @@ export type PalletCurrenciesModuleError =
   /**
    * Operation is not supported for this currency
    **/
-  | 'NotSupported';
+  | 'NotSupported'
+  /**
+   * The beneficiary cannot be the reserve account itself.
+   **/
+  | 'InvalidBeneficiary';
 
 /**
  * The `Error` enum of this pallet.
@@ -20409,7 +21377,11 @@ export type PalletEvmAccountsError =
   /**
    * Insufficient asset balance of the claimed asset
    **/
-  | 'InsufficientAssetBalance';
+  | 'InsufficientAssetBalance'
+  /**
+   * Zero address cannot be used as a minter
+   **/
+  | 'InvalidMinterAddress';
 
 /**
  * The `Error` enum of this pallet.
@@ -20562,7 +21534,15 @@ export type PalletDcaError =
   /**
    * No reserves are locked for the user for the given asset
    **/
-  | 'NoReservesLocked';
+  | 'NoReservesLocked'
+  /**
+   * Buy orders can no longer be scheduled. Existing buy schedules keep executing.
+   **/
+  | 'NoLongerSupported'
+  /**
+   * Schedules cannot be created while they are being migrated to DCA intents
+   **/
+  | 'MigrationInProgress';
 
 export type PalletSchedulerScheduled = {
   maybeId?: FixedBytes<32> | undefined;
@@ -21314,6 +22294,31 @@ export type PalletBroadcastError =
    **/
   | 'ExecutionCallStackUnderflow';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletFeeProcessorError =
+  /**
+   * Asset is already HDX, no conversion needed.
+   **/
+  | 'AlreadyHdx'
+  /**
+   * Conversion failed.
+   **/
+  | 'ConversionFailed'
+  /**
+   * Transfer failed.
+   **/
+  | 'TransferFailed'
+  /**
+   * Spot price not available for asset pair.
+   **/
+  | 'PriceNotAvailable'
+  /**
+   * Arithmetic overflow/underflow.
+   **/
+  | 'Arithmetic';
+
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
 export type SpCoreOpaqueMetadata = Bytes;
@@ -21447,6 +22452,17 @@ export type HydradxRuntimeEvmAaveTradeExecutorPoolData = {
   liqudityOut: bigint;
 };
 
+export type PalletIceRuntimeApiSolverInput = {
+  intents: Array<IceSupportIntent>;
+  state: Bytes;
+  existentialDeposits: Array<[number, bigint]>;
+  minAmountOut: Array<[bigint, bigint]>;
+  fee: Permill;
+  mode: IceSupportSolverMode;
+};
+
+export type PalletIceRuntimeApiLiquidityState = { state: Bytes; existentialDeposits: Array<[number, bigint]> };
+
 export type HydradxRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
@@ -21455,7 +22471,6 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Preimage'; palletError: PalletPreimageError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
-  | { pallet: 'Democracy'; palletError: PalletDemocracyError }
   | { pallet: 'TechnicalCommittee'; palletError: PalletCollectiveError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
@@ -21486,8 +22501,14 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Referrals'; palletError: PalletReferralsError }
   | { pallet: 'Liquidation'; palletError: PalletLiquidationError }
   | { pallet: 'Hsm'; palletError: PalletHsmError }
+  | { pallet: 'Parameters'; palletError: PalletParametersError }
   | { pallet: 'Signet'; palletError: PalletSignetError }
   | { pallet: 'EthDispenser'; palletError: PalletDispenserError }
+  | { pallet: 'GigaHdx'; palletError: PalletGigahdxError }
+  | { pallet: 'GigaHdxRewards'; palletError: PalletGigahdxRewardsError }
+  | { pallet: 'LazyExecutor'; palletError: PalletLazyExecutorError }
+  | { pallet: 'Intent'; palletError: PalletIntentError }
+  | { pallet: 'Ice'; palletError: PalletIceError }
   | { pallet: 'Tokens'; palletError: OrmlTokensModuleError }
   | { pallet: 'Currencies'; palletError: PalletCurrenciesModuleError }
   | { pallet: 'Vesting'; palletError: OrmlVestingModuleError }
@@ -21510,4 +22531,5 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
   | { pallet: 'EmaOracle'; palletError: PalletEmaOracleError }
-  | { pallet: 'Broadcast'; palletError: PalletBroadcastError };
+  | { pallet: 'Broadcast'; palletError: PalletBroadcastError }
+  | { pallet: 'FeeProcessor'; palletError: PalletFeeProcessorError };

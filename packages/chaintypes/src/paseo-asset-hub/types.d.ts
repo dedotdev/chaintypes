@@ -29,7 +29,7 @@ import type {
   Perquintill,
 } from 'dedot/codecs';
 
-export type AssetHubPolkadotRuntimeRuntimeCall =
+export type AssetHubPaseoRuntimeRuntimeCall =
   | { pallet: 'System'; palletCall: FrameSystemCall }
   | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCall }
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
@@ -60,6 +60,7 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCall002 }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'Scarcity'; palletCall: IndivPalletScarcityCall }
   | { pallet: 'Psm'; palletCall: PalletPsmCall }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
@@ -69,6 +70,7 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCall }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCall }
@@ -77,16 +79,18 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'MultiBlockElectionUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCall }
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCall }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
-  | { pallet: 'Revive'; palletCall: PalletReviveCall }
+  | { pallet: 'NftClaims'; palletCall: IndivPalletNftClaimsCall }
   | { pallet: 'MembersSubscriber'; palletCall: IndivPalletMembersSubscriberCall }
   | { pallet: 'AliasAccounts'; palletCall: IndivPalletAliasAccountsCall }
   | { pallet: 'Pgas'; palletCall: IndivPalletPgasCall }
+  | { pallet: 'Revive'; palletCall: PalletReviveCall }
   | { pallet: 'DotnsGateway'; palletCall: IndivPalletDotnsGatewayCall }
   | { pallet: 'OriginRestriction'; palletCall: IndivPalletOriginRestrictionCall }
   | { pallet: 'NetworkSuffix'; palletCall: IndivPalletNetworkSuffixCall }
+  | { pallet: 'Sudo'; palletCall: PalletSudoCall }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCall };
 
-export type AssetHubPolkadotRuntimeRuntimeCallLike =
+export type AssetHubPaseoRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
   | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCallLike }
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
@@ -117,6 +121,7 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCallLike002 }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'Scarcity'; palletCall: IndivPalletScarcityCallLike }
   | { pallet: 'Psm'; palletCall: PalletPsmCallLike }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
@@ -126,6 +131,7 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCallLike }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCallLike }
@@ -134,13 +140,15 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'MultiBlockElectionUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCallLike }
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCallLike }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
-  | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
+  | { pallet: 'NftClaims'; palletCall: IndivPalletNftClaimsCallLike }
   | { pallet: 'MembersSubscriber'; palletCall: IndivPalletMembersSubscriberCallLike }
   | { pallet: 'AliasAccounts'; palletCall: IndivPalletAliasAccountsCallLike }
   | { pallet: 'Pgas'; palletCall: IndivPalletPgasCallLike }
+  | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
   | { pallet: 'DotnsGateway'; palletCall: IndivPalletDotnsGatewayCallLike }
   | { pallet: 'OriginRestriction'; palletCall: IndivPalletOriginRestrictionCallLike }
   | { pallet: 'NetworkSuffix'; palletCall: IndivPalletNetworkSuffixCallLike }
+  | { pallet: 'Sudo'; palletCall: PalletSudoCallLike }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike };
 
 /**
@@ -187,7 +195,7 @@ export type FrameSystemCall =
    * Make some on-chain remark and emit event.
    **/
   | { name: 'RemarkWithEvent'; params: { remark: Bytes } }
-  | { name: 'DoTask'; params: { task: AssetHubPolkadotRuntimeRuntimeTask } }
+  | { name: 'DoTask'; params: { task: AssetHubPaseoRuntimeRuntimeTask } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
@@ -260,7 +268,7 @@ export type FrameSystemCallLike =
    * Make some on-chain remark and emit event.
    **/
   | { name: 'RemarkWithEvent'; params: { remark: BytesLike } }
-  | { name: 'DoTask'; params: { task: AssetHubPolkadotRuntimeRuntimeTask } }
+  | { name: 'DoTask'; params: { task: AssetHubPaseoRuntimeRuntimeTask } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
@@ -292,7 +300,7 @@ export type FrameSystemCallLike =
    **/
   | { name: 'ApplyAuthorizedUpgrade'; params: { code: BytesLike } };
 
-export type AssetHubPolkadotRuntimeRuntimeTask = null;
+export type AssetHubPaseoRuntimeRuntimeTask = null;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -528,7 +536,7 @@ export type PalletSchedulerCall =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCall;
+        call: AssetHubPaseoRuntimeRuntimeCall;
       };
     }
   /**
@@ -548,7 +556,7 @@ export type PalletSchedulerCall =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCall;
+        call: AssetHubPaseoRuntimeRuntimeCall;
       };
     }
   /**
@@ -564,7 +572,7 @@ export type PalletSchedulerCall =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCall;
+        call: AssetHubPaseoRuntimeRuntimeCall;
       };
     }
   /**
@@ -577,7 +585,7 @@ export type PalletSchedulerCall =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCall;
+        call: AssetHubPaseoRuntimeRuntimeCall;
       };
     }
   /**
@@ -633,7 +641,7 @@ export type PalletSchedulerCallLike =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCallLike;
+        call: AssetHubPaseoRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -653,7 +661,7 @@ export type PalletSchedulerCallLike =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCallLike;
+        call: AssetHubPaseoRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -669,7 +677,7 @@ export type PalletSchedulerCallLike =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCallLike;
+        call: AssetHubPaseoRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -682,7 +690,7 @@ export type PalletSchedulerCallLike =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPolkadotRuntimeRuntimeCallLike;
+        call: AssetHubPaseoRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -738,7 +746,7 @@ export type PalletParametersCall =
    * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
    * deleted by setting them to `None`.
    **/
-  { name: 'SetParameter'; params: { keyValue: AssetHubPolkadotRuntimeRuntimeParameters } };
+  { name: 'SetParameter'; params: { keyValue: AssetHubPaseoRuntimeRuntimeParameters } };
 
 export type PalletParametersCallLike =
   /**
@@ -747,176 +755,125 @@ export type PalletParametersCallLike =
    * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
    * deleted by setting them to `None`.
    **/
-  { name: 'SetParameter'; params: { keyValue: AssetHubPolkadotRuntimeRuntimeParameters } };
+  { name: 'SetParameter'; params: { keyValue: AssetHubPaseoRuntimeRuntimeParameters } };
 
-export type AssetHubPolkadotRuntimeRuntimeParameters =
-  | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParameters }
-  | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParameters }
-  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParameters }
-  | { type: 'Individuality'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityParameters };
+export type AssetHubPaseoRuntimeRuntimeParameters =
+  | { type: 'StakingElection'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionParameters }
+  | { type: 'Scheduler'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerParameters }
+  | { type: 'MessageQueue'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueParameters }
+  | { type: 'AliasAccounts'; value: AssetHubPaseoRuntimeDynamicParamsAliasAccountsParameters }
+  | { type: 'DotnsGateway'; value: AssetHubPaseoRuntimeDynamicParamsDotnsGatewayParameters };
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParameters =
-  | { type: 'SignedPhase'; value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase, number | undefined] }
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionParameters =
+  | { type: 'SignedPhase'; value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionSignedPhase, number | undefined] }
   | {
       type: 'MaxSignedSubmissions';
-      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxSignedSubmissions, number | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxSignedSubmissions, number | undefined];
     }
   | {
       type: 'UnsignedPhase';
-      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionUnsignedPhase, number | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionUnsignedPhase, number | undefined];
     }
-  | { type: 'MinerPages'; value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMinerPages, number | undefined] }
+  | { type: 'MinerPages'; value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMinerPages, number | undefined] }
   | {
       type: 'MaxElectingVoters';
-      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxElectingVoters, number | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxElectingVoters, number | undefined];
     }
   | {
       type: 'TargetSnapshotPerBlock';
-      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock, number | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock, number | undefined];
     }
   | {
       type: 'MaxEraDuration';
-      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxEraDuration, bigint | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxEraDuration, bigint | undefined];
     };
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase = {};
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionSignedPhase = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxSignedSubmissions = {};
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxSignedSubmissions = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionUnsignedPhase = {};
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionUnsignedPhase = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMinerPages = {};
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMinerPages = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxElectingVoters = {};
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxElectingVoters = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock = {};
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxEraDuration = {};
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxEraDuration = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsSchedulerParameters =
+export type AssetHubPaseoRuntimeDynamicParamsSchedulerParameters =
   | {
       type: 'MaxScheduledPerBlock';
-      value: [AssetHubPolkadotRuntimeDynamicParamsSchedulerMaxScheduledPerBlock, number | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsSchedulerMaxScheduledPerBlock, number | undefined];
     }
   | {
       type: 'MaximumWeight';
-      value: [AssetHubPolkadotRuntimeDynamicParamsSchedulerMaximumWeight, SpWeightsWeightV2Weight | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsSchedulerMaximumWeight, SpWeightsWeightV2Weight | undefined];
     };
 
-export type AssetHubPolkadotRuntimeDynamicParamsSchedulerMaxScheduledPerBlock = {};
+export type AssetHubPaseoRuntimeDynamicParamsSchedulerMaxScheduledPerBlock = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsSchedulerMaximumWeight = {};
+export type AssetHubPaseoRuntimeDynamicParamsSchedulerMaximumWeight = {};
 
 export type SpWeightsWeightV2Weight = { refTime: bigint; proofSize: bigint };
 
-export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParameters =
+export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParameters =
   | {
       type: 'MaxOnInitWeight';
       value: [
-        AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight,
+        AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnInitWeight,
         SpWeightsWeightV2Weight | undefined | undefined,
       ];
     }
   | {
       type: 'MaxOnIdleWeight';
       value: [
-        AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight,
+        AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnIdleWeight,
         SpWeightsWeightV2Weight | undefined | undefined,
       ];
     };
 
-export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight = {};
+export type AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnInitWeight = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight = {};
+export type AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnIdleWeight = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityParameters =
+export type AssetHubPaseoRuntimeDynamicParamsAliasAccountsParameters =
   | {
-      type: 'PgasClaimAmount';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityPgasClaimAmount, bigint | undefined];
+      type: 'AliasFee';
+      value: [AssetHubPaseoRuntimeDynamicParamsAliasAccountsAliasFee, bigint | undefined | undefined];
     }
   | {
-      type: 'MaxPgasClaimsPerBatch';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimsPerBatch, number | undefined];
-    }
-  | {
-      type: 'MaxClaimsPerPeriodPerPerson';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerPerson, number | undefined];
-    }
-  | {
-      type: 'MaxClaimsPerPeriodPerLitePerson';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerLitePerson, number | undefined];
-    }
-  | {
-      type: 'MaxPgasClaimRecordCleanupPerCall';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimRecordCleanupPerCall, number | undefined];
-    }
-  | {
-      type: 'AliasProofValidityWindow';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasProofValidityWindow, bigint | undefined];
-    }
+      type: 'StaleAliasSweepInterval';
+      value: [AssetHubPaseoRuntimeDynamicParamsAliasAccountsStaleAliasSweepInterval, number | undefined];
+    };
+
+export type AssetHubPaseoRuntimeDynamicParamsAliasAccountsAliasFee = {};
+
+export type AssetHubPaseoRuntimeDynamicParamsAliasAccountsStaleAliasSweepInterval = {};
+
+export type AssetHubPaseoRuntimeDynamicParamsDotnsGatewayParameters =
   | {
       type: 'DotnsMaxContractCallWeight';
       value: [
-        AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxContractCallWeight,
+        AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxContractCallWeight,
         SpWeightsWeightV2Weight | undefined,
       ];
     }
   | {
       type: 'DotnsMaxValiditySeconds';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxValiditySeconds, bigint | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxValiditySeconds, bigint | undefined];
     }
   | {
       type: 'DotnsMaxFutureSkewSeconds';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxFutureSkewSeconds, bigint | undefined];
-    }
-  | {
-      type: 'DotnsPersonRegistrationAllowanceMax';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceMax, bigint | undefined];
-    }
-  | {
-      type: 'DotnsPersonRegistrationAllowanceRecovery';
-      value: [
-        AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceRecovery,
-        bigint | undefined,
-      ];
-    }
-  | { type: 'AliasFee'; value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasFee, bigint | undefined] }
-  | {
-      type: 'StaleAliasSweepInterval';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityStaleAliasSweepInterval, number | undefined];
-    }
-  | {
-      type: 'MaxStaleAliasBatch';
-      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxStaleAliasBatch, number | undefined];
+      value: [AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxFutureSkewSeconds, bigint | undefined];
     };
 
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityPgasClaimAmount = {};
+export type AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxContractCallWeight = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimsPerBatch = {};
+export type AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxValiditySeconds = {};
 
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerPerson = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerLitePerson = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimRecordCleanupPerCall = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasProofValidityWindow = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxContractCallWeight = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxValiditySeconds = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxFutureSkewSeconds = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceMax = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceRecovery = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasFee = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityStaleAliasSweepInterval = {};
-
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxStaleAliasBatch = {};
+export type AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxFutureSkewSeconds = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1829,7 +1786,7 @@ export type PalletSessionCall =
    * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
    * proof format.
    **/
-  | { name: 'SetKeys'; params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: Bytes } }
+  | { name: 'SetKeys'; params: { keys: AssetHubPaseoRuntimeSessionKeys; proof: Bytes } }
   /**
    * Removes any session key(s) of the function caller.
    *
@@ -1856,7 +1813,7 @@ export type PalletSessionCallLike =
    * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
    * proof format.
    **/
-  | { name: 'SetKeys'; params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: BytesLike } }
+  | { name: 'SetKeys'; params: { keys: AssetHubPaseoRuntimeSessionKeys; proof: BytesLike } }
   /**
    * Removes any session key(s) of the function caller.
    *
@@ -1869,9 +1826,9 @@ export type PalletSessionCallLike =
    **/
   | { name: 'PurgeKeys' };
 
-export type AssetHubPolkadotRuntimeSessionKeys = { aura: SpConsensusAuraEd25519AppEd25519Public };
+export type AssetHubPaseoRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
 
-export type SpConsensusAuraEd25519AppEd25519Public = FixedBytes<32>;
+export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3547,7 +3504,7 @@ export type PalletUtilityCall =
    * and the error of the failed call. If all were successful, then the `BatchCompleted`
    * event is deposited.
    **/
-  | { name: 'Batch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCall> } }
+  | { name: 'Batch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCall> } }
   /**
    * Send a call through an indexed pseudonym of the sender.
    *
@@ -3563,7 +3520,7 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Signed_.
    **/
-  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPolkadotRuntimeRuntimeCall } }
+  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPaseoRuntimeRuntimeCall } }
   /**
    * Send a batch of dispatch calls and atomically execute them.
    * The whole transaction will rollback and fail if any of the calls failed.
@@ -3579,7 +3536,7 @@ export type PalletUtilityCall =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: 'BatchAll'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCall> } }
+  | { name: 'BatchAll'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCall> } }
   /**
    * Dispatches a function call with a provided origin.
    *
@@ -3590,7 +3547,7 @@ export type PalletUtilityCall =
    **/
   | {
       name: 'DispatchAs';
-      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCall };
+      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCall };
     }
   /**
    * Send a batch of dispatch calls.
@@ -3607,7 +3564,7 @@ export type PalletUtilityCall =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCall> } }
+  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCall> } }
   /**
    * Dispatch a function call with a specified weight.
    *
@@ -3616,7 +3573,7 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: AssetHubPolkadotRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  | { name: 'WithWeight'; params: { call: AssetHubPaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
   /**
    * Dispatch a fallback call in the event the main call fails to execute.
    * May be called from any origin except `None`.
@@ -3642,10 +3599,7 @@ export type PalletUtilityCall =
    * - Some use cases might involve submitting a `batch` type call in either main, fallback
    * or both.
    **/
-  | {
-      name: 'IfElse';
-      params: { main: AssetHubPolkadotRuntimeRuntimeCall; fallback: AssetHubPolkadotRuntimeRuntimeCall };
-    }
+  | { name: 'IfElse'; params: { main: AssetHubPaseoRuntimeRuntimeCall; fallback: AssetHubPaseoRuntimeRuntimeCall } }
   /**
    * Dispatches a function call with a provided origin.
    *
@@ -3655,7 +3609,7 @@ export type PalletUtilityCall =
    **/
   | {
       name: 'DispatchAsFallible';
-      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCall };
+      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCall };
     };
 
 export type PalletUtilityCallLike =
@@ -3679,7 +3633,7 @@ export type PalletUtilityCallLike =
    * and the error of the failed call. If all were successful, then the `BatchCompleted`
    * event is deposited.
    **/
-  | { name: 'Batch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> } }
+  | { name: 'Batch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> } }
   /**
    * Send a call through an indexed pseudonym of the sender.
    *
@@ -3695,7 +3649,7 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Signed_.
    **/
-  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPolkadotRuntimeRuntimeCallLike } }
+  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPaseoRuntimeRuntimeCallLike } }
   /**
    * Send a batch of dispatch calls and atomically execute them.
    * The whole transaction will rollback and fail if any of the calls failed.
@@ -3711,7 +3665,7 @@ export type PalletUtilityCallLike =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: 'BatchAll'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> } }
+  | { name: 'BatchAll'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> } }
   /**
    * Dispatches a function call with a provided origin.
    *
@@ -3722,7 +3676,7 @@ export type PalletUtilityCallLike =
    **/
   | {
       name: 'DispatchAs';
-      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
     }
   /**
    * Send a batch of dispatch calls.
@@ -3739,7 +3693,7 @@ export type PalletUtilityCallLike =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> } }
+  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> } }
   /**
    * Dispatch a function call with a specified weight.
    *
@@ -3748,7 +3702,7 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  | { name: 'WithWeight'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
   /**
    * Dispatch a fallback call in the event the main call fails to execute.
    * May be called from any origin except `None`.
@@ -3776,7 +3730,7 @@ export type PalletUtilityCallLike =
    **/
   | {
       name: 'IfElse';
-      params: { main: AssetHubPolkadotRuntimeRuntimeCallLike; fallback: AssetHubPolkadotRuntimeRuntimeCallLike };
+      params: { main: AssetHubPaseoRuntimeRuntimeCallLike; fallback: AssetHubPaseoRuntimeRuntimeCallLike };
     }
   /**
    * Dispatches a function call with a provided origin.
@@ -3787,16 +3741,17 @@ export type PalletUtilityCallLike =
    **/
   | {
       name: 'DispatchAsFallible';
-      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
     };
 
-export type AssetHubPolkadotRuntimeOriginCaller =
+export type AssetHubPaseoRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
   | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
-  | { type: 'Origins'; value: AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
-  | { type: 'Revive'; value: PalletReviveOrigin }
+  | { type: 'Scarcity'; value: IndivPalletScarcityOrigin }
+  | { type: 'Origins'; value: AssetHubPaseoRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'Pgas'; value: IndivPalletPgasOrigin }
+  | { type: 'Revive'; value: PalletReviveOrigin }
   | { type: 'DotnsGateway'; value: IndivPalletDotnsGatewayOrigin };
 
 export type FrameSupportDispatchRawOrigin =
@@ -3813,7 +3768,21 @@ export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
 
-export type AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
+export type IndivPalletScarcityOrigin = { type: 'Nft'; value: { owner: AccountId32; nft: IndivPalletScarcityNft } };
+
+export type AssetHubPaseoRuntimeRuntime = {};
+
+export type IndivPalletScarcityNft = {
+  instance: bigint;
+  collection: number;
+  item: number;
+  mintedAt: bigint;
+  lastMoved: bigint;
+  stateNonce: bigint;
+  moves: number;
+};
+
+export type AssetHubPaseoRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'StakingAdmin'
   | 'Treasurer'
   | 'FellowshipAdmin'
@@ -3828,13 +3797,7 @@ export type AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'MediumSpender'
   | 'BigSpender'
   | 'WhitelistedCaller'
-  | 'WishForChange'
-  | 'TechnicalMaintenance'
-  | 'ProsperityEmergency';
-
-export type PalletReviveOrigin = { type: 'EthTransaction'; value: AccountId32 };
-
-export type AssetHubPolkadotRuntimeRuntime = {};
+  | 'WishForChange';
 
 export type IndivPalletPgasOrigin =
   | {
@@ -3861,6 +3824,8 @@ export type IndivSupportUtilsBigEndianU32 = FixedBytes<4>;
 
 export type IndivPalletPgasExtensionPgasCollection = 'People' | 'LitePeople';
 
+export type PalletReviveOrigin = { type: 'EthTransaction'; value: AccountId32 };
+
 export type IndivPalletDotnsGatewayOrigin = { type: 'PersonRegistration'; value: FixedBytes<32> };
 
 /**
@@ -3883,7 +3848,7 @@ export type PalletMultisigCall =
    **/
   | {
       name: 'AsMultiThreshold1';
-      params: { otherSignatories: Array<AccountId32>; call: AssetHubPolkadotRuntimeRuntimeCall };
+      params: { otherSignatories: Array<AccountId32>; call: AssetHubPaseoRuntimeRuntimeCall };
     }
   /**
    * Register approval for a dispatch to be made from a deterministic composite account if
@@ -3935,7 +3900,7 @@ export type PalletMultisigCall =
         threshold: number;
         otherSignatories: Array<AccountId32>;
         maybeTimepoint?: PalletMultisigTimepoint | undefined;
-        call: AssetHubPolkadotRuntimeRuntimeCall;
+        call: AssetHubPaseoRuntimeRuntimeCall;
         maxWeight: SpWeightsWeightV2Weight;
       };
     }
@@ -4058,7 +4023,7 @@ export type PalletMultisigCallLike =
    **/
   | {
       name: 'AsMultiThreshold1';
-      params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+      params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPaseoRuntimeRuntimeCallLike };
     }
   /**
    * Register approval for a dispatch to be made from a deterministic composite account if
@@ -4110,7 +4075,7 @@ export type PalletMultisigCallLike =
         threshold: number;
         otherSignatories: Array<AccountId32Like>;
         maybeTimepoint?: PalletMultisigTimepoint | undefined;
-        call: AssetHubPolkadotRuntimeRuntimeCallLike;
+        call: AssetHubPaseoRuntimeRuntimeCallLike;
         maxWeight: SpWeightsWeightV2Weight;
       };
     }
@@ -4237,8 +4202,8 @@ export type PalletProxyCall =
       name: 'Proxy';
       params: {
         real: MultiAddress;
-        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
-        call: AssetHubPolkadotRuntimeRuntimeCall;
+        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
+        call: AssetHubPaseoRuntimeRuntimeCall;
       };
     }
   /**
@@ -4252,7 +4217,7 @@ export type PalletProxyCall =
    * - `delay`: The announcement period required of the initial proxy. Will generally be
    * zero.
    **/
-  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number } }
+  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: AssetHubPaseoRuntimeProxyType; delay: number } }
   /**
    * Unregister a proxy account for the sender.
    *
@@ -4262,10 +4227,7 @@ export type PalletProxyCall =
    * - `proxy`: The account that the `caller` would like to remove as a proxy.
    * - `proxy_type`: The permissions currently enabled for the removed proxy account.
    **/
-  | {
-      name: 'RemoveProxy';
-      params: { delegate: MultiAddress; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
-    }
+  | { name: 'RemoveProxy'; params: { delegate: MultiAddress; proxyType: AssetHubPaseoRuntimeProxyType; delay: number } }
   /**
    * Unregister all proxy accounts for the sender.
    *
@@ -4295,7 +4257,7 @@ export type PalletProxyCall =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: AssetHubPolkadotRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: AssetHubPaseoRuntimeProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -4318,7 +4280,7 @@ export type PalletProxyCall =
       name: 'KillPure';
       params: {
         spawner: MultiAddress;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
+        proxyType: AssetHubPaseoRuntimeProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -4386,8 +4348,8 @@ export type PalletProxyCall =
       params: {
         delegate: MultiAddress;
         real: MultiAddress;
-        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
-        call: AssetHubPolkadotRuntimeRuntimeCall;
+        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
+        call: AssetHubPaseoRuntimeRuntimeCall;
       };
     }
   /**
@@ -4418,8 +4380,8 @@ export type PalletProxyCallLike =
       name: 'Proxy';
       params: {
         real: MultiAddressLike;
-        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
-        call: AssetHubPolkadotRuntimeRuntimeCallLike;
+        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
+        call: AssetHubPaseoRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -4435,7 +4397,7 @@ export type PalletProxyCallLike =
    **/
   | {
       name: 'AddProxy';
-      params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
+      params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
     }
   /**
    * Unregister a proxy account for the sender.
@@ -4448,7 +4410,7 @@ export type PalletProxyCallLike =
    **/
   | {
       name: 'RemoveProxy';
-      params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
+      params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
     }
   /**
    * Unregister all proxy accounts for the sender.
@@ -4479,7 +4441,7 @@ export type PalletProxyCallLike =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: AssetHubPolkadotRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: AssetHubPaseoRuntimeProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -4502,7 +4464,7 @@ export type PalletProxyCallLike =
       name: 'KillPure';
       params: {
         spawner: MultiAddressLike;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
+        proxyType: AssetHubPaseoRuntimeProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -4570,8 +4532,8 @@ export type PalletProxyCallLike =
       params: {
         delegate: MultiAddressLike;
         real: MultiAddressLike;
-        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
-        call: AssetHubPolkadotRuntimeRuntimeCallLike;
+        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
+        call: AssetHubPaseoRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -4586,7 +4548,7 @@ export type PalletProxyCallLike =
    **/
   | { name: 'PokeDeposit' };
 
-export type AssetHubPolkadotRuntimeProxyType =
+export type AssetHubPaseoRuntimeProxyType =
   | 'Any'
   | 'NonTransfer'
   | 'CancelProxy'
@@ -4599,7 +4561,8 @@ export type AssetHubPolkadotRuntimeProxyType =
   | 'NominationPools'
   | 'Auction'
   | 'ParaRegistration'
-  | 'StakingOperator';
+  | 'StakingOperator'
+  | 'SafeSudo';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5057,10 +5020,6 @@ export type PalletAssetsCall =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
-   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-   * blocks the full transfer; clear it and retry.
-   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -5250,18 +5209,16 @@ export type PalletAssetsCall =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the debit spends the approval in full, then any deposit previously reserved by
-   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-   * balance, so a request smaller than the approval can still spend it in full.
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least the debit
-   * and from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the debited balance will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `Transferred` on success.
+   * Emits `TransferredApproved` on success.
    *
    * Weight: `O(1)`
    **/
@@ -5652,10 +5609,6 @@ export type PalletAssetsCallLike =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
-   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-   * blocks the full transfer; clear it and retry.
-   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -5848,18 +5801,16 @@ export type PalletAssetsCallLike =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the debit spends the approval in full, then any deposit previously reserved by
-   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-   * balance, so a request smaller than the approval can still spend it in full.
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least the debit
-   * and from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the debited balance will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `Transferred` on success.
+   * Emits `TransferredApproved` on success.
    *
    * Weight: `O(1)`
    **/
@@ -6172,10 +6123,6 @@ export type PalletUniquesCall =
    * Change the Owner of a collection.
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
-   *
-   * The collection's total deposit is moved from the current to the new owner. Fails with
-   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-   * the full transfer; clear it and retry.
    *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
@@ -6626,10 +6573,6 @@ export type PalletUniquesCallLike =
    * Change the Owner of a collection.
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
-   *
-   * The collection's total deposit is moved from the current to the new owner. Fails with
-   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-   * the full transfer; clear it and retry.
    *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
@@ -7104,10 +7047,6 @@ export type PalletNftsCall =
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
    *
-   * The collection deposit is moved from the current to the new owner. Fails with
-   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-   * the full transfer; clear it and retry.
-   *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
    * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -7148,10 +7087,6 @@ export type PalletNftsCall =
    * Change the Owner of a collection.
    *
    * Origin must be `ForceOrigin`.
-   *
-   * The collection deposit is moved from the current to the new owner. Fails with
-   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-   * the full transfer; clear it and retry.
    *
    * - `collection`: The identifier of the collection.
    * - `owner`: The new Owner of this collection.
@@ -7826,10 +7761,6 @@ export type PalletNftsCallLike =
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
    *
-   * The collection deposit is moved from the current to the new owner. Fails with
-   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-   * the full transfer; clear it and retry.
-   *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
    * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -7870,10 +7801,6 @@ export type PalletNftsCallLike =
    * Change the Owner of a collection.
    *
    * Origin must be `ForceOrigin`.
-   *
-   * The collection deposit is moved from the current to the new owner. Fails with
-   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-   * the full transfer; clear it and retry.
    *
    * - `collection`: The identifier of the collection.
    * - `owner`: The new Owner of this collection.
@@ -8698,10 +8625,6 @@ export type PalletAssetsCall002 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
-   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-   * blocks the full transfer; clear it and retry.
-   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -8894,18 +8817,16 @@ export type PalletAssetsCall002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the debit spends the approval in full, then any deposit previously reserved by
-   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-   * balance, so a request smaller than the approval can still spend it in full.
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least the debit
-   * and from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the debited balance will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `Transferred` on success.
+   * Emits `TransferredApproved` on success.
    *
    * Weight: `O(1)`
    **/
@@ -9308,10 +9229,6 @@ export type PalletAssetsCallLike002 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
-   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-   * blocks the full transfer; clear it and retry.
-   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -9512,18 +9429,16 @@ export type PalletAssetsCallLike002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the debit spends the approval in full, then any deposit previously reserved by
-   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-   * balance, so a request smaller than the approval can still spend it in full.
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least the debit
-   * and from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the debited balance will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `Transferred` on success.
+   * Emits `TransferredApproved` on success.
    *
    * Weight: `O(1)`
    **/
@@ -9928,10 +9843,6 @@ export type PalletAssetsCall003 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
-   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-   * blocks the full transfer; clear it and retry.
-   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -10121,18 +10032,16 @@ export type PalletAssetsCall003 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the debit spends the approval in full, then any deposit previously reserved by
-   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-   * balance, so a request smaller than the approval can still spend it in full.
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least the debit
-   * and from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the debited balance will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `Transferred` on success.
+   * Emits `TransferredApproved` on success.
    *
    * Weight: `O(1)`
    **/
@@ -10523,10 +10432,6 @@ export type PalletAssetsCallLike003 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
-   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-   * blocks the full transfer; clear it and retry.
-   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -10719,18 +10624,16 @@ export type PalletAssetsCallLike003 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the debit spends the approval in full, then any deposit previously reserved by
-   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-   * balance, so a request smaller than the approval can still spend it in full.
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least the debit
-   * and from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the debited balance will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `Transferred` on success.
+   * Emits `TransferredApproved` on success.
    *
    * Weight: `O(1)`
    **/
@@ -10960,29 +10863,7 @@ export type PalletAssetConversionCall =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
-  /**
-   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
-   * global [`Config::LPFee`].
-   *
-   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
-   * `fee` must not exceed [`Config::MaxSwapFee`].
-   *
-   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
-   **/
-  | {
-      name: 'CreatePoolWithFee';
-      params: { creator: AccountId32; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
-    }
-  /**
-   * Set the per-pool swap `fee` for an existing pool, overriding the global
-   * [`Config::LPFee`].
-   *
-   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
-   *
-   * Emits [`Event::PoolFeeSet`] on success.
-   **/
-  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
 
 export type PalletAssetConversionCallLike =
   /**
@@ -11085,29 +10966,266 @@ export type PalletAssetConversionCallLike =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletScarcityCall =
   /**
-   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
-   * global [`Config::LPFee`].
+   * Create a collection owned by the signer.
+   **/
+  | { name: 'CreateCollection' }
+  /**
+   * Define one immutable item and its shared metadata defaults.
    *
-   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
-   * `fee` must not exceed [`Config::MaxSwapFee`].
-   *
-   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+   * The supplied metadata is inherited by every instance minted from this definition.
+   * Instance-specific values belong on [`Self::mint`] or [`Self::set_instance_metadata`].
+   * `transferability` is fixed here and cannot be changed once instances exist.
    **/
   | {
-      name: 'CreatePoolWithFee';
-      params: { creator: AccountId32Like; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
+      name: 'DefineItem';
+      params: {
+        collection: number;
+        transferability: IndivPalletScarcityTransferability;
+        metadata: Array<[Bytes, Bytes]>;
+      };
     }
   /**
-   * Set the per-pool swap `fee` for an existing pool, overriding the global
-   * [`Config::LPFee`].
+   * Mint an instance of an immutable item definition into an empty purse key.
    *
-   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+   * The destination gives no consent; any empty key is a valid target. See the module
+   * documentation on purse-key occupancy.
    *
-   * Emits [`Event::PoolFeeSet`] on success.
+   * `metadata` contains instance-specific overrides. Item metadata remains the shared
+   * default for every instance minted from the definition.
    **/
-  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
+  | { name: 'Mint'; params: { collection: number; item: number; to: AccountId32; metadata: Array<[Bytes, Bytes]> } }
+  /**
+   * Transfer an NFT held by the `Origin::Nft` purse-key origin.
+   *
+   * Fails for an instance of a [`Transferability::Soulbound`] definition.
+   **/
+  | { name: 'Transfer'; params: { to: AccountId32 } }
+  /**
+   * Burn an NFT held by the `Origin::Nft` purse-key origin.
+   *
+   * Item-definition supply counts minted-ever instances and is deliberately monotonic.
+   * Item metadata belongs to the definition and remains untouched. Instance metadata is
+   * removed and its exact deposits are released.
+   **/
+  | { name: 'Burn' }
+  /**
+   * Nominate an account to claim ownership of a collection.
+   *
+   * Only the current owner may nominate or clear a prospective owner. Nomination does not
+   * change authority or move deposits.
+   **/
+  | { name: 'NominateCollectionOwner'; params: { collection: number; pendingOwner?: AccountId32 | undefined } }
+  /**
+   * Set or remove a collection-level metadata default.
+   *
+   * Only the collection owner may mutate metadata. `None` releases an existing entry's
+   * deposit; when the key is absent it is a successful no-op.
+   **/
+  | { name: 'SetCollectionMetadata'; params: { collection: number; key: Bytes; value?: Bytes | undefined } }
+  /**
+   * Set or remove a metadata default shared by every instance of an item.
+   *
+   * This scope overrides the collection default without changing any instance-specific
+   * override. Only the collection owner may mutate metadata. `None` releases an existing
+   * entry's deposit; when the key is absent it is a successful no-op.
+   **/
+  | { name: 'SetItemMetadata'; params: { collection: number; item: number; key: Bytes; value?: Bytes | undefined } }
+  /**
+   * Claim a collection after nomination by its current owner.
+   *
+   * An equivalent aggregate consideration is first created for the claimant and then the
+   * previous owner's ticket is dropped. The operation is atomic: failure to establish the
+   * claimant's consideration leaves ownership and both tickets unchanged.
+   **/
+  | { name: 'ClaimCollectionOwnership'; params: { collection: number } }
+  /**
+   * Set or remove an instance-specific metadata override.
+   *
+   * Only the collection owner may mutate metadata. `None` releases an existing entry's
+   * deposit; when the key is absent it is a successful no-op.
+   **/
+  | { name: 'SetInstanceMetadata'; params: { instance: bigint; key: Bytes; value?: Bytes | undefined } }
+  /**
+   * Force-burn one live instance as its collection owner.
+   *
+   * The collection layer intentionally applies no holder-level ACL. When a runtime exposes
+   * this call to its contract environment, a contract-owned collection can enforce its own
+   * consent and game rules before calling it.
+   **/
+  | { name: 'ForceBurn'; params: { instance: bigint } }
+  /**
+   * Delete an unused item definition owned by the signer.
+   *
+   * Every live instance must be burned and every item metadata entry removed first.
+   * Deleted item indices are never reused, and the collection's next index does not drop, so
+   * anything selecting an item by that index can select a deleted one and fail. Defining a
+   * replacement raises the index rather than filling the hole, which changes what every
+   * outstanding selection resolves to.
+   **/
+  | { name: 'DeleteItem'; params: { collection: number; item: number } }
+  /**
+   * Delete an empty collection owned by the signer.
+   *
+   * Every item definition and collection metadata entry must be removed first. Deleted
+   * collection identifiers are never reused.
+   **/
+  | { name: 'DeleteCollection'; params: { collection: number } }
+  /**
+   * Force-transfer one live instance as its collection owner.
+   *
+   * The collection layer intentionally applies no holder-level ACL. When a runtime exposes
+   * this call to its contract environment, a contract-owned collection can enforce its own
+   * consent and game rules before calling it. The move increments the instance state nonce,
+   * invalidating prior holder authorizations.
+   **/
+  | { name: 'ForceTransfer'; params: { instance: bigint; to: AccountId32 } }
+  /**
+   * Move the instance the signer holds, with the fee paid from the signer's account.
+   *
+   * The move refills the feeless move budget of [`Config::MaximumMoves`].
+   *
+   * Fails for an instance of a [`Transferability::Soulbound`] definition.
+   **/
+  | { name: 'TransferByHolder'; params: { instance: bigint; to: AccountId32 } };
+
+export type IndivPalletScarcityCallLike =
+  /**
+   * Create a collection owned by the signer.
+   **/
+  | { name: 'CreateCollection' }
+  /**
+   * Define one immutable item and its shared metadata defaults.
+   *
+   * The supplied metadata is inherited by every instance minted from this definition.
+   * Instance-specific values belong on [`Self::mint`] or [`Self::set_instance_metadata`].
+   * `transferability` is fixed here and cannot be changed once instances exist.
+   **/
+  | {
+      name: 'DefineItem';
+      params: {
+        collection: number;
+        transferability: IndivPalletScarcityTransferability;
+        metadata: Array<[BytesLike, BytesLike]>;
+      };
+    }
+  /**
+   * Mint an instance of an immutable item definition into an empty purse key.
+   *
+   * The destination gives no consent; any empty key is a valid target. See the module
+   * documentation on purse-key occupancy.
+   *
+   * `metadata` contains instance-specific overrides. Item metadata remains the shared
+   * default for every instance minted from the definition.
+   **/
+  | {
+      name: 'Mint';
+      params: { collection: number; item: number; to: AccountId32Like; metadata: Array<[BytesLike, BytesLike]> };
+    }
+  /**
+   * Transfer an NFT held by the `Origin::Nft` purse-key origin.
+   *
+   * Fails for an instance of a [`Transferability::Soulbound`] definition.
+   **/
+  | { name: 'Transfer'; params: { to: AccountId32Like } }
+  /**
+   * Burn an NFT held by the `Origin::Nft` purse-key origin.
+   *
+   * Item-definition supply counts minted-ever instances and is deliberately monotonic.
+   * Item metadata belongs to the definition and remains untouched. Instance metadata is
+   * removed and its exact deposits are released.
+   **/
+  | { name: 'Burn' }
+  /**
+   * Nominate an account to claim ownership of a collection.
+   *
+   * Only the current owner may nominate or clear a prospective owner. Nomination does not
+   * change authority or move deposits.
+   **/
+  | { name: 'NominateCollectionOwner'; params: { collection: number; pendingOwner?: AccountId32Like | undefined } }
+  /**
+   * Set or remove a collection-level metadata default.
+   *
+   * Only the collection owner may mutate metadata. `None` releases an existing entry's
+   * deposit; when the key is absent it is a successful no-op.
+   **/
+  | { name: 'SetCollectionMetadata'; params: { collection: number; key: BytesLike; value?: BytesLike | undefined } }
+  /**
+   * Set or remove a metadata default shared by every instance of an item.
+   *
+   * This scope overrides the collection default without changing any instance-specific
+   * override. Only the collection owner may mutate metadata. `None` releases an existing
+   * entry's deposit; when the key is absent it is a successful no-op.
+   **/
+  | {
+      name: 'SetItemMetadata';
+      params: { collection: number; item: number; key: BytesLike; value?: BytesLike | undefined };
+    }
+  /**
+   * Claim a collection after nomination by its current owner.
+   *
+   * An equivalent aggregate consideration is first created for the claimant and then the
+   * previous owner's ticket is dropped. The operation is atomic: failure to establish the
+   * claimant's consideration leaves ownership and both tickets unchanged.
+   **/
+  | { name: 'ClaimCollectionOwnership'; params: { collection: number } }
+  /**
+   * Set or remove an instance-specific metadata override.
+   *
+   * Only the collection owner may mutate metadata. `None` releases an existing entry's
+   * deposit; when the key is absent it is a successful no-op.
+   **/
+  | { name: 'SetInstanceMetadata'; params: { instance: bigint; key: BytesLike; value?: BytesLike | undefined } }
+  /**
+   * Force-burn one live instance as its collection owner.
+   *
+   * The collection layer intentionally applies no holder-level ACL. When a runtime exposes
+   * this call to its contract environment, a contract-owned collection can enforce its own
+   * consent and game rules before calling it.
+   **/
+  | { name: 'ForceBurn'; params: { instance: bigint } }
+  /**
+   * Delete an unused item definition owned by the signer.
+   *
+   * Every live instance must be burned and every item metadata entry removed first.
+   * Deleted item indices are never reused, and the collection's next index does not drop, so
+   * anything selecting an item by that index can select a deleted one and fail. Defining a
+   * replacement raises the index rather than filling the hole, which changes what every
+   * outstanding selection resolves to.
+   **/
+  | { name: 'DeleteItem'; params: { collection: number; item: number } }
+  /**
+   * Delete an empty collection owned by the signer.
+   *
+   * Every item definition and collection metadata entry must be removed first. Deleted
+   * collection identifiers are never reused.
+   **/
+  | { name: 'DeleteCollection'; params: { collection: number } }
+  /**
+   * Force-transfer one live instance as its collection owner.
+   *
+   * The collection layer intentionally applies no holder-level ACL. When a runtime exposes
+   * this call to its contract environment, a contract-owned collection can enforce its own
+   * consent and game rules before calling it. The move increments the instance state nonce,
+   * invalidating prior holder authorizations.
+   **/
+  | { name: 'ForceTransfer'; params: { instance: bigint; to: AccountId32Like } }
+  /**
+   * Move the instance the signer holds, with the fee paid from the signer's account.
+   *
+   * The move refills the feeless move budget of [`Config::MaximumMoves`].
+   *
+   * Fails for an instance of a [`Transferability::Soulbound`] definition.
+   **/
+  | { name: 'TransferByHolder'; params: { instance: bigint; to: AccountId32Like } };
+
+export type IndivPalletScarcityTransferability = 'Transferable' | 'Soulbound';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11126,8 +11244,7 @@ export type PalletPsmCall =
    * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
    * caller minus the minting fee. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-   * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
-   * if that account cannot receive it.
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
    *
    * ## Parameters
    *
@@ -11174,9 +11291,8 @@ export type PalletPsmCall =
    * ## Details
    *
    * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-   * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
-   * receive it), then transfers the resulting amount in `external_asset` from the PSM
-   * reserve to the caller. The fee is
+   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+   * amount in `external_asset` from the PSM reserve to the caller. The fee is
    * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
    * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
    * was registered, allowing existing positions to unwind even if live metadata later
@@ -11236,8 +11352,7 @@ export type PalletPsmCall =
    * fungibles backend; must not already have a PSM registered.
    * - `full_admin`: Origin granted full management of the new PSM.
    * - `emergency_admin`: Origin granted emergency management of the new PSM.
-   * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
-   * it cannot receive the internal asset.
+   * - `fee_destination`: Account that will receive mint/redeem fees.
    * - `max_debt`: Initial absolute internal-asset debt ceiling.
    * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
    * Must be non-zero.
@@ -11245,7 +11360,6 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
-   * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
    * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
    * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
    * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -11260,8 +11374,8 @@ export type PalletPsmCall =
       name: 'CreatePsm';
       params: {
         internalAsset: StagingXcmV5Location;
-        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        fullAdmin: AssetHubPaseoRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPaseoRuntimeOriginCaller;
         feeDestination: AccountId32;
         maxDebt: bigint;
         minSwapAmount: bigint;
@@ -11435,10 +11549,6 @@ export type PalletPsmCall =
    * Snapshots the external asset's live decimals at registration time and
    * increments [`PsmInfo::external_count`].
    *
-   * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
-   * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
-   * `touch_other`).
-   *
    * ## Dispatch Origin
    *
    * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -11458,8 +11568,6 @@ export type PalletPsmCall =
    * fungibles backend.
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
-   * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
-   * `external_asset`.
    *
    * ## Events
    *
@@ -11512,7 +11620,6 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
-   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -11520,7 +11627,7 @@ export type PalletPsmCall =
    **/
   | {
       name: 'SetFullAdmin';
-      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPaseoRuntimeOriginCaller };
     }
   /**
    * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
@@ -11537,7 +11644,6 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
-   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -11545,7 +11651,7 @@ export type PalletPsmCall =
    **/
   | {
       name: 'SetEmergencyAdmin';
-      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPaseoRuntimeOriginCaller };
     };
 
 export type PalletPsmCallLike =
@@ -11562,8 +11668,7 @@ export type PalletPsmCallLike =
    * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
    * caller minus the minting fee. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-   * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
-   * if that account cannot receive it.
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
    *
    * ## Parameters
    *
@@ -11610,9 +11715,8 @@ export type PalletPsmCallLike =
    * ## Details
    *
    * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-   * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
-   * receive it), then transfers the resulting amount in `external_asset` from the PSM
-   * reserve to the caller. The fee is
+   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+   * amount in `external_asset` from the PSM reserve to the caller. The fee is
    * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
    * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
    * was registered, allowing existing positions to unwind even if live metadata later
@@ -11672,8 +11776,7 @@ export type PalletPsmCallLike =
    * fungibles backend; must not already have a PSM registered.
    * - `full_admin`: Origin granted full management of the new PSM.
    * - `emergency_admin`: Origin granted emergency management of the new PSM.
-   * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
-   * it cannot receive the internal asset.
+   * - `fee_destination`: Account that will receive mint/redeem fees.
    * - `max_debt`: Initial absolute internal-asset debt ceiling.
    * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
    * Must be non-zero.
@@ -11681,7 +11784,6 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
-   * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
    * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
    * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
    * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -11696,8 +11798,8 @@ export type PalletPsmCallLike =
       name: 'CreatePsm';
       params: {
         internalAsset: StagingXcmV5Location;
-        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        fullAdmin: AssetHubPaseoRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPaseoRuntimeOriginCaller;
         feeDestination: AccountId32Like;
         maxDebt: bigint;
         minSwapAmount: bigint;
@@ -11871,10 +11973,6 @@ export type PalletPsmCallLike =
    * Snapshots the external asset's live decimals at registration time and
    * increments [`PsmInfo::external_count`].
    *
-   * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
-   * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
-   * `touch_other`).
-   *
    * ## Dispatch Origin
    *
    * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -11894,8 +11992,6 @@ export type PalletPsmCallLike =
    * fungibles backend.
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
-   * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
-   * `external_asset`.
    *
    * ## Events
    *
@@ -11948,7 +12044,6 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
-   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -11956,7 +12051,7 @@ export type PalletPsmCallLike =
    **/
   | {
       name: 'SetFullAdmin';
-      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPaseoRuntimeOriginCaller };
     }
   /**
    * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
@@ -11973,7 +12068,6 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
-   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -11981,7 +12075,7 @@ export type PalletPsmCallLike =
    **/
   | {
       name: 'SetEmergencyAdmin';
-      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPaseoRuntimeOriginCaller };
     };
 
 export type PalletPsmCircuitBreakerLevel = 'AllEnabled' | 'MintingDisabled' | 'AllDisabled';
@@ -12573,7 +12667,7 @@ export type PalletReferendaCall =
   | {
       name: 'Submit';
       params: {
-        proposalOrigin: AssetHubPolkadotRuntimeOriginCaller;
+        proposalOrigin: AssetHubPaseoRuntimeOriginCaller;
         proposal: FrameSupportPreimagesBounded;
         enactmentMoment: FrameSupportScheduleDispatchTime;
       };
@@ -12672,7 +12766,7 @@ export type PalletReferendaCallLike =
   | {
       name: 'Submit';
       params: {
-        proposalOrigin: AssetHubPolkadotRuntimeOriginCaller;
+        proposalOrigin: AssetHubPaseoRuntimeOriginCaller;
         proposal: FrameSupportPreimagesBounded;
         enactmentMoment: FrameSupportScheduleDispatchTime;
       };
@@ -12775,8 +12869,7 @@ export type PalletWhitelistCall =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCall } }
-  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPaseoRuntimeRuntimeCall } };
 
 export type PalletWhitelistCallLike =
   | { name: 'WhitelistCall'; params: { callHash: H256 } }
@@ -12785,8 +12878,7 @@ export type PalletWhitelistCallLike =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike } }
-  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12935,21 +13027,7 @@ export type PalletBountiesCall =
    *
    * Emits `DepositPoked` if the deposit is updated.
    **/
-  | { name: 'PokeDeposit'; params: { bountyId: number } }
-  /**
-   * Reclaim funds stranded in a closed bounty's account back to the treasury.
-   *
-   * Permissionless. Moves all remaining assets from a closed bounty's account back to the
-   * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
-   * configuration.
-   *
-   * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
-   * used to grief the network. Emits `BountyFundsReclaimed` on success.
-   *
-   * ## Complexity
-   * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
-   **/
-  | { name: 'ReclaimBountyFunds'; params: { bountyId: number } };
+  | { name: 'PokeDeposit'; params: { bountyId: number } };
 
 export type PalletBountiesCallLike =
   /**
@@ -13095,21 +13173,7 @@ export type PalletBountiesCallLike =
    *
    * Emits `DepositPoked` if the deposit is updated.
    **/
-  | { name: 'PokeDeposit'; params: { bountyId: number } }
-  /**
-   * Reclaim funds stranded in a closed bounty's account back to the treasury.
-   *
-   * Permissionless. Moves all remaining assets from a closed bounty's account back to the
-   * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
-   * configuration.
-   *
-   * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
-   * used to grief the network. Emits `BountyFundsReclaimed` on success.
-   *
-   * ## Complexity
-   * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
-   **/
-  | { name: 'ReclaimBountyFunds'; params: { bountyId: number } };
+  | { name: 'PokeDeposit'; params: { bountyId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14088,6 +14152,172 @@ export type PalletMultiAssetBountiesCallLike =
    * Emits [`Event::BountyValueIncreased`] if successful.
    **/
   | { name: 'IncreaseValue'; params: { parentBountyId: number; amount: bigint } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletStateTrieMigrationCall =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<Bytes>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: Bytes; childKeys: Array<Bytes>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationCallLike =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<BytesLike>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationMigrationLimits = { size: number; item: number };
+
+export type PalletStateTrieMigrationMigrationTask = {
+  progressTop: PalletStateTrieMigrationProgress;
+  progressChild: PalletStateTrieMigrationProgress;
+  size: number;
+  topItems: number;
+  childItems: number;
+};
+
+export type PalletStateTrieMigrationProgress =
+  | { type: 'ToStart' }
+  | { type: 'LastKey'; value: Bytes }
+  | { type: 'Complete' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15202,12 +15432,12 @@ export type PalletElectionProviderMultiBlockUnsignedPalletCallLike =
   { name: 'SubmitUnsigned'; params: { pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution } };
 
 export type PalletElectionProviderMultiBlockPagedRawSolution = {
-  solutionPages: Array<AssetHubPolkadotRuntimeStakingNposCompactSolution16>;
+  solutionPages: Array<AssetHubPaseoRuntimeStakingNposCompactSolution16>;
   score: SpNposElectionsElectionScore;
   round: number;
 };
 
-export type AssetHubPolkadotRuntimeStakingNposCompactSolution16 = {
+export type AssetHubPaseoRuntimeStakingNposCompactSolution16 = {
   votes1: Array<[number, number]>;
   votes2: Array<[number, [number, PerU16], number]>;
   votes3: Array<[number, FixedArray<[number, PerU16], 2>, number]>;
@@ -15241,13 +15471,12 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
    *
    * `maybe_solution` can be set to `None` to erase the page.
    *
-   * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
-   * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
-   * part.
+   * Collects deposits from the signed origin based on [`Config::DepositBase`] and
+   * [`Config::DepositPerPage`].
    **/
   | {
       name: 'SubmitPage';
-      params: { page: number; maybeSolution?: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined };
+      params: { page: number; maybeSolution?: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined };
     }
   /**
    * Retract a submission.
@@ -15271,12 +15500,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
    *
    * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
    **/
-  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32> } }
-  /**
-   * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
-   * call it for any round. Free on success, normal fee on failure to discourage spam.
-   **/
-  | { name: 'ClaimUnpaidReward'; params: { round: number } };
+  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32> } };
 
 export type PalletElectionProviderMultiBlockSignedPalletCallLike =
   /**
@@ -15290,13 +15514,12 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    *
    * `maybe_solution` can be set to `None` to erase the page.
    *
-   * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
-   * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
-   * part.
+   * Collects deposits from the signed origin based on [`Config::DepositBase`] and
+   * [`Config::DepositPerPage`].
    **/
   | {
       name: 'SubmitPage';
-      params: { page: number; maybeSolution?: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined };
+      params: { page: number; maybeSolution?: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined };
     }
   /**
    * Retract a submission.
@@ -15320,12 +15543,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    *
    * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
    **/
-  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32Like> } }
-  /**
-   * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
-   * call it for any round. Free on success, normal fee on failure to discourage spam.
-   **/
-  | { name: 'ClaimUnpaidReward'; params: { round: number } };
+  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32Like> } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15609,9 +15827,6 @@ export type PalletStakingAsyncPalletCall =
    * should be filled in order for the `chill_other` transaction to work.
    * * `min_commission`: The minimum amount of commission that each validators must maintain.
    * This is checked only upon calling `validate`. Existing validators are not affected.
-   * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
-   * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
-   * inactivity.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -15629,7 +15844,6 @@ export type PalletStakingAsyncPalletCall =
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
-        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
       };
     }
   /**
@@ -15821,24 +16035,7 @@ export type PalletStakingAsyncPalletCall =
         hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
         selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
       };
-    }
-  /**
-   * Chill an inactive validator.
-   *
-   * This extrinsic can be called by anyone, given that the valid inactivity proof is
-   * provided. Inactivity proof is a vector of eras where the given validator was inactive.
-   *
-   * Requirements for the inactivity proof:
-   * - The length must be equal to [`ChillInactiveThreshold`].
-   * - It must be sorted in ascending order.
-   * - It must not contain duplicate entries.
-   * - For every era the `stash` account must be exposed.
-   * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
-   * - Every era must be less than the active era.
-   *
-   * On a successfull execution, caller doesn't pay fees.
-   **/
-  | { name: 'ChillInactive'; params: { stash: AccountId32; proof: Array<number> } };
+    };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -16119,9 +16316,6 @@ export type PalletStakingAsyncPalletCallLike =
    * should be filled in order for the `chill_other` transaction to work.
    * * `min_commission`: The minimum amount of commission that each validators must maintain.
    * This is checked only upon calling `validate`. Existing validators are not affected.
-   * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
-   * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
-   * inactivity.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -16139,7 +16333,6 @@ export type PalletStakingAsyncPalletCallLike =
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
-        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
       };
     }
   /**
@@ -16331,24 +16524,7 @@ export type PalletStakingAsyncPalletCallLike =
         hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
         selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
       };
-    }
-  /**
-   * Chill an inactive validator.
-   *
-   * This extrinsic can be called by anyone, given that the valid inactivity proof is
-   * provided. Inactivity proof is a vector of eras where the given validator was inactive.
-   *
-   * Requirements for the inactivity proof:
-   * - The length must be equal to [`ChillInactiveThreshold`].
-   * - It must be sorted in ascending order.
-   * - It must not contain duplicate entries.
-   * - For every era the `stash` account must be exposed.
-   * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
-   * - Every era must be less than the active era.
-   *
-   * On a successfull execution, caller doesn't pay fees.
-   **/
-  | { name: 'ChillInactive'; params: { stash: AccountId32Like; proof: Array<number> } };
+    };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -16386,512 +16562,253 @@ export type PalletStakingAsyncLedgerUnlockChunk = { value: bigint; era: number }
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletReviveCall =
+export type IndivPalletNftClaimsCall =
   /**
-   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   * Stores the credit trees of a batch sent by the game pallet.
    *
-   * # Parameters
+   * ## Origin
+   * Requires the game chain's XCM origin (`EnsureGameChainOrigin`).
    *
-   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * This does not store a tree past its deadline, nor one for a block whose tree it holds
+   * already.
    *
-   * # Note
-   *
-   * This call cannot be dispatched directly; attempting to do so will result in a failed
-   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
-   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
-   * signer and validating the transaction.
+   * ## Parameters
+   * - `batch`: The credit trees to store, in ascending block order.
    **/
-  | { name: 'EthTransact'; params: { payload: Bytes } }
+  | { name: 'ReceiveCreditTrees'; params: { batch: IndivSupportCreditTreesCreditTreeBatch } }
   /**
-   * Makes a call to an account, optionally transferring some balance.
+   * Mints the NFT of one NFT claim credit the game chain committed in `block`'s tree.
    *
-   * # Parameters
+   * The credit is spent by the claim: its leaf is recorded, and a second claim of the same
+   * credit fails, whoever submits it.
    *
-   * * `dest`: Address of the contract to call.
-   * * `value`: The balance to transfer from the `origin` to `dest`.
-   * * `weight_limit`: The weight limit enforced when executing the constructor.
-   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
-   * caller to pay for the storage consumed.
-   * * `data`: The input data to pass to the contract.
+   * ## Origin
+   * The signer of the claimant the credit was awarded to ([`Config::EnsureClaimant`]).
    *
-   * * If the account is a smart-contract account, the associated code will be
-   * executed and any value will be transferred.
-   * * If the account is a regular account, any value will be transferred.
-   * * If no account exists and the call value is not less than `existential_deposit`,
-   * a regular account will be created and any value will be transferred.
+   * ## Parameters
+   * - `claimant`: Which of the signer's identities the credit was awarded to. A person
+   * claims as [`ClaimantKind::Person`], which resolves to the alias their account is bound
+   * to.
+   * - `block`: The People-chain block whose tree committed the credit, which is the tree the
+   * proof is verified against. It is at or after the block the credit was earned in.
+   * - `credit`: The credit being claimed. Hashed together with the origin's identity into
+   * the leaf, so a credit of somebody else's rehashes to a leaf that is in no tree.
+   * - `leaf_index`: The position of that leaf in the block's leaves, in award order.
+   * - `proof`: The sibling hashes that rehash the leaf up to the tree's root, bottom layer
+   * first, as the game chain's `nft_claim_credit_proofs` returns them.
+   * - `collection`: The Scarcity collection the NFT is minted into, which has to be
+   * registered through [`Pallet::set_collection_minter`]. Its [`ItemSelection`] decides
+   * the item.
+   * - `mint_to`: The Scarcity purse key the NFT is minted to. A purse key holds one NFT, so
+   * this has to be an empty one, and holders are meant to use a fresh key they control
+   * rather than an account that already holds something.
+   *
+   * The claim that spends the tree's last credit also removes the tree and queues its
+   * deletion for the game chain, and the call is charged for that. The claims that came
+   * before decide which claim that is, not the call's arguments, so a claim that leaves
+   * credits behind is refunded down to a plain claim of the kind the call names. A
+   * contract-registered collection also reserves [`CollectionSelector::max_weight`],
+   * refunded down to what the selection consumed, including on the error path.
    **/
   | {
-      name: 'Call';
+      name: 'Claim';
       params: {
-        dest: H160;
-        value: bigint;
-        weightLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
-        data: Bytes;
+        claimant: IndivPalletNftClaimsClaimantKind;
+        block: number;
+        credit: FixedBytes<32>;
+        leafIndex: number;
+        proof: Array<IndivSupportCreditTreesCreditProofNode>;
+        collection: number;
+        mintTo: AccountId32;
       };
     }
   /**
-   * Instantiates a contract from a previously deployed vm binary.
+   * Registers `collection` for claims with `selection` deciding the minted item, or
+   * withdraws it with `None`.
    *
-   * This function is identical to [`Self::instantiate_with_code`] but without the
-   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
-   * must be supplied.
+   * Registration is the owner's opt-in to deposit-free supply growth: without it no claim
+   * can mint into the collection. Withdrawing stops further claims and spends nothing
+   * already claimed. Deleting the collection or handing it to a new owner clears its
+   * registration through [`indiv_pallet_scarcity::OnCollectionDeleted`] and
+   * [`indiv_pallet_scarcity::OnCollectionOwnerChanged`], so a new owner has to register
+   * again. A contract selection is validated through [`CollectionSelector::validate`], so
+   * an address with no code fails here rather than on the first claim.
+   *
+   * Registering a contract selection commits the owner's funds: the owner pays the
+   * storage deposit of every minter call, up to the runtime's per-call limit. The
+   * claimant pays for the contract's execution, on failure too.
+   *
+   * ## Origin
+   * The collection's Scarcity owner.
+   *
+   * ## Parameters
+   * - `collection`: The Scarcity collection to register or withdraw.
+   * - `selection`: How claims pick the item to mint, or `None` to withdraw.
    **/
   | {
-      name: 'Instantiate';
-      params: {
-        value: bigint;
-        weightLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
-        codeHash: H256;
-        data: Bytes;
-        salt?: FixedBytes<32> | undefined;
-      };
+      name: 'SetCollectionMinter';
+      params: { collection: number; selection?: IndivPalletNftClaimsItemSelection | undefined };
     }
   /**
-   * Instantiates a new contract from the supplied `code` optionally transferring
-   * some balance.
+   * Removes the trees whose deadline has passed, oldest first, and queues their deletion
+   * for the game chain.
    *
-   * This dispatchable has the same effect as calling [`Self::upload_code`] +
-   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
-   * also check the documentation of [`Self::upload_code`].
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
    *
-   * # Parameters
-   *
-   * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `weight_limit`: The weight limit enforced when executing the constructor.
-   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
-   * from the caller to pay for the storage consumed.
-   * * `code`: The contract code to deploy in raw bytes.
-   * * `data`: The input data to pass to the contract constructor.
-   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
-   * semantics are used. If `None` then `CRATE1` is used.
-   *
-   *
-   * Instantiation is executed as follows:
-   *
-   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
-   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
-   * - The destination address is computed based on the sender, code_hash and the salt.
-   * - The smart-contract account is created at the computed address.
-   * - The `value` is transferred to the new account.
-   * - The `deploy` function is executed in the context of the newly-created account.
+   * `oldest` must be the timestamp [`TreeExpiries`] holds its oldest entry under, which
+   * makes a retry that raced a successful sweep stale instead of a second pass. One call
+   * removes at most [`Config::MaxTreeDeletionsPerMessage`] trees, so clearing more trees
+   * than that takes several blocks.
    **/
-  | {
-      name: 'InstantiateWithCode';
-      params: {
-        value: bigint;
-        weightLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
-        code: Bytes;
-        data: Bytes;
-        salt?: FixedBytes<32> | undefined;
-      };
-    }
+  | { name: 'SweepExpiredTrees'; params: { oldest: number; discriminator: number } }
   /**
-   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
-   * by an EVM transaction through the EVM compatibility layer.
+   * Tells the game chain about the queued tree deletions that fit one XCM message.
    *
-   * # Parameters
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
    *
-   * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-   * payment
-   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-   * * `code`: The contract code to deploy in raw bytes.
-   * * `data`: The input data to pass to the contract constructor.
-   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-   * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
-   *
-   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
-   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
-   * also bumps the nonce after contract instantiation, since it may be invoked multiple
-   * times within a batch call transaction.
+   * `front` must be the block at the front of [`PendingTreeDeletions`], which a successful
+   * send replaces. A retry that raced that send is stale instead of a second send. The next
+   * batch's send names a new front, so it carries a transaction hash of its own.
    **/
-  | {
-      name: 'EthInstantiateWithCode';
-      params: {
-        value: U256;
-        weightLimit: SpWeightsWeightV2Weight;
-        ethGasLimit: U256;
-        code: Bytes;
-        data: Bytes;
-        transactionEncoded: Bytes;
-        effectiveGasPrice: U256;
-        encodedLen: number;
-      };
-    }
-  /**
-   * Same as [`Self::call`], but intended to be dispatched **only**
-   * by an EVM transaction through the EVM compatibility layer.
-   *
-   * # Parameters
-   *
-   * * `dest`: The Ethereum address of the account to be called
-   * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-   * payment
-   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-   * * `data`: The input data to pass to the contract constructor.
-   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-   * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
-   **/
-  | {
-      name: 'EthCall';
-      params: {
-        dest: H160;
-        value: U256;
-        weightLimit: SpWeightsWeightV2Weight;
-        ethGasLimit: U256;
-        data: Bytes;
-        transactionEncoded: Bytes;
-        effectiveGasPrice: U256;
-        encodedLen: number;
-      };
-    }
-  /**
-   * Executes a Substrate runtime call from an Ethereum transaction.
-   *
-   * This dispatchable is intended to be called **only** through the EVM compatibility
-   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
-   *
-   * # Parameters
-   *
-   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
-   * * `call`: The Substrate runtime call to execute.
-   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
-   **/
-  | { name: 'EthSubstrateCall'; params: { call: AssetHubPolkadotRuntimeRuntimeCall; transactionEncoded: Bytes } }
-  /**
-   * Upload new `code` without instantiating a contract from it.
-   *
-   * If the code does not already exist a deposit is reserved from the caller
-   * The size of the reserve depends on the size of the supplied `code`.
-   *
-   * # Note
-   *
-   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
-   * To avoid this situation a constructor could employ access control so that it can
-   * only be instantiated by permissioned entities. The same is true when uploading
-   * through [`Self::instantiate_with_code`].
-   *
-   * If the refcount of the code reaches zero after terminating the last contract that
-   * references this code, the code will be removed automatically.
-   **/
-  | { name: 'UploadCode'; params: { code: Bytes; storageDepositLimit: bigint } }
-  /**
-   * Remove the code stored under `code_hash` and refund the deposit to its owner.
-   *
-   * A code can only be removed by its original uploader (its owner) and only if it is
-   * not used by any contract.
-   **/
-  | { name: 'RemoveCode'; params: { codeHash: H256 } }
-  /**
-   * Privileged function that changes the code of an existing contract.
-   *
-   * This takes care of updating refcounts and all other necessary operations. Returns
-   * an error if either the `code_hash` or `dest` do not exist.
-   *
-   * # Note
-   *
-   * This does **not** change the address of the contract in question. This means
-   * that the contract address is no longer derived from its code hash after calling
-   * this dispatchable.
-   **/
-  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
-  /**
-   * Register the callers account id so that it can be used in contract interactions.
-   *
-   * This will error if the origin is already mapped or is a eth native `Address20`. It will
-   * take a deposit that can be released by calling [`Self::unmap_account`].
-   *
-   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
-   * on creation via [`AutoMapper`].
-   **/
-  | { name: 'MapAccount' }
-  /**
-   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
-   **/
-  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32> } }
-  /**
-   * Unregister the callers account id in order to free the deposit.
-   *
-   * There is no reason to ever call this function other than freeing up the deposit.
-   * This is only useful when the account should no longer be used.
-   *
-   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
-   * on kill via [`AutoMapper`].
-   **/
-  | { name: 'UnmapAccount' }
-  /**
-   * Dispatch an `call` with the origin set to the callers fallback address.
-   *
-   * Every `AccountId32` can control its corresponding fallback account. The fallback account
-   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
-   * recovery function in case an `AccountId20` was used without creating a mapping first.
-   **/
-  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPolkadotRuntimeRuntimeCall } };
+  | { name: 'SendTreeDeletions'; params: { front: number; discriminator: number } };
 
-export type PalletReviveCallLike =
+export type IndivPalletNftClaimsCallLike =
   /**
-   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   * Stores the credit trees of a batch sent by the game pallet.
    *
-   * # Parameters
+   * ## Origin
+   * Requires the game chain's XCM origin (`EnsureGameChainOrigin`).
    *
-   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * This does not store a tree past its deadline, nor one for a block whose tree it holds
+   * already.
    *
-   * # Note
-   *
-   * This call cannot be dispatched directly; attempting to do so will result in a failed
-   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
-   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
-   * signer and validating the transaction.
+   * ## Parameters
+   * - `batch`: The credit trees to store, in ascending block order.
    **/
-  | { name: 'EthTransact'; params: { payload: BytesLike } }
+  | { name: 'ReceiveCreditTrees'; params: { batch: IndivSupportCreditTreesCreditTreeBatch } }
   /**
-   * Makes a call to an account, optionally transferring some balance.
+   * Mints the NFT of one NFT claim credit the game chain committed in `block`'s tree.
    *
-   * # Parameters
+   * The credit is spent by the claim: its leaf is recorded, and a second claim of the same
+   * credit fails, whoever submits it.
    *
-   * * `dest`: Address of the contract to call.
-   * * `value`: The balance to transfer from the `origin` to `dest`.
-   * * `weight_limit`: The weight limit enforced when executing the constructor.
-   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
-   * caller to pay for the storage consumed.
-   * * `data`: The input data to pass to the contract.
+   * ## Origin
+   * The signer of the claimant the credit was awarded to ([`Config::EnsureClaimant`]).
    *
-   * * If the account is a smart-contract account, the associated code will be
-   * executed and any value will be transferred.
-   * * If the account is a regular account, any value will be transferred.
-   * * If no account exists and the call value is not less than `existential_deposit`,
-   * a regular account will be created and any value will be transferred.
+   * ## Parameters
+   * - `claimant`: Which of the signer's identities the credit was awarded to. A person
+   * claims as [`ClaimantKind::Person`], which resolves to the alias their account is bound
+   * to.
+   * - `block`: The People-chain block whose tree committed the credit, which is the tree the
+   * proof is verified against. It is at or after the block the credit was earned in.
+   * - `credit`: The credit being claimed. Hashed together with the origin's identity into
+   * the leaf, so a credit of somebody else's rehashes to a leaf that is in no tree.
+   * - `leaf_index`: The position of that leaf in the block's leaves, in award order.
+   * - `proof`: The sibling hashes that rehash the leaf up to the tree's root, bottom layer
+   * first, as the game chain's `nft_claim_credit_proofs` returns them.
+   * - `collection`: The Scarcity collection the NFT is minted into, which has to be
+   * registered through [`Pallet::set_collection_minter`]. Its [`ItemSelection`] decides
+   * the item.
+   * - `mint_to`: The Scarcity purse key the NFT is minted to. A purse key holds one NFT, so
+   * this has to be an empty one, and holders are meant to use a fresh key they control
+   * rather than an account that already holds something.
+   *
+   * The claim that spends the tree's last credit also removes the tree and queues its
+   * deletion for the game chain, and the call is charged for that. The claims that came
+   * before decide which claim that is, not the call's arguments, so a claim that leaves
+   * credits behind is refunded down to a plain claim of the kind the call names. A
+   * contract-registered collection also reserves [`CollectionSelector::max_weight`],
+   * refunded down to what the selection consumed, including on the error path.
    **/
   | {
-      name: 'Call';
+      name: 'Claim';
       params: {
-        dest: H160;
-        value: bigint;
-        weightLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
-        data: BytesLike;
+        claimant: IndivPalletNftClaimsClaimantKind;
+        block: number;
+        credit: FixedBytes<32>;
+        leafIndex: number;
+        proof: Array<IndivSupportCreditTreesCreditProofNode>;
+        collection: number;
+        mintTo: AccountId32Like;
       };
     }
   /**
-   * Instantiates a contract from a previously deployed vm binary.
+   * Registers `collection` for claims with `selection` deciding the minted item, or
+   * withdraws it with `None`.
    *
-   * This function is identical to [`Self::instantiate_with_code`] but without the
-   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
-   * must be supplied.
+   * Registration is the owner's opt-in to deposit-free supply growth: without it no claim
+   * can mint into the collection. Withdrawing stops further claims and spends nothing
+   * already claimed. Deleting the collection or handing it to a new owner clears its
+   * registration through [`indiv_pallet_scarcity::OnCollectionDeleted`] and
+   * [`indiv_pallet_scarcity::OnCollectionOwnerChanged`], so a new owner has to register
+   * again. A contract selection is validated through [`CollectionSelector::validate`], so
+   * an address with no code fails here rather than on the first claim.
+   *
+   * Registering a contract selection commits the owner's funds: the owner pays the
+   * storage deposit of every minter call, up to the runtime's per-call limit. The
+   * claimant pays for the contract's execution, on failure too.
+   *
+   * ## Origin
+   * The collection's Scarcity owner.
+   *
+   * ## Parameters
+   * - `collection`: The Scarcity collection to register or withdraw.
+   * - `selection`: How claims pick the item to mint, or `None` to withdraw.
    **/
   | {
-      name: 'Instantiate';
-      params: {
-        value: bigint;
-        weightLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
-        codeHash: H256;
-        data: BytesLike;
-        salt?: FixedBytes<32> | undefined;
-      };
+      name: 'SetCollectionMinter';
+      params: { collection: number; selection?: IndivPalletNftClaimsItemSelection | undefined };
     }
   /**
-   * Instantiates a new contract from the supplied `code` optionally transferring
-   * some balance.
+   * Removes the trees whose deadline has passed, oldest first, and queues their deletion
+   * for the game chain.
    *
-   * This dispatchable has the same effect as calling [`Self::upload_code`] +
-   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
-   * also check the documentation of [`Self::upload_code`].
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
    *
-   * # Parameters
-   *
-   * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `weight_limit`: The weight limit enforced when executing the constructor.
-   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
-   * from the caller to pay for the storage consumed.
-   * * `code`: The contract code to deploy in raw bytes.
-   * * `data`: The input data to pass to the contract constructor.
-   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
-   * semantics are used. If `None` then `CRATE1` is used.
-   *
-   *
-   * Instantiation is executed as follows:
-   *
-   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
-   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
-   * - The destination address is computed based on the sender, code_hash and the salt.
-   * - The smart-contract account is created at the computed address.
-   * - The `value` is transferred to the new account.
-   * - The `deploy` function is executed in the context of the newly-created account.
+   * `oldest` must be the timestamp [`TreeExpiries`] holds its oldest entry under, which
+   * makes a retry that raced a successful sweep stale instead of a second pass. One call
+   * removes at most [`Config::MaxTreeDeletionsPerMessage`] trees, so clearing more trees
+   * than that takes several blocks.
    **/
-  | {
-      name: 'InstantiateWithCode';
-      params: {
-        value: bigint;
-        weightLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
-        code: BytesLike;
-        data: BytesLike;
-        salt?: FixedBytes<32> | undefined;
-      };
-    }
+  | { name: 'SweepExpiredTrees'; params: { oldest: number; discriminator: number } }
   /**
-   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
-   * by an EVM transaction through the EVM compatibility layer.
+   * Tells the game chain about the queued tree deletions that fit one XCM message.
    *
-   * # Parameters
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
    *
-   * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-   * payment
-   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-   * * `code`: The contract code to deploy in raw bytes.
-   * * `data`: The input data to pass to the contract constructor.
-   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-   * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
-   *
-   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
-   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
-   * also bumps the nonce after contract instantiation, since it may be invoked multiple
-   * times within a batch call transaction.
+   * `front` must be the block at the front of [`PendingTreeDeletions`], which a successful
+   * send replaces. A retry that raced that send is stale instead of a second send. The next
+   * batch's send names a new front, so it carries a transaction hash of its own.
    **/
-  | {
-      name: 'EthInstantiateWithCode';
-      params: {
-        value: U256;
-        weightLimit: SpWeightsWeightV2Weight;
-        ethGasLimit: U256;
-        code: BytesLike;
-        data: BytesLike;
-        transactionEncoded: BytesLike;
-        effectiveGasPrice: U256;
-        encodedLen: number;
-      };
-    }
-  /**
-   * Same as [`Self::call`], but intended to be dispatched **only**
-   * by an EVM transaction through the EVM compatibility layer.
-   *
-   * # Parameters
-   *
-   * * `dest`: The Ethereum address of the account to be called
-   * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-   * payment
-   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-   * * `data`: The input data to pass to the contract constructor.
-   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-   * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
-   **/
-  | {
-      name: 'EthCall';
-      params: {
-        dest: H160;
-        value: U256;
-        weightLimit: SpWeightsWeightV2Weight;
-        ethGasLimit: U256;
-        data: BytesLike;
-        transactionEncoded: BytesLike;
-        effectiveGasPrice: U256;
-        encodedLen: number;
-      };
-    }
-  /**
-   * Executes a Substrate runtime call from an Ethereum transaction.
-   *
-   * This dispatchable is intended to be called **only** through the EVM compatibility
-   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
-   *
-   * # Parameters
-   *
-   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
-   * * `call`: The Substrate runtime call to execute.
-   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
-   **/
-  | {
-      name: 'EthSubstrateCall';
-      params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
-    }
-  /**
-   * Upload new `code` without instantiating a contract from it.
-   *
-   * If the code does not already exist a deposit is reserved from the caller
-   * The size of the reserve depends on the size of the supplied `code`.
-   *
-   * # Note
-   *
-   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
-   * To avoid this situation a constructor could employ access control so that it can
-   * only be instantiated by permissioned entities. The same is true when uploading
-   * through [`Self::instantiate_with_code`].
-   *
-   * If the refcount of the code reaches zero after terminating the last contract that
-   * references this code, the code will be removed automatically.
-   **/
-  | { name: 'UploadCode'; params: { code: BytesLike; storageDepositLimit: bigint } }
-  /**
-   * Remove the code stored under `code_hash` and refund the deposit to its owner.
-   *
-   * A code can only be removed by its original uploader (its owner) and only if it is
-   * not used by any contract.
-   **/
-  | { name: 'RemoveCode'; params: { codeHash: H256 } }
-  /**
-   * Privileged function that changes the code of an existing contract.
-   *
-   * This takes care of updating refcounts and all other necessary operations. Returns
-   * an error if either the `code_hash` or `dest` do not exist.
-   *
-   * # Note
-   *
-   * This does **not** change the address of the contract in question. This means
-   * that the contract address is no longer derived from its code hash after calling
-   * this dispatchable.
-   **/
-  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
-  /**
-   * Register the callers account id so that it can be used in contract interactions.
-   *
-   * This will error if the origin is already mapped or is a eth native `Address20`. It will
-   * take a deposit that can be released by calling [`Self::unmap_account`].
-   *
-   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
-   * on creation via [`AutoMapper`].
-   **/
-  | { name: 'MapAccount' }
-  /**
-   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
-   **/
-  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32Like> } }
-  /**
-   * Unregister the callers account id in order to free the deposit.
-   *
-   * There is no reason to ever call this function other than freeing up the deposit.
-   * This is only useful when the account should no longer be used.
-   *
-   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
-   * on kill via [`AutoMapper`].
-   **/
-  | { name: 'UnmapAccount' }
-  /**
-   * Dispatch an `call` with the origin set to the callers fallback address.
-   *
-   * Every `AccountId32` can control its corresponding fallback account. The fallback account
-   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
-   * recovery function in case an `AccountId20` was used without creating a mapping first.
-   **/
-  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike } };
+  | { name: 'SendTreeDeletions'; params: { front: number; discriminator: number } };
+
+export type IndivSupportCreditTreesCreditTreeBatch = {
+  sourceTime: bigint;
+  trees: Array<IndivSupportCreditTreesCreditTreeDelivery>;
+};
+
+export type IndivSupportCreditTreesCreditTreeDelivery = {
+  sequence?: bigint | undefined;
+  block: number;
+  tree: IndivSupportCreditTreesNftClaimCreditTree;
+};
+
+export type IndivSupportCreditTreesNftClaimCreditTree = {
+  gameIndex: number;
+  root: IndivSupportCreditTreesCreditProofNode;
+  leafCount: number;
+  timestamp: number;
+};
+
+export type IndivSupportCreditTreesCreditProofNode = FixedBytes<32>;
+
+export type IndivPalletNftClaimsClaimantKind = 'Account' | 'Person';
+
+export type IndivPalletNftClaimsItemSelection = { type: 'Random' } | { type: 'Contract'; value: H160 };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -17302,6 +17219,513 @@ export type IndivPalletPgasCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletReviveCall =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | { name: 'EthTransact'; params: { payload: Bytes } }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: Bytes;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed vm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: Bytes;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   *
+   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+   * also bumps the nonce after contract instantiation, since it may be invoked multiple
+   * times within a batch call transaction.
+   **/
+  | {
+      name: 'EthInstantiateWithCode';
+      params: {
+        value: U256;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
+        code: Bytes;
+        data: Bytes;
+        transactionEncoded: Bytes;
+        effectiveGasPrice: U256;
+        encodedLen: number;
+      };
+    }
+  /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * # Parameters
+   *
+   * * `dest`: The Ethereum address of the account to be called
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   **/
+  | {
+      name: 'EthCall';
+      params: {
+        dest: H160;
+        value: U256;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
+        data: Bytes;
+        transactionEncoded: Bytes;
+        effectiveGasPrice: U256;
+        encodedLen: number;
+      };
+    }
+  /**
+   * Executes a Substrate runtime call from an Ethereum transaction.
+   *
+   * This dispatchable is intended to be called **only** through the EVM compatibility
+   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+   *
+   * # Parameters
+   *
+   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+   * * `call`: The Substrate runtime call to execute.
+   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+   **/
+  | { name: 'EthSubstrateCall'; params: { call: AssetHubPaseoRuntimeRuntimeCall; transactionEncoded: Bytes } }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * The size of the reserve depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   *
+   * If the refcount of the code reaches zero after terminating the last contract that
+   * references this code, the code will be removed automatically.
+   **/
+  | { name: 'UploadCode'; params: { code: Bytes; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+   **/
+  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32> } }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPaseoRuntimeRuntimeCall } };
+
+export type PalletReviveCallLike =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | { name: 'EthTransact'; params: { payload: BytesLike } }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: BytesLike;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed vm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: BytesLike;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   *
+   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+   * also bumps the nonce after contract instantiation, since it may be invoked multiple
+   * times within a batch call transaction.
+   **/
+  | {
+      name: 'EthInstantiateWithCode';
+      params: {
+        value: U256;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
+        code: BytesLike;
+        data: BytesLike;
+        transactionEncoded: BytesLike;
+        effectiveGasPrice: U256;
+        encodedLen: number;
+      };
+    }
+  /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * # Parameters
+   *
+   * * `dest`: The Ethereum address of the account to be called
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   **/
+  | {
+      name: 'EthCall';
+      params: {
+        dest: H160;
+        value: U256;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
+        data: BytesLike;
+        transactionEncoded: BytesLike;
+        effectiveGasPrice: U256;
+        encodedLen: number;
+      };
+    }
+  /**
+   * Executes a Substrate runtime call from an Ethereum transaction.
+   *
+   * This dispatchable is intended to be called **only** through the EVM compatibility
+   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+   *
+   * # Parameters
+   *
+   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+   * * `call`: The Substrate runtime call to execute.
+   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+   **/
+  | { name: 'EthSubstrateCall'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike; transactionEncoded: BytesLike } }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * The size of the reserve depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   *
+   * If the refcount of the code reaches zero after terminating the last contract that
+   * references this code, the code will be removed automatically.
+   **/
+  | { name: 'UploadCode'; params: { code: BytesLike; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+   **/
+  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32Like> } }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type IndivPalletDotnsGatewayCall =
   /**
    * Reserves a lite-person label on `DotnsPopController` (via `RootGatewayDispatcher`)
@@ -17316,10 +17740,9 @@ export type IndivPalletDotnsGatewayCall =
    * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
    * signer of `candidate_signature`.
    * - `candidate_signature`: signature over the bytes returned by
-   * `Pallet::construct_reservation_message` in the personhood signing context (see
-   * [`Pallet::account_signing_payload`]). The message is a SCALE-encoded tuple binding the
-   * attester, candidate, the candidate's chosen *base* username and chat key. The digit
-   * suffix of `lite_label` is **not** part of the signed message (the digits are allocated
+   * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
+   * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
+   * `lite_label` is **not** part of the signed message (the digits are allocated
    * server-side after the candidate signs, so the candidate cannot commit to them at
    * signing time).
    * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
@@ -17401,10 +17824,9 @@ export type IndivPalletDotnsGatewayCallLike =
    * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
    * signer of `candidate_signature`.
    * - `candidate_signature`: signature over the bytes returned by
-   * `Pallet::construct_reservation_message` in the personhood signing context (see
-   * [`Pallet::account_signing_payload`]). The message is a SCALE-encoded tuple binding the
-   * attester, candidate, the candidate's chosen *base* username and chat key. The digit
-   * suffix of `lite_label` is **not** part of the signed message (the digits are allocated
+   * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
+   * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
+   * `lite_label` is **not** part of the signed message (the digits are allocated
    * server-side after the candidate signs, so the candidate cannot commit to them at
    * signing time).
    * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
@@ -17488,19 +17910,16 @@ export type IndivPalletOriginRestrictionCall =
    * Allow to clean usage associated with an entity when it is zero or when there is no
    * longer any allowance for the origin.
    **/
-  { name: 'CleanUsage'; params: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity } };
+  { name: 'CleanUsage'; params: { entity: AssetHubPaseoRuntimeRestrictedEntity } };
 
 export type IndivPalletOriginRestrictionCallLike =
   /**
    * Allow to clean usage associated with an entity when it is zero or when there is no
    * longer any allowance for the origin.
    **/
-  { name: 'CleanUsage'; params: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity } };
+  { name: 'CleanUsage'; params: { entity: AssetHubPaseoRuntimeRestrictedEntity } };
 
-export type AssetHubPolkadotRuntimeIndividualityRestrictedEntity = {
-  type: 'DotnsPersonRegistration';
-  value: FixedBytes<32>;
-};
+export type AssetHubPaseoRuntimeRestrictedEntity = { type: 'DotnsPersonRegistration'; value: FixedBytes<32> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -17516,6 +17935,76 @@ export type IndivPalletNetworkSuffixCallLike =
    * Set the network suffix used by all product-context derivations.
    **/
   { name: 'SetNetworkSuffix'; params: { networkSuffix: BytesLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletSudoCall =
+  /**
+   * Authenticates the sudo key and dispatches a function call with `Root` origin.
+   **/
+  | { name: 'Sudo'; params: { call: AssetHubPaseoRuntimeRuntimeCall } }
+  /**
+   * Authenticates the sudo key and dispatches a function call with `Root` origin.
+   * This function does not check the weight of the call, and instead allows the
+   * Sudo user to specify the weight of the call.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   **/
+  | { name: 'SudoUncheckedWeight'; params: { call: AssetHubPaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
+   * key.
+   **/
+  | { name: 'SetKey'; params: { new: MultiAddress } }
+  /**
+   * Authenticates the sudo key and dispatches a function call with `Signed` origin from
+   * a given account.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   **/
+  | { name: 'SudoAs'; params: { who: MultiAddress; call: AssetHubPaseoRuntimeRuntimeCall } }
+  /**
+   * Permanently removes the sudo key.
+   *
+   * **This cannot be un-done.**
+   **/
+  | { name: 'RemoveKey' };
+
+export type PalletSudoCallLike =
+  /**
+   * Authenticates the sudo key and dispatches a function call with `Root` origin.
+   **/
+  | { name: 'Sudo'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike } }
+  /**
+   * Authenticates the sudo key and dispatches a function call with `Root` origin.
+   * This function does not check the weight of the call, and instead allows the
+   * Sudo user to specify the weight of the call.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   **/
+  | {
+      name: 'SudoUncheckedWeight';
+      params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
+    }
+  /**
+   * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
+   * key.
+   **/
+  | { name: 'SetKey'; params: { new: MultiAddressLike } }
+  /**
+   * Authenticates the sudo key and dispatches a function call with `Signed` origin from
+   * a given account.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   **/
+  | { name: 'SudoAs'; params: { who: MultiAddressLike; call: AssetHubPaseoRuntimeRuntimeCallLike } }
+  /**
+   * Permanently removes the sudo key.
+   *
+   * **This cannot be un-done.**
+   **/
+  | { name: 'RemoveKey' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -17704,6 +18193,13 @@ export type PalletVerifySignatureExtensionVerifySignature =
   | { type: 'Disabled' }
   | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } };
 
+export type IndivPalletScarcityExtensionAsScarcity = IndivPalletScarcityExtensionAsScarcityInfo | undefined;
+
+export type IndivPalletScarcityExtensionAsScarcityInfo = {
+  type: 'AsNft';
+  value: { instance: bigint; stateNonce: bigint };
+};
+
 export type IndivPalletPgasExtensionAsPgas = IndivPalletPgasExtensionAsPgasInfo | undefined;
 
 export type IndivPalletPgasExtensionAsPgasInfo =
@@ -17762,9 +18258,9 @@ export type FrameSupportDispatchPerDispatchClass = {
   mandatory: SpWeightsWeightV2Weight;
 };
 
-export type FrameSystemEventRecord = { phase: Phase; event: AssetHubPolkadotRuntimeRuntimeEvent; topics: Array<H256> };
+export type FrameSystemEventRecord = { phase: Phase; event: AssetHubPaseoRuntimeRuntimeEvent; topics: Array<H256> };
 
-export type AssetHubPolkadotRuntimeRuntimeEvent =
+export type AssetHubPaseoRuntimeRuntimeEvent =
   | { pallet: 'System'; palletEvent: FrameSystemEvent }
   | { pallet: 'ParachainSystem'; palletEvent: CumulusPalletParachainSystemEvent }
   | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
@@ -17795,9 +18291,10 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'ForeignAssets'; palletEvent: PalletAssetsEvent002 }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
-  | { pallet: 'Psm'; palletEvent: PalletPsmEvent }
   | { pallet: 'AssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
   | { pallet: 'AssetsHolder'; palletEvent: PalletAssetsHolderEvent }
+  | { pallet: 'Scarcity'; palletEvent: IndivPalletScarcityEvent }
+  | { pallet: 'Psm'; palletEvent: PalletPsmEvent }
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
@@ -17806,6 +18303,7 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'ChildBounties'; palletEvent: PalletChildBountiesEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'MultiAssetBounties'; palletEvent: PalletMultiAssetBountiesEvent }
+  | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
@@ -17814,13 +18312,15 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'MultiBlockElectionVerifier'; palletEvent: PalletElectionProviderMultiBlockVerifierImplsPalletEvent }
   | { pallet: 'MultiBlockElectionSigned'; palletEvent: PalletElectionProviderMultiBlockSignedPalletEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
-  | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
+  | { pallet: 'NftClaims'; palletEvent: IndivPalletNftClaimsEvent }
   | { pallet: 'MembersSubscriber'; palletEvent: IndivPalletMembersSubscriberEvent }
   | { pallet: 'AliasAccounts'; palletEvent: IndivPalletAliasAccountsEvent }
   | { pallet: 'Pgas'; palletEvent: IndivPalletPgasEvent }
+  | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
   | { pallet: 'DotnsGateway'; palletEvent: IndivPalletDotnsGatewayEvent }
   | { pallet: 'OriginRestriction'; palletEvent: IndivPalletOriginRestrictionEvent }
   | { pallet: 'NetworkSuffix'; palletEvent: IndivPalletNetworkSuffixEvent }
+  | { pallet: 'Sudo'; palletEvent: PalletSudoEvent }
   | { pallet: 'PgasAllowance'; palletEvent: PalletPgasAllowanceEvent }
   | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent };
 
@@ -17855,15 +18355,15 @@ export type FrameSystemEvent =
   /**
    * A [`Task`] has started executing
    **/
-  | { name: 'TaskStarted'; data: { task: AssetHubPolkadotRuntimeRuntimeTask } }
+  | { name: 'TaskStarted'; data: { task: AssetHubPaseoRuntimeRuntimeTask } }
   /**
    * A [`Task`] has finished executing.
    **/
-  | { name: 'TaskCompleted'; data: { task: AssetHubPolkadotRuntimeRuntimeTask } }
+  | { name: 'TaskCompleted'; data: { task: AssetHubPaseoRuntimeRuntimeTask } }
   /**
    * A [`Task`] failed during execution.
    **/
-  | { name: 'TaskFailed'; data: { task: AssetHubPolkadotRuntimeRuntimeTask; err: DispatchError } }
+  | { name: 'TaskFailed'; data: { task: AssetHubPaseoRuntimeRuntimeTask; err: DispatchError } }
   /**
    * An upgrade was authorized.
    **/
@@ -18012,90 +18512,67 @@ export type PalletParametersEvent =
       /**
        * The key that was updated.
        **/
-      key: AssetHubPolkadotRuntimeRuntimeParametersKey;
+      key: AssetHubPaseoRuntimeRuntimeParametersKey;
 
       /**
        * The old value before this call.
        **/
-      oldValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
+      oldValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
 
       /**
        * The new value after this call.
        **/
-      newValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
+      newValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
     };
   };
 
-export type AssetHubPolkadotRuntimeRuntimeParametersKey =
-  | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersKey }
-  | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersKey }
-  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersKey }
-  | { type: 'Individuality'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersKey };
+export type AssetHubPaseoRuntimeRuntimeParametersKey =
+  | { type: 'StakingElection'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersKey }
+  | { type: 'Scheduler'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerParametersKey }
+  | { type: 'MessageQueue'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersKey }
+  | { type: 'AliasAccounts'; value: AssetHubPaseoRuntimeDynamicParamsAliasAccountsParametersKey }
+  | { type: 'DotnsGateway'; value: AssetHubPaseoRuntimeDynamicParamsDotnsGatewayParametersKey };
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersKey =
-  | { type: 'SignedPhase'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase }
-  | { type: 'MaxSignedSubmissions'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxSignedSubmissions }
-  | { type: 'UnsignedPhase'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionUnsignedPhase }
-  | { type: 'MinerPages'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMinerPages }
-  | { type: 'MaxElectingVoters'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxElectingVoters }
-  | { type: 'TargetSnapshotPerBlock'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock }
-  | { type: 'MaxEraDuration'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxEraDuration };
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersKey =
+  | { type: 'SignedPhase'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionSignedPhase }
+  | { type: 'MaxSignedSubmissions'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxSignedSubmissions }
+  | { type: 'UnsignedPhase'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionUnsignedPhase }
+  | { type: 'MinerPages'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMinerPages }
+  | { type: 'MaxElectingVoters'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxElectingVoters }
+  | { type: 'TargetSnapshotPerBlock'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock }
+  | { type: 'MaxEraDuration'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxEraDuration };
 
-export type AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersKey =
-  | { type: 'MaxScheduledPerBlock'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerMaxScheduledPerBlock }
-  | { type: 'MaximumWeight'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerMaximumWeight };
+export type AssetHubPaseoRuntimeDynamicParamsSchedulerParametersKey =
+  | { type: 'MaxScheduledPerBlock'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerMaxScheduledPerBlock }
+  | { type: 'MaximumWeight'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerMaximumWeight };
 
-export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersKey =
-  | { type: 'MaxOnInitWeight'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight }
-  | { type: 'MaxOnIdleWeight'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight };
+export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersKey =
+  | { type: 'MaxOnInitWeight'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnInitWeight }
+  | { type: 'MaxOnIdleWeight'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnIdleWeight };
 
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersKey =
-  | { type: 'PgasClaimAmount'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityPgasClaimAmount }
-  | { type: 'MaxPgasClaimsPerBatch'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimsPerBatch }
-  | {
-      type: 'MaxClaimsPerPeriodPerPerson';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerPerson;
-    }
-  | {
-      type: 'MaxClaimsPerPeriodPerLitePerson';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerLitePerson;
-    }
-  | {
-      type: 'MaxPgasClaimRecordCleanupPerCall';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimRecordCleanupPerCall;
-    }
-  | {
-      type: 'AliasProofValidityWindow';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasProofValidityWindow;
-    }
+export type AssetHubPaseoRuntimeDynamicParamsAliasAccountsParametersKey =
+  | { type: 'AliasFee'; value: AssetHubPaseoRuntimeDynamicParamsAliasAccountsAliasFee }
+  | { type: 'StaleAliasSweepInterval'; value: AssetHubPaseoRuntimeDynamicParamsAliasAccountsStaleAliasSweepInterval };
+
+export type AssetHubPaseoRuntimeDynamicParamsDotnsGatewayParametersKey =
   | {
       type: 'DotnsMaxContractCallWeight';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxContractCallWeight;
+      value: AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxContractCallWeight;
     }
-  | { type: 'DotnsMaxValiditySeconds'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxValiditySeconds }
+  | { type: 'DotnsMaxValiditySeconds'; value: AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxValiditySeconds }
   | {
       type: 'DotnsMaxFutureSkewSeconds';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxFutureSkewSeconds;
-    }
-  | {
-      type: 'DotnsPersonRegistrationAllowanceMax';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceMax;
-    }
-  | {
-      type: 'DotnsPersonRegistrationAllowanceRecovery';
-      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceRecovery;
-    }
-  | { type: 'AliasFee'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasFee }
-  | { type: 'StaleAliasSweepInterval'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityStaleAliasSweepInterval }
-  | { type: 'MaxStaleAliasBatch'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxStaleAliasBatch };
+      value: AssetHubPaseoRuntimeDynamicParamsDotnsGatewayDotnsMaxFutureSkewSeconds;
+    };
 
-export type AssetHubPolkadotRuntimeRuntimeParametersValue =
-  | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersValue }
-  | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersValue }
-  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersValue }
-  | { type: 'Individuality'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersValue };
+export type AssetHubPaseoRuntimeRuntimeParametersValue =
+  | { type: 'StakingElection'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersValue }
+  | { type: 'Scheduler'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerParametersValue }
+  | { type: 'MessageQueue'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersValue }
+  | { type: 'AliasAccounts'; value: AssetHubPaseoRuntimeDynamicParamsAliasAccountsParametersValue }
+  | { type: 'DotnsGateway'; value: AssetHubPaseoRuntimeDynamicParamsDotnsGatewayParametersValue };
 
-export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersValue =
+export type AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersValue =
   | { type: 'SignedPhase'; value: number }
   | { type: 'MaxSignedSubmissions'; value: number }
   | { type: 'UnsignedPhase'; value: number }
@@ -18104,29 +18581,22 @@ export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersValue =
   | { type: 'TargetSnapshotPerBlock'; value: number }
   | { type: 'MaxEraDuration'; value: bigint };
 
-export type AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersValue =
+export type AssetHubPaseoRuntimeDynamicParamsSchedulerParametersValue =
   | { type: 'MaxScheduledPerBlock'; value: number }
   | { type: 'MaximumWeight'; value: SpWeightsWeightV2Weight };
 
-export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersValue =
+export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersValue =
   | { type: 'MaxOnInitWeight'; value?: SpWeightsWeightV2Weight | undefined }
   | { type: 'MaxOnIdleWeight'; value?: SpWeightsWeightV2Weight | undefined };
 
-export type AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersValue =
-  | { type: 'PgasClaimAmount'; value: bigint }
-  | { type: 'MaxPgasClaimsPerBatch'; value: number }
-  | { type: 'MaxClaimsPerPeriodPerPerson'; value: number }
-  | { type: 'MaxClaimsPerPeriodPerLitePerson'; value: number }
-  | { type: 'MaxPgasClaimRecordCleanupPerCall'; value: number }
-  | { type: 'AliasProofValidityWindow'; value: bigint }
+export type AssetHubPaseoRuntimeDynamicParamsAliasAccountsParametersValue =
+  | { type: 'AliasFee'; value?: bigint | undefined }
+  | { type: 'StaleAliasSweepInterval'; value: number };
+
+export type AssetHubPaseoRuntimeDynamicParamsDotnsGatewayParametersValue =
   | { type: 'DotnsMaxContractCallWeight'; value: SpWeightsWeightV2Weight }
   | { type: 'DotnsMaxValiditySeconds'; value: bigint }
-  | { type: 'DotnsMaxFutureSkewSeconds'; value: bigint }
-  | { type: 'DotnsPersonRegistrationAllowanceMax'; value: bigint }
-  | { type: 'DotnsPersonRegistrationAllowanceRecovery'; value: bigint }
-  | { type: 'AliasFee'; value: bigint }
-  | { type: 'StaleAliasSweepInterval'; value: number }
-  | { type: 'MaxStaleAliasBatch'; value: number };
+  | { type: 'DotnsMaxFutureSkewSeconds'; value: bigint };
 
 /**
  * The `Event` enum of this pallet
@@ -18352,22 +18822,17 @@ export type PalletBalancesEvent =
   /**
    * Some balance was placed on hold.
    **/
-  | { name: 'Held'; data: { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  | { name: 'Held'; data: { reason: AssetHubPaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
   /**
    * Held balance was burned from an account.
    **/
-  | { name: 'BurnedHeld'; data: { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  | { name: 'BurnedHeld'; data: { reason: AssetHubPaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
   /**
    * A transfer of `amount` on hold from `source` to `dest` was initiated.
    **/
   | {
       name: 'TransferOnHold';
-      data: {
-        reason: AssetHubPolkadotRuntimeRuntimeHoldReason;
-        source: AccountId32;
-        dest: AccountId32;
-        amount: bigint;
-      };
+      data: { reason: AssetHubPaseoRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint };
     }
   /**
    * The `transferred` balance is placed on hold at the `dest` account.
@@ -18375,7 +18840,7 @@ export type PalletBalancesEvent =
   | {
       name: 'TransferAndHold';
       data: {
-        reason: AssetHubPolkadotRuntimeRuntimeHoldReason;
+        reason: AssetHubPaseoRuntimeRuntimeHoldReason;
         source: AccountId32;
         dest: AccountId32;
         transferred: bigint;
@@ -18384,7 +18849,7 @@ export type PalletBalancesEvent =
   /**
    * Some balance was released from hold.
    **/
-  | { name: 'Released'; data: { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  | { name: 'Released'; data: { reason: AssetHubPaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
   /**
    * An unexpected/defensive event was triggered.
    **/
@@ -18392,17 +18857,20 @@ export type PalletBalancesEvent =
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
 
-export type AssetHubPolkadotRuntimeRuntimeHoldReason =
+export type AssetHubPaseoRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'Scarcity'; value: IndivPalletScarcityHoldReason }
   | { type: 'Psm'; value: PalletPsmHoldReason }
   | { type: 'MultiAssetBounties'; value: PalletMultiAssetBountiesHoldReason }
+  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
   | { type: 'StakingRcClient'; value: PalletStakingAsyncRcClientHoldReason }
   | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason }
   | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
-  | { type: 'Revive'; value: PalletReviveHoldReason };
+  | { type: 'Revive'; value: PalletReviveHoldReason }
+  | { type: 'CtMigrator'; value: PalletCtMigratorHoldReason };
 
 export type PalletPreimageHoldReason = 'Preimage';
 
@@ -18410,9 +18878,13 @@ export type PalletSessionHoldReason = 'Keys';
 
 export type PalletXcmHoldReason = 'AuthorizeAlias';
 
+export type IndivPalletScarcityHoldReason = 'StorageDeposit';
+
 export type PalletPsmHoldReason = 'CreationDeposit';
 
 export type PalletMultiAssetBountiesHoldReason = 'CuratorDeposit';
+
+export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
 
@@ -18423,6 +18895,8 @@ export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubm
 export type PalletStakingAsyncPalletHoldReason = 'Staking';
 
 export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
+
+export type PalletCtMigratorHoldReason = 'RegistrarDeposit' | 'HrmpDeposit' | 'ProxyDeposit' | 'UnattributedReserve';
 
 export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
@@ -19133,7 +19607,7 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         who: AccountId32;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
+        proxyType: AssetHubPaseoRuntimeProxyType;
         disambiguationIndex: number;
         at: number;
         extrinsicIndex: number;
@@ -19147,7 +19621,7 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         spawner: AccountId32;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
+        proxyType: AssetHubPaseoRuntimeProxyType;
         disambiguationIndex: number;
       };
     }
@@ -19160,24 +19634,14 @@ export type PalletProxyEvent =
    **/
   | {
       name: 'ProxyAdded';
-      data: {
-        delegator: AccountId32;
-        delegatee: AccountId32;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
-        delay: number;
-      };
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
     }
   /**
    * A proxy was removed.
    **/
   | {
       name: 'ProxyRemoved';
-      data: {
-        delegator: AccountId32;
-        delegatee: AccountId32;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
-        delay: number;
-      };
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
     }
   /**
    * A deposit stored for proxies or announcements was poked / updated.
@@ -19907,24 +20371,6 @@ export type PalletAssetConversionEvent =
       };
     }
   /**
-   * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
-   * or afterwards via [`Pallet::set_pool_fee`].
-   **/
-  | {
-      name: 'PoolFeeSet';
-      data: {
-        /**
-         * The pool whose fee was set.
-         **/
-        poolId: [StagingXcmV5Location, StagingXcmV5Location];
-
-        /**
-         * The swap fee now applied to the pool.
-         **/
-        fee: Permill;
-      };
-    }
-  /**
    * A successful call of the `AddLiquidity` extrinsic will create this event.
    **/
   | {
@@ -20091,6 +20537,111 @@ export type PalletAssetConversionEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletAssetsFreezerEvent =
+  | { name: 'Frozen'; data: { who: AccountId32; assetId: number; amount: bigint } }
+  | { name: 'Thawed'; data: { who: AccountId32; assetId: number; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetsHolderEvent =
+  /**
+   * `who`s balance on hold was increased by `amount`.
+   **/
+  | {
+      name: 'Held';
+      data: { who: AccountId32; assetId: number; reason: AssetHubPaseoRuntimeRuntimeHoldReason; amount: bigint };
+    }
+  /**
+   * `who`s balance on hold was decreased by `amount`.
+   **/
+  | {
+      name: 'Released';
+      data: { who: AccountId32; assetId: number; reason: AssetHubPaseoRuntimeRuntimeHoldReason; amount: bigint };
+    }
+  /**
+   * `who`s balance on hold was burned by `amount`.
+   **/
+  | {
+      name: 'Burned';
+      data: { who: AccountId32; assetId: number; reason: AssetHubPaseoRuntimeRuntimeHoldReason; amount: bigint };
+    };
+
+/**
+ * Every instance event names its collection and both purse keys involved.
+ *
+ * Off-chain consumers reconstruct per-collection views from these events alone, and the
+ * state a lookup would need is already gone by the time a burn is observed.
+ **/
+export type IndivPalletScarcityEvent =
+  /**
+   * A collection was created and assigned to its initial owner.
+   **/
+  | { name: 'CollectionCreated'; data: { collection: number; owner: AccountId32 } }
+  /**
+   * The collection owner nominated or cleared a prospective owner.
+   **/
+  | { name: 'CollectionOwnerNominated'; data: { collection: number; pendingOwner?: AccountId32 | undefined } }
+  /**
+   * A nominated account claimed the collection and assumed its aggregate storage deposit.
+   **/
+  | { name: 'CollectionOwnerChanged'; data: { collection: number; oldOwner: AccountId32; newOwner: AccountId32 } }
+  /**
+   * An empty collection was deleted and its remaining deposit released.
+   **/
+  | { name: 'CollectionDeleted'; data: { collection: number } }
+  /**
+   * An immutable item definition was assigned within a collection.
+   **/
+  | { name: 'ItemDefined'; data: { collection: number; item: number } }
+  /**
+   * An unused item definition was deleted and its deposit released.
+   **/
+  | { name: 'ItemDeleted'; data: { collection: number; item: number } }
+  /**
+   * An instance was minted into an empty purse key.
+   **/
+  | { name: 'Minted'; data: { instance: bigint; collection: number; item: number; owner: AccountId32 } }
+  /**
+   * A holder moved an instance from one purse key to another.
+   **/
+  | { name: 'Transferred'; data: { instance: bigint; collection: number; from: AccountId32; to: AccountId32 } }
+  /**
+   * A collection owner forced an instance from one purse key to another.
+   **/
+  | { name: 'ForceTransferred'; data: { instance: bigint; collection: number; from: AccountId32; to: AccountId32 } }
+  /**
+   * An instance was permanently removed from the purse key that held it.
+   **/
+  | { name: 'Burned'; data: { instance: bigint; collection: number; owner: AccountId32 } }
+  /**
+   * A collection-level metadata default was inserted or overwritten.
+   **/
+  | { name: 'CollectionMetadataSet'; data: { collection: number; key: Bytes } }
+  /**
+   * A collection-level metadata default was removed.
+   **/
+  | { name: 'CollectionMetadataRemoved'; data: { collection: number; key: Bytes } }
+  /**
+   * An item-level metadata override was inserted or overwritten.
+   **/
+  | { name: 'ItemMetadataSet'; data: { collection: number; item: number; key: Bytes } }
+  /**
+   * An item-level metadata override was removed.
+   **/
+  | { name: 'ItemMetadataRemoved'; data: { collection: number; item: number; key: Bytes } }
+  /**
+   * An instance-level metadata override was inserted or overwritten.
+   **/
+  | { name: 'InstanceMetadataSet'; data: { instance: bigint; key: Bytes } }
+  /**
+   * An instance-level metadata override was removed.
+   **/
+  | { name: 'InstanceMetadataRemoved'; data: { instance: bigint; key: Bytes } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletPsmEvent =
   /**
    * User swapped external asset for internal.
@@ -20186,8 +20737,8 @@ export type PalletPsmEvent =
       name: 'PsmCreated';
       data: {
         internalAsset: StagingXcmV5Location;
-        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        fullAdmin: AssetHubPaseoRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPaseoRuntimeOriginCaller;
         feeDestination: AccountId32;
         maxDebt: bigint;
       };
@@ -20203,8 +20754,8 @@ export type PalletPsmEvent =
       name: 'FullAdminChanged';
       data: {
         internalAsset: StagingXcmV5Location;
-        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        oldAdmin: AssetHubPaseoRuntimeOriginCaller;
+        newAdmin: AssetHubPaseoRuntimeOriginCaller;
       };
     }
   /**
@@ -20214,42 +20765,9 @@ export type PalletPsmEvent =
       name: 'EmergencyAdminChanged';
       data: {
         internalAsset: StagingXcmV5Location;
-        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        oldAdmin: AssetHubPaseoRuntimeOriginCaller;
+        newAdmin: AssetHubPaseoRuntimeOriginCaller;
       };
-    };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletAssetsFreezerEvent =
-  | { name: 'Frozen'; data: { who: AccountId32; assetId: number; amount: bigint } }
-  | { name: 'Thawed'; data: { who: AccountId32; assetId: number; amount: bigint } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletAssetsHolderEvent =
-  /**
-   * `who`s balance on hold was increased by `amount`.
-   **/
-  | {
-      name: 'Held';
-      data: { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
-    }
-  /**
-   * `who`s balance on hold was decreased by `amount`.
-   **/
-  | {
-      name: 'Released';
-      data: { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
-    }
-  /**
-   * `who`s balance on hold was burned by `amount`.
-   **/
-  | {
-      name: 'Burned';
-      data: { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
     };
 
 /**
@@ -20641,23 +21159,7 @@ export type PalletWhitelistEvent =
         callHash: H256;
         result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
       };
-    }
-  /**
-   * A call dispatch has been deferred to a future provided block.
-   **/
-  | { name: 'DispatchDeferred'; data: { callHash: H256 } }
-  /**
-   * A deferred dispatch entry has been removed after expiration.
-   **/
-  | { name: 'DeferredDispatchRemoved'; data: { callHash: H256 } }
-  /**
-   * A relayer (signed origin) executed a deferred dispatch.
-   *
-   * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
-   * inner call itself succeeded; the inner call's outcome is reported separately by
-   * [`Event::WhitelistedCallDispatched`].
-   **/
-  | { name: 'DeferredDispatchExecuted'; data: { callHash: H256; who: AccountId32 } };
+    };
 
 export type FrameSupportDispatchPostDispatchInfo = {
   actualWeight?: SpWeightsWeightV2Weight | undefined;
@@ -20720,11 +21222,7 @@ export type PalletBountiesEvent =
   /**
    * A bounty deposit has been poked.
    **/
-  | { name: 'DepositPoked'; data: { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint } }
-  /**
-   * Stranded funds left in a closed bounty's account were reclaimed to the treasury.
-   **/
-  | { name: 'BountyFundsReclaimed'; data: { bountyId: number } };
+  | { name: 'DepositPoked'; data: { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -20833,6 +21331,65 @@ export type PalletMultiAssetBountiesEvent =
    * A bounty's value was increased by its curator.
    **/
   | { name: 'BountyValueIncreased'; data: { index: number; oldValue: bigint; newValue: bigint } };
+
+/**
+ * Inner events of this pallet.
+ **/
+export type PalletStateTrieMigrationEvent =
+  /**
+   * Given number of `(top, child)` keys were migrated respectively, with the given
+   * `compute`.
+   **/
+  | { name: 'Migrated'; data: { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute } }
+  /**
+   * Some account got slashed by the given amount.
+   **/
+  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * The auto migration task finished.
+   **/
+  | { name: 'AutoMigrationFinished' }
+  /**
+   * Migration got halted due to an error or miss-configuration.
+   **/
+  | { name: 'Halted'; data: { error: PalletStateTrieMigrationError } };
+
+export type PalletStateTrieMigrationMigrationCompute = 'Signed' | 'Auto';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStateTrieMigrationError =
+  /**
+   * Max signed limits not respected.
+   **/
+  | 'MaxSignedLimits'
+  /**
+   * A key was longer than the configured maximum.
+   *
+   * This means that the migration halted at the current [`Progress`] and
+   * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+   * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+   * The value should only be increased to avoid a storage migration for the currently
+   * stored [`crate::Progress::LastKey`].
+   **/
+  | 'KeyTooLong'
+  /**
+   * submitter does not have enough funds.
+   **/
+  | 'NotEnoughFunds'
+  /**
+   * Bad witness data provided.
+   **/
+  | 'BadWitness'
+  /**
+   * Signed migration is not allowed because the maximum limit is not set yet.
+   **/
+  | 'SignedMigrationNotAllowed'
+  /**
+   * Bad child root provided.
+   **/
+  | 'BadChildRoot';
 
 /**
  * Events of this pallet.
@@ -21161,20 +21718,6 @@ export type PalletElectionProviderMultiBlockSignedPalletEvent =
    **/
   | { name: 'Rewarded'; data: [number, AccountId32, bigint] }
   /**
-   * A reward payout failed and has been queued in [`UnpaidRewards`]; claimable via
-   * [`Pallet::claim_unpaid_reward`] once the pot is refilled.
-   **/
-  | { name: 'RewardPaymentDeferred'; data: [number, AccountId32, bigint] }
-  /**
-   * [`UnpaidRewards`] was full, so this (the oldest) entry was evicted to make room for a
-   * new deferral; no funds moved, the reward is now unrecoverable.
-   **/
-  | { name: 'UnpaidRewardEvicted'; data: [number, AccountId32, bigint] }
-  /**
-   * An invulnerable's transaction fee refund failed; no funds moved, no recovery.
-   **/
-  | { name: 'FeeRefundFailed'; data: [number, AccountId32, bigint] }
-  /**
    * The given account has been slashed with the given amount.
    **/
   | { name: 'Slashed'; data: [number, AccountId32, bigint] }
@@ -21226,18 +21769,7 @@ export type PalletStakingAsyncPalletEvent =
   /**
    * An account has unbonded this amount.
    **/
-  | {
-      name: 'Unbonded';
-      data: {
-        stash: AccountId32;
-        amount: bigint;
-
-        /**
-         * The era at which `amount` becomes withdrawable.
-         **/
-        era: number;
-      };
-    }
+  | { name: 'Unbonded'; data: { stash: AccountId32; amount: bigint } }
   /**
    * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
    * from the unlocking queue.
@@ -21361,44 +21893,95 @@ export type PalletStakingAsyncPalletUnexpectedKind =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletReviveEvent =
+export type IndivPalletNftClaimsEvent =
   /**
-   * A custom event emitted by the contract.
+   * Credit trees were received and stored.
+   **/
+  | { name: 'CreditTreesReceived'; data: { count: number; stored: number } }
+  /**
+   * Trees of the live stream never arrived. The game pallet's `CreditTreesSent` events
+   * resolve these sequences to the tree blocks they were delivered under, and a
+   * `replay_credit_trees` naming those blocks recovers the trees.
+   *
+   * A sequence that resolves to no block is one the game pallet spent on a tree it had
+   * already dropped the root of, and no replay brings it back.
+   **/
+  | { name: 'CreditTreesMissing'; data: { fromSequence: bigint; toSequence: bigint } }
+  /**
+   * A tree was received for a block that already holds a different root. The stored
+   * root is kept, so the proofs built against it stay valid.
+   **/
+  | { name: 'CreditTreeConflict'; data: { block: number } }
+  /**
+   * A tree with a zero root or no leaves was received for `block` and not stored. Its
+   * sequence stays unconsumed, so the gap check reports it and a replay can deliver the
+   * genuine tree.
+   **/
+  | { name: 'CreditTreeRejected'; data: { block: number } }
+  /**
+   * A credit `block` committed was claimed, minting `instance` of `collection`'s `item`
+   * to the purse key `owner`.
    **/
   | {
-      name: 'ContractEmitted';
+      name: 'CreditClaimed';
       data: {
-        /**
-         * The contract that emitted the event.
-         **/
-        contract: H160;
-
-        /**
-         * Data supplied by the contract. Metadata generated during contract compilation
-         * is needed to decode it.
-         **/
-        data: Bytes;
-
-        /**
-         * A list of topics used to index the event.
-         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
-         **/
-        topics: Array<H256>;
+        block: number;
+        leaf: IndivSupportCreditTreesNftClaimCreditLeaf;
+        collection: number;
+        item: number;
+        owner: AccountId32;
+        instance: bigint;
       };
     }
   /**
-   * Contract deployed by deployer at the specified address.
+   * Every credit committed to by `block`'s tree has been claimed. This chain removed the
+   * tree and queued its deletion for the game chain.
    **/
-  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } }
+  | { name: 'TreeFullyClaimed'; data: { block: number } }
   /**
-   * Emitted when an Ethereum transaction reverts.
-   *
-   * Ethereum transactions always complete successfully at the extrinsic level,
-   * as even reverted calls must store their `ReceiptInfo`.
-   * To distinguish reverted calls from successful ones, this event is emitted
-   * for failed Ethereum transactions.
+   * `collection`'s owner registered it for claims with `selection`, or withdrew it with
+   * `None`.
    **/
-  | { name: 'EthExtrinsicRevert'; data: { dispatchError: DispatchError } };
+  | {
+      name: 'CollectionMinterSet';
+      data: { collection: number; selection?: IndivPalletNftClaimsItemSelection | undefined };
+    }
+  /**
+   * `count` trees outlived [`Config::TreeTtl`], and this chain removed them with credits
+   * left unclaimed. Nothing can mint those credits again, on this chain or any other.
+   *
+   * The blocks are not named here. The same trees travel in a deletion message, and the
+   * [`Event::TreeDeletionsSent`] carrying them names every one.
+   **/
+  | { name: 'CreditTreesExpired'; data: { count: number } }
+  /**
+   * A tree arrived for `block` past its deadline, so this chain did not store it. Its
+   * credits were already unmintable when the delivery arrived.
+   **/
+  | { name: 'CreditTreeStale'; data: { block: number } }
+  /**
+   * Tree blocks whose deletion was handed to the XCM router for the game chain.
+   **/
+  | { name: 'TreeDeletionsSent'; data: { blocks: Array<number> } }
+  /**
+   * Delivery of the deletions to the game chain failed. The blocks stay queued, and the
+   * next offchain worker cycle retries them.
+   **/
+  | { name: 'TreeDeletionSendFailed' }
+  /**
+   * [`PendingTreeDeletions`] is full, so this chain dropped the deletions of `blocks`.
+   * Delivery has failed for [`Config::MaxQueuedTreeDeletions`] trees. The game chain
+   * removes its own copies when its TTL runs out.
+   **/
+  | { name: 'TreeDeletionsDropped'; data: { blocks: Array<number> } }
+  /**
+   * A tree arrived for `block` committing to more leaves than
+   * [`Config::MaxCreditsPerTree`], so this chain did not store it. None of its
+   * credits can be claimed here until that bound covers the game chain's own.
+   **/
+  | { name: 'CreditTreeOversized'; data: { block: number } };
+
+export type IndivSupportCreditTreesNftClaimCreditLeaf = FixedBytes<32>;
 
 /**
  * The `Event` enum of this pallet
@@ -21638,6 +22221,48 @@ export type IndivPalletPgasEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletReviveEvent =
+  /**
+   * A custom event emitted by the contract.
+   **/
+  | {
+      name: 'ContractEmitted';
+      data: {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
+
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
+
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      };
+    }
+  /**
+   * Contract deployed by deployer at the specified address.
+   **/
+  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } }
+  /**
+   * Emitted when an Ethereum transaction reverts.
+   *
+   * Ethereum transactions always complete successfully at the extrinsic level,
+   * as even reverted calls must store their `ReceiptInfo`.
+   * To distinguish reverted calls from successful ones, this event is emitted
+   * for failed Ethereum transactions.
+   **/
+  | { name: 'EthExtrinsicRevert'; data: { dispatchError: DispatchError } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type IndivPalletDotnsGatewayEvent =
   /**
    * A username has been reserved for a candidate by an attester.
@@ -21747,7 +22372,7 @@ export type IndivPalletOriginRestrictionEvent =
   /**
    * Usage for an entity is cleaned.
    **/
-  { name: 'UsageCleaned'; data: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity } };
+  { name: 'UsageCleaned'; data: { entity: AssetHubPaseoRuntimeRestrictedEntity } };
 
 /**
  * The `Event` enum of this pallet
@@ -21757,6 +22382,56 @@ export type IndivPalletNetworkSuffixEvent =
    * The network suffix changed.
    **/
   { name: 'NetworkSuffixSet'; data: { old: Bytes; new: Bytes } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletSudoEvent =
+  /**
+   * A sudo call just took place.
+   **/
+  | {
+      name: 'Sudid';
+      data: {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      };
+    }
+  /**
+   * The sudo key has been updated.
+   **/
+  | {
+      name: 'KeyChanged';
+      data: {
+        /**
+         * The old sudo key (if one was previously set).
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new sudo key (if one was set).
+         **/
+        new: AccountId32;
+      };
+    }
+  /**
+   * The key was permanently removed.
+   **/
+  | { name: 'KeyRemoved' }
+  /**
+   * A [sudo_as](Pallet::sudo_as) call just took place.
+   **/
+  | {
+      name: 'SudoAsDone';
+      data: {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -22104,7 +22779,7 @@ export type PalletSchedulerScheduled = {
   priority: number;
   call: FrameSupportPreimagesBounded;
   maybePeriodic?: [number, number] | undefined;
-  origin: AssetHubPolkadotRuntimeOriginCaller;
+  origin: AssetHubPaseoRuntimeOriginCaller;
 };
 
 export type PalletSchedulerRetryConfig = { totalRetries: number; remaining: number; period: number };
@@ -22164,14 +22839,14 @@ export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
-export type FrameSupportTokensMiscIdAmount = { id: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
+export type FrameSupportTokensMiscIdAmount = { id: AssetHubPaseoRuntimeRuntimeHoldReason; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
-  id: AssetHubPolkadotRuntimeRuntimeFreezeReason;
+  id: AssetHubPaseoRuntimeRuntimeFreezeReason;
   amount: bigint;
 };
 
-export type AssetHubPolkadotRuntimeRuntimeFreezeReason =
+export type AssetHubPaseoRuntimeRuntimeFreezeReason =
   | { type: 'NominationPools'; value: PalletNominationPoolsFreezeReason }
   | { type: 'Revive'; value: PalletReviveFreezeReason };
 
@@ -22294,12 +22969,7 @@ export type PolkadotRuntimeCommonClaimsPalletError =
   /**
    * The account already has a vested balance.
    **/
-  | 'VestedBalanceExists'
-  /**
-   * The claim has a vesting schedule but its value is below the existential deposit, so the
-   * destination account could not be kept alive to carry the vesting lock.
-   **/
-  | 'ClaimBelowExistentialDeposit';
+  | 'VestedBalanceExists';
 
 export type FrameSupportPalletId = FixedBytes<8>;
 
@@ -22884,7 +23554,7 @@ export type PalletMultisigError =
 
 export type PalletProxyProxyDefinition = {
   delegate: AccountId32;
-  proxyType: AssetHubPolkadotRuntimeProxyType;
+  proxyType: AssetHubPaseoRuntimeProxyType;
   delay: number;
 };
 
@@ -23102,11 +23772,7 @@ export type PalletAssetsError =
   /**
    * Tried setting too many reserves.
    **/
-  | 'TooManyReserves'
-  /**
-   * The asset deposit could not be fully moved due to a lock or freeze on the owner.
-   **/
-  | 'IncompleteDepositTransfer';
+  | 'TooManyReserves';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -23223,11 +23889,7 @@ export type PalletUniquesError =
   /**
    * Wrong attribute key/value bytes supplied.
    **/
-  | 'WrongAttribute'
-  /**
-   * The collection deposit could not be fully moved due to a lock or freeze on the owner.
-   **/
-  | 'IncompleteDepositTransfer';
+  | 'WrongAttribute';
 
 export type PalletNftsCollectionDetails = {
   owner: AccountId32;
@@ -23452,11 +24114,7 @@ export type PalletNftsError =
   /**
    * The witness data should be provided.
    **/
-  | 'WitnessRequired'
-  /**
-   * The collection deposit could not be fully moved due to a lock or freeze on the owner.
-   **/
-  | 'IncompleteDepositTransfer';
+  | 'WitnessRequired';
 
 export type PalletAssetConversionPoolInfo = { lpToken: number };
 
@@ -23562,16 +24220,141 @@ export type PalletAssetConversionError =
   /**
    * The pool exists but has no liquidity (at least one of the reserves is zero).
    **/
-  | 'PoolEmpty'
+  | 'PoolEmpty';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsFreezerError =
   /**
-   * The fee exceeds [`Config::MaxSwapFee`].
+   * Number of freezes on an account would exceed `MaxFreezes`.
    **/
-  | 'FeeTooHigh'
+  'TooManyFreezes';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsHolderError =
   /**
-   * The pool account can't send one of its assets (e.g. the asset class is frozen or the
-   * pool account is blocked).
+   * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
    **/
-  | 'PoolUnavailable';
+  'TooManyHolds';
+
+export type IndivPalletScarcityCollectionInfo = {
+  owner: AccountId32;
+  pendingOwner?: AccountId32 | undefined;
+  nextItemIndex: number;
+  itemCount: number;
+  metadataCount: number;
+  collectionDeposit: bigint;
+  ownerDeposit: bigint;
+  consideration: FrameSupportTokensFungibleHoldConsideration;
+};
+
+export type IndivPalletScarcityItemDefinition = {
+  supply: number;
+  liveSupply: number;
+  metadataCount: number;
+  deposit: bigint;
+  transferability: IndivPalletScarcityTransferability;
+};
+
+export type IndivPalletScarcityMetadataEntry = { value: Bytes; deposit: bigint };
+
+export type IndivPalletScarcityLockInfo = { retries: number; until: bigint };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletScarcityError =
+  /**
+   * The collection identifier space is exhausted.
+   **/
+  | 'TooManyCollections'
+  /**
+   * The collection does not exist.
+   **/
+  | 'UnknownCollection'
+  /**
+   * Only the current collection owner may perform this operation.
+   **/
+  | 'NoPermission'
+  /**
+   * The current collection owner cannot be nominated as its replacement.
+   **/
+  | 'AlreadyCollectionOwner'
+  /**
+   * The signer is not the account currently nominated to claim this collection.
+   **/
+  | 'NotPendingCollectionOwner'
+  /**
+   * The per-collection item index space is exhausted.
+   **/
+  | 'TooManyItems'
+  /**
+   * The requested item definition does not exist.
+   **/
+  | 'UnknownItem'
+  /**
+   * An item with live instances cannot be deleted.
+   **/
+  | 'ItemInUse'
+  /**
+   * Item metadata must be removed before deleting the item.
+   **/
+  | 'ItemMetadataNotEmpty'
+  /**
+   * Item definitions must be deleted before deleting the collection.
+   **/
+  | 'CollectionItemsNotEmpty'
+  /**
+   * Collection metadata must be removed before deleting the collection.
+   **/
+  | 'CollectionMetadataNotEmpty'
+  /**
+   * Stored dependency counters or deposits do not permit deletion.
+   **/
+  | 'DeletionInvariant'
+  /**
+   * The destination purse key already holds an NFT.
+   **/
+  | 'AddressOccupied'
+  /**
+   * The permanent instance identifier space is exhausted.
+   **/
+  | 'TooManyInstances'
+  /**
+   * An item definition's minted supply is exhausted.
+   **/
+  | 'SupplyOverflow'
+  /**
+   * The requested live instance does not exist.
+   **/
+  | 'UnknownInstance'
+  /**
+   * The configured per-instance metadata entry limit was reached.
+   **/
+  | 'TooManyInstanceMetadata'
+  /**
+   * An NFT cannot be transferred to its current purse key.
+   **/
+  | 'SelfTransfer'
+  /**
+   * An NFT has exhausted its ownership-state nonce.
+   **/
+  | 'StateNonceOverflow'
+  /**
+   * The item definition binds its instances to the purse key they were minted into.
+   **/
+  | 'Soulbound'
+  /**
+   * The configured per-collection metadata entry limit was reached.
+   **/
+  | 'TooManyCollectionMetadata'
+  /**
+   * The configured per-item metadata entry limit was reached.
+   **/
+  | 'TooManyItemMetadata';
 
 export type PalletPsmPsmInfo = {
   feeDestination: AccountId32;
@@ -23582,8 +24365,8 @@ export type PalletPsmPsmInfo = {
 };
 
 export type PalletPsmPsmAdminInfo = {
-  fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
-  emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+  fullAdmin: AssetHubPaseoRuntimeOriginCaller;
+  emergencyAdmin: AssetHubPaseoRuntimeOriginCaller;
   deposit?: [AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined;
 };
 
@@ -23685,34 +24468,7 @@ export type PalletPsmError =
   /**
    * An unexpected invariant violation occurred. This should be reported.
    **/
-  | 'Unexpected'
-  /**
-   * An admin origin was supplied that cannot be used as an authority, such as the system
-   * `None` origin.
-   **/
-  | 'InvalidAdminOrigin'
-  /**
-   * The PSM reserve account cannot receive the external asset.
-   **/
-  | 'ReserveCannotReceive';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletAssetsFreezerError =
-  /**
-   * Number of freezes on an account would exceed `MaxFreezes`.
-   **/
-  'TooManyFreezes';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletAssetsHolderError =
-  /**
-   * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
-   **/
-  'TooManyHolds';
+  | 'Unexpected';
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
@@ -23866,7 +24622,7 @@ export type PalletReferendaReferendumInfo =
 
 export type PalletReferendaReferendumStatus = {
   track: number;
-  origin: AssetHubPolkadotRuntimeOriginCaller;
+  origin: AssetHubPaseoRuntimeOriginCaller;
   proposal: FrameSupportPreimagesBounded;
   enactment: FrameSupportScheduleDispatchTime;
   submitted: number;
@@ -23983,23 +24739,7 @@ export type PalletWhitelistError =
   /**
    * The call was already whitelisted; No-Op.
    **/
-  | 'CallAlreadyWhitelisted'
-  /**
-   * No deferred dispatch entry exists for this call hash.
-   **/
-  | 'DeferredDispatchNotFound'
-  /**
-   * The deferred dispatch entry has not yet expired.
-   **/
-  | 'DeferredDispatchNotExpired'
-  /**
-   * The dispatch has already been deferred.
-   **/
-  | 'AlreadyDeferred'
-  /**
-   * The deferred dispatch has expired.
-   **/
-  | 'DeferredDispatchExpired';
+  | 'CallAlreadyWhitelisted';
 
 export type PalletBountiesBounty = {
   proposer: AccountId32;
@@ -24071,11 +24811,7 @@ export type PalletBountiesError =
   /**
    * User is not the proposer of the bounty.
    **/
-  | 'NotProposer'
-  /**
-   * The bounty is still active and its account cannot be reclaimed.
-   **/
-  | 'BountyStillActive';
+  | 'NotProposer';
 
 export type PalletChildBountiesChildBounty = {
   parentBounty: number;
@@ -24612,15 +25348,12 @@ export type PalletElectionProviderMultiBlockVerifierImplsStatus =
   | { type: 'Ongoing'; value: number }
   | { type: 'Nothing' };
 
-export type PalletElectionProviderMultiBlockSignedUnpaidReward = { round: number; who: AccountId32; amount: bigint };
-
 export type PalletElectionProviderMultiBlockSignedSubmissionMetadata = {
   deposit: bigint;
   fee: bigint;
   reward: bigint;
   claimedScore: SpNposElectionsElectionScore;
   pages: Array<boolean>;
-  base: bigint;
 };
 
 /**
@@ -24662,15 +25395,7 @@ export type PalletElectionProviderMultiBlockSignedPalletError =
   /**
    * Too many invulnerable accounts are provided,
    **/
-  | 'TooManyInvulnerables'
-  /**
-   * No [`UnpaidRewards`] entry exists for the caller in the given round.
-   **/
-  | 'NoUnpaidReward'
-  /**
-   * The [`Config::RewardSource`] pot is still insufficient to pay the unpaid reward.
-   **/
-  | 'PotStillDepleted';
+  | 'TooManyInvulnerables';
 
 export type PalletStakingAsyncLedgerStakingLedger = {
   stash: AccountId32;
@@ -24732,176 +25457,161 @@ export type PalletStakingAsyncPalletError =
   /**
    * Not a controller account.
    **/
-  | { name: 'NotController' }
+  | 'NotController'
   /**
    * Not a stash account.
    **/
-  | { name: 'NotStash' }
+  | 'NotStash'
   /**
    * Stash is already bonded.
    **/
-  | { name: 'AlreadyBonded' }
+  | 'AlreadyBonded'
   /**
    * Controller is already paired.
    **/
-  | { name: 'AlreadyPaired' }
+  | 'AlreadyPaired'
   /**
    * Targets cannot be empty.
    **/
-  | { name: 'EmptyTargets' }
+  | 'EmptyTargets'
   /**
    * Duplicate index.
    **/
-  | { name: 'DuplicateIndex' }
+  | 'DuplicateIndex'
   /**
    * Slash record not found.
    **/
-  | { name: 'InvalidSlashRecord' }
+  | 'InvalidSlashRecord'
   /**
    * Cannot bond, nominate or validate with value less than the minimum defined by
    * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
    * intention, `chill` first to remove one's role as validator/nominator.
    **/
-  | { name: 'InsufficientBond' }
+  | 'InsufficientBond'
   /**
    * Can not schedule more unlock chunks.
    **/
-  | { name: 'NoMoreChunks' }
+  | 'NoMoreChunks'
   /**
    * Can not rebond without unlocking chunks.
    **/
-  | { name: 'NoUnlockChunk' }
+  | 'NoUnlockChunk'
   /**
    * Attempting to target a stash that still has funds.
    **/
-  | { name: 'FundedTarget' }
+  | 'FundedTarget'
   /**
    * Invalid era to reward.
    **/
-  | { name: 'InvalidEraToReward' }
+  | 'InvalidEraToReward'
   /**
    * Invalid number of nominations.
    **/
-  | { name: 'InvalidNumberOfNominations' }
+  | 'InvalidNumberOfNominations'
   /**
    * Rewards for this era have already been claimed for this validator.
    **/
-  | { name: 'AlreadyClaimed' }
+  | 'AlreadyClaimed'
   /**
    * No nominators exist on this page.
    **/
-  | { name: 'InvalidPage' }
+  | 'InvalidPage'
   /**
    * Incorrect previous history depth input provided.
    **/
-  | { name: 'IncorrectHistoryDepth' }
+  | 'IncorrectHistoryDepth'
   /**
    * Internal state has become somehow corrupted and the operation cannot continue.
    **/
-  | { name: 'BadState' }
+  | 'BadState'
   /**
    * Too many nomination targets supplied.
    **/
-  | { name: 'TooManyTargets' }
+  | 'TooManyTargets'
   /**
    * A nomination target was supplied that was blocked or otherwise not a validator.
    **/
-  | { name: 'BadTarget' }
+  | 'BadTarget'
   /**
    * The user has enough bond and thus cannot be chilled forcefully by an external person.
    **/
-  | { name: 'CannotChillOther' }
+  | 'CannotChillOther'
   /**
    * There are too many nominators in the system. Governance needs to adjust the staking
    * settings to keep things safe for the runtime.
    **/
-  | { name: 'TooManyNominators' }
+  | 'TooManyNominators'
   /**
    * There are too many validator candidates in the system. Governance needs to adjust the
    * staking settings to keep things safe for the runtime.
    **/
-  | { name: 'TooManyValidators' }
+  | 'TooManyValidators'
   /**
    * Commission is too low. Must be at least `MinCommission`.
    **/
-  | { name: 'CommissionTooLow' }
+  | 'CommissionTooLow'
   /**
    * Some bound is not met.
    **/
-  | { name: 'BoundNotMet' }
+  | 'BoundNotMet'
   /**
    * Used when attempting to use deprecated controller account logic.
    **/
-  | { name: 'ControllerDeprecated' }
+  | 'ControllerDeprecated'
   /**
    * Cannot reset a ledger.
    **/
-  | { name: 'CannotRestoreLedger' }
+  | 'CannotRestoreLedger'
   /**
    * Provided reward destination is not allowed.
    **/
-  | { name: 'RewardDestinationRestricted' }
+  | 'RewardDestinationRestricted'
   /**
    * Not enough funds available to withdraw.
    **/
-  | { name: 'NotEnoughFunds' }
+  | 'NotEnoughFunds'
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | { name: 'VirtualStakerNotAllowed' }
+  | 'VirtualStakerNotAllowed'
   /**
    * Stash could not be reaped as other pallet might depend on it.
    **/
-  | { name: 'CannotReapStash' }
+  | 'CannotReapStash'
   /**
    * The stake of this account is already migrated to `Fungible` holds.
    **/
-  | { name: 'AlreadyMigrated' }
+  | 'AlreadyMigrated'
   /**
    * Era not yet started.
    **/
-  | { name: 'EraNotStarted' }
+  | 'EraNotStarted'
   /**
    * Account is restricted from participation in staking. This may happen if the account is
    * staking in another way already, such as via pool.
    **/
-  | { name: 'Restricted' }
+  | 'Restricted'
   /**
    * Unapplied slashes in the recently concluded era is blocking this operation.
    * See `Call::apply_slash` to apply them.
    **/
-  | { name: 'UnappliedSlashesInPreviousEra' }
+  | 'UnappliedSlashesInPreviousEra'
   /**
    * The era is not eligible for pruning.
    **/
-  | { name: 'EraNotPrunable' }
+  | 'EraNotPrunable'
   /**
    * The slash has been cancelled and cannot be applied.
    **/
-  | { name: 'CancelledSlash' }
+  | 'CancelledSlash'
   /**
    * Commission is higher than the allowed maximum `MaxCommission`.
    **/
-  | { name: 'CommissionTooHigh' }
+  | 'CommissionTooHigh'
   /**
    * Optimum self-stake cannot be greater than hard cap.
    **/
-  | { name: 'OptimumGreaterThanCap' }
-  /**
-   * Validator inactivity proof is invalid.
-   **/
-  | { name: 'InvalidInactivityProof'; data: PalletStakingAsyncPalletInvalidInactivityProofError }
-  /**
-   * Cannot set [`ChillInactiveThreshold`] to the provided value.
-   **/
-  | { name: 'InvalidChillInactiveThreshold' };
-
-export type PalletStakingAsyncPalletInvalidInactivityProofError =
-  | 'InvalidLen'
-  | 'NotSorted'
-  | 'ValidatorNotExposed'
-  | 'ValidatorActive'
-  | 'InvalidEra';
+  | 'OptimumGreaterThanCap';
 
 export type PalletStakingAsyncRewardPot =
   | { type: 'General'; value: PalletStakingAsyncRewardKind }
@@ -24910,6 +25620,235 @@ export type PalletStakingAsyncRewardPot =
 export type PalletStakingAsyncRewardKind = 'StakerRewards' | 'ValidatorSelfStake';
 
 export type PalletStakingAsyncRewardEraRewardAllocation = { stakerRewards: bigint; validatorIncentive: bigint };
+
+export type IndivPalletNftClaimsCollectionMinter = { owner: AccountId32; selection: IndivPalletNftClaimsItemSelection };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletNftClaimsError =
+  /**
+   * No tree is held for the block, so nothing can be proven against it. The tree may
+   * still be on its way, or have been lost, in which case a `replay_credit_trees` on the
+   * game pallet delivers it.
+   **/
+  | 'UnknownCreditTree'
+  /**
+   * The leaf index is not one of the tree's leaves.
+   **/
+  | 'LeafIndexOutOfBounds'
+  /**
+   * The credit has already been claimed and mints one NFT only.
+   **/
+  | 'AlreadyClaimed'
+  /**
+   * The proof does not rehash the credit's leaf to the tree's root, so the origin holds no
+   * such credit in that block.
+   **/
+  | 'InvalidProof'
+  /**
+   * The collection does not exist in Scarcity.
+   **/
+  | 'UnknownCollection'
+  /**
+   * Only the collection's owner may register or withdraw its minter.
+   **/
+  | 'NotCollectionOwner'
+  /**
+   * The collection's owner has not registered it for claims, so no claim can mint into
+   * it.
+   **/
+  | 'CollectionNotRegistered'
+  /**
+   * The collection has changed owners since registration, so its current owner must
+   * register it again. Only a runtime that leaves
+   * [`indiv_pallet_scarcity::Config::OnCollectionOwnerChanged`] unwired reaches this.
+   **/
+  | 'CollectionOwnerChanged'
+  /**
+   * The collection has no live item definitions for [`ItemSelection::Random`] to draw
+   * from, either because none were defined or because all were deleted.
+   **/
+  | 'NoItems'
+  /**
+   * The registered minter contract reverted instead of selecting an item.
+   **/
+  | 'MinterContractReverted'
+  /**
+   * The registered minter contract returned data that is not one canonical `uint32`
+   * item index.
+   **/
+  | 'MinterContractInvalidReturn'
+  /**
+   * The address given for a minter registration holds no contract code.
+   **/
+  | 'MinterNotAContract'
+  /**
+   * The selected item has no definition in the collection, so the mint would reject it.
+   * An [`ItemSelection::Random`] draw reaches this by landing on a deleted index, which
+   * stays inside the draw range, and a contract selection by naming such an index.
+   **/
+  | 'UnknownItem';
+
+export type IndivPalletMembersSubscriberRingCommitmentRecord = {
+  root: VerifiableRingMembersCommitment;
+  revision: number;
+  sourceTime: bigint;
+  sourceSequence: bigint;
+};
+
+export type IndivPalletMembersSubscriberRingPurgeProgress = { generation: number; page: number };
+
+export type IndivPalletMembersSubscriberRingCollectionState = {
+  ringCount: number;
+  nextRingIndex: number;
+  nextScanIndex: number;
+  missingIndices: Array<[number, number]>;
+  deletedIndices: Array<number>;
+  lastBatchReceivedTime: bigint;
+};
+
+export type IndivPalletMembersSubscriberSubscriptionStatus =
+  | { type: 'Inactive' }
+  | { type: 'Active'; value: { initializedAtSequence: bigint } }
+  | { type: 'Terminated' };
+
+export type IndivPalletMembersSubscriberUpdatesProcessingState = {
+  lastProcessedSequence: bigint;
+  lastReplayRequestTime: bigint;
+};
+
+export type IndivPalletMembersSubscriberNotifierEndpoint = { location: StagingXcmV5Location; palletIndex: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletMembersSubscriberError =
+  /**
+   * XCM message send failed.
+   **/
+  | 'XcmSendFailed'
+  /**
+   * Subscription is currently inactive.
+   **/
+  | 'SubscriptionInactive'
+  /**
+   * Subscription is in terminated state.
+   **/
+  | 'SubscriptionTerminated'
+  /**
+   * Subscription is active with a different sequence; must be terminated first.
+   **/
+  | 'SubscriptionAlreadyActive'
+  /**
+   * Collection with the given identifier is not tracked.
+   **/
+  | 'CollectionNotFound'
+  /**
+   * No ring root stored for the given ring index.
+   **/
+  | 'NoRoot'
+  /**
+   * Proof failed to verify against any stored ring root.
+   **/
+  | 'InvalidProof'
+  /**
+   * Stored ring exponent does not convert into the crypto's capacity.
+   **/
+  | 'InvalidRingExponent'
+  /**
+   * Requested revision is not present in the stored sliding window.
+   **/
+  | 'RevisionNotFound'
+  /**
+   * Requested revision has been superseded for longer than the retention duration.
+   **/
+  | 'RevisionExpired'
+  /**
+   * The notifier initialized more than `MaxCollections` collections.
+   **/
+  | 'TooManyCollections';
+
+export type IndivSupportRealityContextualAlias = { alias: FixedBytes<32>; context: FixedBytes<32> };
+
+export type IndivPalletAliasAccountsAliasAccountInfo = {
+  collection: FixedBytes<32>;
+  revision: number;
+  ring: number;
+  ca: IndivSupportRealityContextualAlias;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletAliasAccountsError =
+  /**
+   * The collection is not accepted.
+   **/
+  | 'InvalidCollection'
+  /**
+   * The account is already in use under another alias.
+   **/
+  | 'AccountInUse'
+  /**
+   * The account is not known.
+   **/
+  | 'InvalidAccount'
+  /**
+   * Alias <-> Account is already set and up to date.
+   **/
+  | 'AliasAccountAlreadySet'
+  /**
+   * Call is too late or too early.
+   **/
+  | 'TimeOutOfRange'
+  /**
+   * The PGAS fee for alias registrations has not been set yet.
+   **/
+  | 'AliasFeeUnset'
+  /**
+   * The proof passed to `reprove_alias_account` produced an alias / context
+   * that does not match the stored mapping for the signer.
+   **/
+  | 'ReproveMismatch'
+  /**
+   * No ring root was found for the requested collection / ring index.
+   **/
+  | 'RingRootNotFound'
+  /**
+   * The requested ring revision is no longer accepted for this ring.
+   **/
+  | 'StaleRevision'
+  /**
+   * Ring-VRF proof verification failed.
+   **/
+  | 'BadProof'
+  /**
+   * The configured ring capacity is invalid for this collection.
+   **/
+  | 'InvalidRingCapacity';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletPgasError =
+  /**
+   * This alias has already been used to claim PGAS in this period.
+   **/
+  | 'AlreadyClaimed'
+  /**
+   * The PGAS asset does not exist or minting failed.
+   **/
+  | 'PgasMintFailed'
+  /**
+   * `clean_pgas_claim_records` was called with a day that has no stored records.
+   **/
+  | 'NoRecordsForDay'
+  /**
+   * The `first_alias` passed to `clean_pgas_claim_records` does not match the first alias
+   * currently stored under the prefix.
+   **/
+  | 'FirstAliasMismatch';
 
 export type PalletReviveVmCodeInfo = {
   owner: AccountId32;
@@ -24943,19 +25882,19 @@ export type PalletReviveStorageDeletionQueueItem = { trieId: Bytes; accountId: A
 
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
-export type PalletReviveEvmApiBlock = {
+export type PalletReviveEvmApiRpcTypesGenBlock = {
   baseFeePerGas: U256;
   blobGasUsed: U256;
   difficulty: U256;
   excessBlobGas: U256;
-  extraData: PalletReviveTypesCommonByteBytes;
+  extraData: PalletReviveEvmApiByteBytes;
   gasLimit: U256;
   gasUsed: U256;
   hash: H256;
-  logsBloom: PalletReviveTypesCommonByteBytes256;
+  logsBloom: PalletReviveEvmApiByteBytes256;
   miner: H160;
   mixHash: H256;
-  nonce: PalletReviveTypesCommonByteBytes8;
+  nonce: PalletReviveEvmApiByteBytes8;
   number: U256;
   parentBeaconBlockRoot?: H256 | undefined;
   parentHash: H256;
@@ -24966,53 +25905,53 @@ export type PalletReviveEvmApiBlock = {
   stateRoot: H256;
   timestamp: U256;
   totalDifficulty?: U256 | undefined;
-  transactions: PalletReviveEvmApiTransactionHashesOrTransactionInfos;
+  transactions: PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos;
   transactionsRoot: H256;
   uncles: Array<H256>;
-  withdrawals: Array<PalletReviveEvmApiBlockWithdrawal>;
+  withdrawals: Array<PalletReviveEvmApiRpcTypesGenWithdrawal>;
   withdrawalsRoot: H256;
 };
 
-export type PalletReviveTypesCommonByteBytes = Bytes;
+export type PalletReviveEvmApiByteBytes = Bytes;
 
-export type PalletReviveTypesCommonByteBytes256 = FixedBytes<256>;
+export type PalletReviveEvmApiByteBytes256 = FixedBytes<256>;
 
-export type PalletReviveTypesCommonByteBytes8 = FixedBytes<8>;
+export type PalletReviveEvmApiByteBytes8 = FixedBytes<8>;
 
-export type PalletReviveEvmApiTransactionHashesOrTransactionInfos =
+export type PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos =
   | { type: 'Hashes'; value: Array<H256> }
-  | { type: 'TransactionInfos'; value: Array<PalletReviveEvmApiTransactionTransactionInfo> };
+  | { type: 'TransactionInfos'; value: Array<PalletReviveEvmApiRpcTypesGenTransactionInfo> };
 
-export type PalletReviveEvmApiTransactionTransactionInfo = {
+export type PalletReviveEvmApiRpcTypesGenTransactionInfo = {
   blockHash: H256;
   blockNumber: U256;
   from: H160;
   hash: H256;
   transactionIndex: U256;
-  transactionSigned: PalletReviveEvmApiTransactionTransactionSigned;
+  transactionSigned: PalletReviveEvmApiRpcTypesGenTransactionSigned;
 };
 
-export type PalletReviveEvmApiTransactionTransactionSigned =
-  | { type: 'Transaction7702Signed'; value: PalletReviveEvmApiTransactionTransaction7702Signed }
-  | { type: 'Transaction4844Signed'; value: PalletReviveEvmApiTransactionTransaction4844Signed }
-  | { type: 'Transaction1559Signed'; value: PalletReviveEvmApiTransactionTransaction1559Signed }
-  | { type: 'Transaction2930Signed'; value: PalletReviveEvmApiTransactionTransaction2930Signed }
-  | { type: 'TransactionLegacySigned'; value: PalletReviveEvmApiTransactionTransactionLegacySigned };
+export type PalletReviveEvmApiRpcTypesGenTransactionSigned =
+  | { type: 'Transaction7702Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction7702Signed }
+  | { type: 'Transaction4844Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction4844Signed }
+  | { type: 'Transaction1559Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction1559Signed }
+  | { type: 'Transaction2930Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction2930Signed }
+  | { type: 'TransactionLegacySigned'; value: PalletReviveEvmApiRpcTypesGenTransactionLegacySigned };
 
-export type PalletReviveEvmApiTransactionTransaction7702Signed = {
-  transaction7702Unsigned: PalletReviveEvmApiTransactionTransaction7702Unsigned;
+export type PalletReviveEvmApiRpcTypesGenTransaction7702Signed = {
+  transaction7702Unsigned: PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransaction7702Unsigned = {
-  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
-  authorizationList: Array<PalletReviveEvmApiTransactionAuthorizationListEntry>;
+export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
   chainId: U256;
   gas: U256;
-  input: PalletReviveTypesCommonByteBytes;
+  input: PalletReviveEvmApiByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
   nonce: U256;
@@ -25021,9 +25960,9 @@ export type PalletReviveEvmApiTransactionTransaction7702Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiTransactionAccessListEntry = { address: H160; storageKeys: Array<H256> };
+export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
 
-export type PalletReviveEvmApiTransactionAuthorizationListEntry = {
+export type PalletReviveEvmApiRpcTypesGenAuthorizationListEntry = {
   chainId: U256;
   address: H160;
   nonce: U256;
@@ -25032,19 +25971,19 @@ export type PalletReviveEvmApiTransactionAuthorizationListEntry = {
   s: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransaction4844Signed = {
-  transaction4844Unsigned: PalletReviveEvmApiTransactionTransaction4844Unsigned;
+export type PalletReviveEvmApiRpcTypesGenTransaction4844Signed = {
+  transaction4844Unsigned: PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned;
   r: U256;
   s: U256;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransaction4844Unsigned = {
-  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
+export type PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
   blobVersionedHashes: Array<H256>;
   chainId: U256;
   gas: U256;
-  input: PalletReviveTypesCommonByteBytes;
+  input: PalletReviveEvmApiByteBytes;
   maxFeePerBlobGas: U256;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
@@ -25054,20 +25993,20 @@ export type PalletReviveEvmApiTransactionTransaction4844Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransaction1559Signed = {
-  transaction1559Unsigned: PalletReviveEvmApiTransactionTransaction1559Unsigned;
+export type PalletReviveEvmApiRpcTypesGenTransaction1559Signed = {
+  transaction1559Unsigned: PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransaction1559Unsigned = {
-  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
+export type PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
   chainId: U256;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveTypesCommonByteBytes;
+  input: PalletReviveEvmApiByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
   nonce: U256;
@@ -25076,53 +26015,52 @@ export type PalletReviveEvmApiTransactionTransaction1559Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransaction2930Signed = {
-  transaction2930Unsigned: PalletReviveEvmApiTransactionTransaction2930Unsigned;
+export type PalletReviveEvmApiRpcTypesGenTransaction2930Signed = {
+  transaction2930Unsigned: PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransaction2930Unsigned = {
-  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
+export type PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
   chainId: U256;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveTypesCommonByteBytes;
+  input: PalletReviveEvmApiByteBytes;
   nonce: U256;
   to?: H160 | undefined;
   rType: number;
   value: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransactionLegacySigned = {
-  transactionLegacyUnsigned: PalletReviveEvmApiTransactionTransactionLegacyUnsigned;
+export type PalletReviveEvmApiRpcTypesGenTransactionLegacySigned = {
+  transactionLegacyUnsigned: PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned;
   r: U256;
   s: U256;
   v: U256;
 };
 
-export type PalletReviveEvmApiTransactionTransactionLegacyUnsigned = {
+export type PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned = {
   chainId?: U256 | undefined;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveTypesCommonByteBytes;
+  input: PalletReviveEvmApiByteBytes;
   nonce: U256;
   to?: H160 | undefined;
   rType: number;
   value: U256;
 };
 
-export type PalletReviveEvmApiBlockWithdrawal = { address: H160; amount: U256; index: U256; validatorIndex: U256 };
+export type PalletReviveEvmApiRpcTypesGenWithdrawal = {
+  address: H160;
+  amount: U256;
+  index: U256;
+  validatorIndex: U256;
+};
 
 export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
-
-export type PalletReviveEvmBlockHashReceiptCommittedReceiptLogs = {
-  encodedLen: number;
-  bloom: FixedBytes<256>;
-  exceeded: boolean;
-};
 
 export type PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR = {
   transactionRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
@@ -25421,12 +26359,7 @@ export type PalletReviveError =
    * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
    * queue has not yet drained.
    **/
-  | 'PendingDepositCleanup'
-  /**
-   * The logs of the ethereum transaction would exceed
-   * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
-   **/
-  | 'ReceiptTooLarge';
+  | 'PendingDepositCleanup';
 
 /**
  * Error types for the permit pallet.
@@ -25464,166 +26397,6 @@ export type PalletAssetsPrecompilesPermitPalletError =
    * The spender address is invalid (e.g., zero address).
    **/
   | 'InvalidSpender';
-
-export type IndivPalletMembersSubscriberRingCommitmentRecord = {
-  root: VerifiableRingMembersCommitment;
-  revision: number;
-  sourceTime: bigint;
-  sourceSequence: bigint;
-};
-
-export type IndivPalletMembersSubscriberRingPurgeProgress = { generation: number; page: number };
-
-export type IndivPalletMembersSubscriberRingCollectionState = {
-  ringCount: number;
-  nextRingIndex: number;
-  nextScanIndex: number;
-  missingIndices: Array<[number, number]>;
-  deletedIndices: Array<number>;
-  lastBatchReceivedTime: bigint;
-};
-
-export type IndivPalletMembersSubscriberSubscriptionStatus =
-  | { type: 'Inactive' }
-  | { type: 'Active'; value: { initializedAtSequence: bigint } }
-  | { type: 'Terminated' };
-
-export type IndivPalletMembersSubscriberUpdatesProcessingState = {
-  lastProcessedSequence: bigint;
-  lastReplayRequestTime: bigint;
-};
-
-export type IndivPalletMembersSubscriberNotifierEndpoint = { location: StagingXcmV5Location; palletIndex: number };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type IndivPalletMembersSubscriberError =
-  /**
-   * XCM message send failed.
-   **/
-  | 'XcmSendFailed'
-  /**
-   * Subscription is currently inactive.
-   **/
-  | 'SubscriptionInactive'
-  /**
-   * Subscription is in terminated state.
-   **/
-  | 'SubscriptionTerminated'
-  /**
-   * Subscription is active with a different sequence; must be terminated first.
-   **/
-  | 'SubscriptionAlreadyActive'
-  /**
-   * Collection with the given identifier is not tracked.
-   **/
-  | 'CollectionNotFound'
-  /**
-   * No ring root stored for the given ring index.
-   **/
-  | 'NoRoot'
-  /**
-   * Proof failed to verify against any stored ring root.
-   **/
-  | 'InvalidProof'
-  /**
-   * Stored ring exponent does not convert into the crypto's capacity.
-   **/
-  | 'InvalidRingExponent'
-  /**
-   * Requested revision is not present in the stored sliding window.
-   **/
-  | 'RevisionNotFound'
-  /**
-   * Requested revision has been superseded for longer than the retention duration.
-   **/
-  | 'RevisionExpired'
-  /**
-   * The notifier initialized more than `MaxCollections` collections.
-   **/
-  | 'TooManyCollections';
-
-export type IndivSupportRealityContextualAlias = { alias: FixedBytes<32>; context: FixedBytes<32> };
-
-export type IndivPalletAliasAccountsAliasAccountInfo = {
-  collection: FixedBytes<32>;
-  revision: number;
-  ring: number;
-  ca: IndivSupportRealityContextualAlias;
-};
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type IndivPalletAliasAccountsError =
-  /**
-   * The collection is not accepted.
-   **/
-  | 'InvalidCollection'
-  /**
-   * The account is already in use under another alias.
-   **/
-  | 'AccountInUse'
-  /**
-   * The account is not known.
-   **/
-  | 'InvalidAccount'
-  /**
-   * Alias <-> Account is already set and up to date.
-   **/
-  | 'AliasAccountAlreadySet'
-  /**
-   * Call is too late or too early.
-   **/
-  | 'TimeOutOfRange'
-  /**
-   * The PGAS fee for alias registrations has not been set yet.
-   **/
-  | 'AliasFeeUnset'
-  /**
-   * The proof passed to `reprove_alias_account` produced an alias / context
-   * that does not match the stored mapping for the signer.
-   **/
-  | 'ReproveMismatch'
-  /**
-   * No ring root was found for the requested collection / ring index.
-   **/
-  | 'RingRootNotFound'
-  /**
-   * The requested ring revision is no longer accepted for this ring.
-   **/
-  | 'StaleRevision'
-  /**
-   * Ring-VRF proof verification failed.
-   **/
-  | 'BadProof'
-  /**
-   * The configured ring capacity is invalid for this collection.
-   **/
-  | 'InvalidRingCapacity';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type IndivPalletPgasError =
-  /**
-   * This alias has already been used to claim PGAS in this period.
-   **/
-  | 'AlreadyClaimed'
-  /**
-   * The PGAS asset does not exist or minting failed.
-   **/
-  | 'PgasMintFailed'
-  /**
-   * `clean_pgas_claim_records` was called with a day that has no stored records.
-   **/
-  | 'NoRecordsForDay'
-  /**
-   * The `first_alias` passed to `clean_pgas_claim_records` does not match the first alias
-   * currently stored under the prefix.
-   **/
-  | 'FirstAliasMismatch';
 
 export type IndivPalletDotnsGatewayRegistrationRecord = {
   collection: IndivPalletDotnsGatewayCollection;
@@ -25725,6 +26498,15 @@ export type IndivPalletNetworkSuffixError =
    * A network suffix cannot be empty.
    **/
   'EmptySuffix';
+
+/**
+ * Error for the Sudo pallet.
+ **/
+export type PalletSudoError =
+  /**
+   * Sender must be the Sudo account.
+   **/
+  'RequireSudo';
 
 /**
  * The `Error` enum of this pallet.
@@ -25871,7 +26653,7 @@ export type XcmRuntimeApisFeesError =
 
 export type XcmRuntimeApisDryRunCallDryRunEffects = {
   executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
-  emittedEvents: Array<AssetHubPolkadotRuntimeRuntimeEvent>;
+  emittedEvents: Array<AssetHubPaseoRuntimeRuntimeEvent>;
   localXcm?: XcmVersionedXcm | undefined;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
@@ -25880,7 +26662,7 @@ export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFa
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
   executionResult: StagingXcmV5TraitsOutcome;
-  emittedEvents: Array<AssetHubPolkadotRuntimeRuntimeEvent>;
+  emittedEvents: Array<AssetHubPaseoRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
 
@@ -25897,6 +26679,39 @@ export type XcmRuntimeApisAuthorizedAliasesError = 'LocationVersionConversionFai
 
 export type AssetsCommonRuntimeApiFungiblesAccessError = 'AssetIdConversionFailed' | 'AmountToBalanceConversionFailed';
 
+export type IndivPalletScarcityRuntimeApiMetadataQuery =
+  | { type: 'Instance'; value: bigint }
+  | { type: 'Item'; value: { collection: number; item: number } }
+  | { type: 'Collection'; value: number };
+
+export type IndivPalletScarcityRuntimeApiMetadataLayers = {
+  resolved?: IndivPalletScarcityRuntimeApiMetadataTarget | undefined;
+  collection: Array<[Bytes, Bytes]>;
+  item: Array<[Bytes, Bytes]>;
+  instance: Array<[Bytes, Bytes]>;
+};
+
+export type IndivPalletScarcityRuntimeApiMetadataTarget =
+  | { type: 'Instance'; value: { instance: bigint; collection: number; item: number } }
+  | { type: 'Item'; value: { collection: number; item: number } }
+  | { type: 'Collection'; value: number };
+
+export type IndivPalletNftClaimsRuntimeApiPreviewQuery = { credit: FixedBytes<32>; collection: number };
+
+export type IndivPalletNftClaimsRuntimeApiPreviewOutcome =
+  | { type: 'Mints'; value: { item: number; via: IndivPalletNftClaimsRuntimeApiSelectionKind } }
+  | { type: 'Fails'; value: { reason: IndivPalletNftClaimsRuntimeApiPreviewFailure } };
+
+export type IndivPalletNftClaimsRuntimeApiSelectionKind = { type: 'Random' } | { type: 'Contract'; value: H160 };
+
+export type IndivPalletNftClaimsRuntimeApiPreviewFailure =
+  | { type: 'CollectionNotRegistered' }
+  | { type: 'UnknownCollection' }
+  | { type: 'CollectionOwnerChanged' }
+  | { type: 'NoItems' }
+  | { type: 'UnknownItem'; value: { item: number } }
+  | { type: 'ContractSelectionFailed'; value: { error: DispatchError } };
+
 export type CumulusPrimitivesCoreCollationInfo = {
   upwardMessages: Array<Bytes>;
   horizontalMessages: Array<PolkadotCorePrimitivesOutboundHrmpMessage>;
@@ -25910,245 +26725,66 @@ export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
 export type SystemParachainsCommonApisInflationInfo = { issuance: Perquintill; nextMint: [bigint, bigint] };
 
-export type PalletReviveTypesRuntimeApiTypesBlockBlockV1 = {
-  baseFeePerGas: U256;
-  blobGasUsed: U256;
-  difficulty: U256;
-  excessBlobGas: U256;
-  extraData: PalletReviveTypesCommonByteBytes;
-  gasLimit: U256;
-  gasUsed: U256;
-  hash: H256;
-  logsBloom: PalletReviveTypesCommonByteBytes256;
-  miner: H160;
-  mixHash: H256;
-  nonce: PalletReviveTypesCommonByteBytes8;
-  number: U256;
-  parentBeaconBlockRoot?: H256 | undefined;
-  parentHash: H256;
-  receiptsRoot: H256;
-  requestsHash?: H256 | undefined;
-  sha3Uncles: H256;
-  size: U256;
-  stateRoot: H256;
-  timestamp: U256;
-  totalDifficulty?: U256 | undefined;
-  transactions: PalletReviveTypesRuntimeApiTypesTransactionHashesOrTransactionInfosV1;
-  transactionsRoot: H256;
-  uncles: Array<H256>;
-  withdrawals: Array<PalletReviveTypesRuntimeApiTypesBlockWithdrawalV1>;
-  withdrawalsRoot: H256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionHashesOrTransactionInfosV1 =
-  | { type: 'Hashes'; value: Array<H256> }
-  | { type: 'TransactionInfos'; value: Array<PalletReviveTypesRuntimeApiTypesTransactionTransactionInfoV1> };
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransactionInfoV1 = {
-  blockHash: H256;
-  blockNumber: U256;
-  from: H160;
-  hash: H256;
-  transactionIndex: U256;
-  transactionSigned: PalletReviveTypesRuntimeApiTypesTransactionTransactionSignedV1;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransactionSignedV1 =
-  | { type: 'Transaction7702Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction7702SignedV1 }
-  | { type: 'Transaction4844Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction4844SignedV1 }
-  | { type: 'Transaction1559Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction1559SignedV1 }
-  | { type: 'Transaction2930Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction2930SignedV1 }
-  | { type: 'TransactionLegacySigned'; value: PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacySignedV1 };
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction7702SignedV1 = {
-  transaction7702Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction7702UnsignedV1;
-  r: U256;
-  s: U256;
-  v?: U256 | undefined;
-  yParity: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction7702UnsignedV1 = {
-  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
-  authorizationList: Array<PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1>;
-  chainId: U256;
-  gas: U256;
-  input: PalletReviveTypesCommonByteBytes;
-  maxFeePerGas: U256;
-  maxPriorityFeePerGas: U256;
-  nonce: U256;
-  to: H160;
-  rType: number;
-  value: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1 = { address: H160; storageKeys: Array<H256> };
-
-export type PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1 = {
-  chainId: U256;
-  address: H160;
-  nonce: U256;
-  yParity: U256;
-  r: U256;
-  s: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction4844SignedV1 = {
-  transaction4844Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction4844UnsignedV1;
-  r: U256;
-  s: U256;
-  yParity: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction4844UnsignedV1 = {
-  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
-  blobVersionedHashes: Array<H256>;
-  chainId: U256;
-  gas: U256;
-  input: PalletReviveTypesCommonByteBytes;
-  maxFeePerBlobGas: U256;
-  maxFeePerGas: U256;
-  maxPriorityFeePerGas: U256;
-  nonce: U256;
-  to: H160;
-  rType: number;
-  value: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction1559SignedV1 = {
-  transaction1559Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction1559UnsignedV1;
-  r: U256;
-  s: U256;
-  v?: U256 | undefined;
-  yParity: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction1559UnsignedV1 = {
-  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
-  chainId: U256;
-  gas: U256;
-  gasPrice: U256;
-  input: PalletReviveTypesCommonByteBytes;
-  maxFeePerGas: U256;
-  maxPriorityFeePerGas: U256;
-  nonce: U256;
-  to?: H160 | undefined;
-  rType: number;
-  value: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction2930SignedV1 = {
-  transaction2930Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction2930UnsignedV1;
-  r: U256;
-  s: U256;
-  v?: U256 | undefined;
-  yParity: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransaction2930UnsignedV1 = {
-  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
-  chainId: U256;
-  gas: U256;
-  gasPrice: U256;
-  input: PalletReviveTypesCommonByteBytes;
-  nonce: U256;
-  to?: H160 | undefined;
-  rType: number;
-  value: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacySignedV1 = {
-  transactionLegacyUnsigned: PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacyUnsignedV1;
-  r: U256;
-  s: U256;
-  v: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacyUnsignedV1 = {
-  chainId?: U256 | undefined;
-  gas: U256;
-  gasPrice: U256;
-  input: PalletReviveTypesCommonByteBytes;
-  nonce: U256;
-  to?: H160 | undefined;
-  rType: number;
-  value: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesBlockWithdrawalV1 = {
-  address: H160;
-  amount: U256;
-  index: U256;
-  validatorIndex: U256;
-};
-
-export type PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1 = { gasUsed: U256; effectiveGasPrice: U256 };
-
-export type PalletReviveTypesRuntimeApiTypesContractContractResultV1 = {
+export type PalletRevivePrimitivesContractResult = {
   weightConsumed: SpWeightsWeightV2Weight;
   weightRequired: SpWeightsWeightV2Weight;
-  storageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
-  maxStorageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
   gasConsumed: bigint;
-  result: Result<PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1, DispatchError>;
+  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
 };
 
-export type PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1 = {
-  flags: PalletReviveUapiFlagsReturnFlags;
-  data: Bytes;
-};
+export type PalletRevivePrimitivesExecReturnValue = { flags: PalletReviveUapiFlagsReturnFlags; data: Bytes };
 
 export type PalletReviveUapiFlagsReturnFlags = { bits: number };
 
-export type PalletReviveTypesRuntimeApiTypesContractStorageDepositV1 =
+export type PalletRevivePrimitivesStorageDeposit =
   | { type: 'Refund'; value: bigint }
   | { type: 'Charge'; value: bigint };
 
-export type PalletReviveTypesRuntimeApiTypesContractCodeV1 =
-  | { type: 'Upload'; value: Bytes }
-  | { type: 'Existing'; value: H256 };
+export type PalletRevivePrimitivesCode = { type: 'Upload'; value: Bytes } | { type: 'Existing'; value: H256 };
 
-export type PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1 = {
+export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
   weightConsumed: SpWeightsWeightV2Weight;
   weightRequired: SpWeightsWeightV2Weight;
-  storageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
-  maxStorageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
   gasConsumed: bigint;
-  result: Result<PalletReviveTypesRuntimeApiTypesContractInstantiateReturnValueV1, DispatchError>;
+  result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
 };
 
-export type PalletReviveTypesRuntimeApiTypesContractInstantiateReturnValueV1 = {
-  result: PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1;
+export type PalletRevivePrimitivesInstantiateReturnValue = {
+  result: PalletRevivePrimitivesExecReturnValue;
   addr: H160;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1 = {
-  accessList?: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1> | undefined;
-  authorizationList: Array<PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1>;
+export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
+  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
+  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
   blobVersionedHashes: Array<H256>;
-  blobs: Array<PalletReviveTypesCommonByteBytes>;
+  blobs: Array<PalletReviveEvmApiByteBytes>;
   chainId?: U256 | undefined;
   from?: H160 | undefined;
   gas?: U256 | undefined;
   gasPrice?: U256 | undefined;
-  input: PalletReviveTypesRuntimeApiTypesTransactionInputOrDataV1;
+  input: PalletReviveEvmApiRpcTypesGenInputOrData;
   maxFeePerBlobGas?: U256 | undefined;
   maxFeePerGas?: U256 | undefined;
   maxPriorityFeePerGas?: U256 | undefined;
   nonce?: U256 | undefined;
   to?: H160 | undefined;
-  rType?: PalletReviveTypesCommonByte | undefined;
+  rType?: PalletReviveEvmApiByte | undefined;
   value?: U256 | undefined;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTransactionInputOrDataV1 = {
-  input?: PalletReviveTypesCommonByteBytes | undefined;
-  data?: PalletReviveTypesCommonByteBytes | undefined;
+export type PalletReviveEvmApiRpcTypesGenInputOrData = {
+  input?: PalletReviveEvmApiByteBytes | undefined;
+  data?: PalletReviveEvmApiByteBytes | undefined;
 };
 
-export type PalletReviveTypesCommonByte = number;
+export type PalletReviveEvmApiByte = number;
 
-export type PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1 = {
+export type PalletRevivePrimitivesEthTransactInfo = {
   weightRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
   maxStorageDeposit: bigint;
@@ -26160,49 +26796,47 @@ export type PalletRevivePrimitivesEthTransactError =
   | { type: 'Data'; value: Bytes }
   | { type: 'Message'; value: string };
 
-export type PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1 = {
+export type PalletReviveEvmApiRpcTypesDryRunConfig = {
   timestampOverride?: bigint | undefined;
   performBalanceChecks?: boolean | undefined;
-  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
 };
 
-export type PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 = Array<
-  [H160, PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideV1]
->;
+export type PalletReviveEvmApiRpcTypesGenStateOverrideSet = Array<[H160, PalletReviveEvmApiRpcTypesGenStateOverride]>;
 
-export type PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideV1 = {
+export type PalletReviveEvmApiRpcTypesGenStateOverride = {
   balance?: U256 | undefined;
   nonce?: U256 | undefined;
-  code?: PalletReviveTypesCommonByteBytes | undefined;
-  storage?: PalletReviveTypesRuntimeApiTypesStateOverridesStorageOverrideV1 | undefined;
+  code?: PalletReviveEvmApiByteBytes | undefined;
+  storage?: PalletReviveEvmApiRpcTypesGenStorageOverride | undefined;
   movePrecompileToAddress?: H160 | undefined;
 };
 
-export type PalletReviveTypesRuntimeApiTypesStateOverridesStorageOverrideV1 =
+export type PalletReviveEvmApiRpcTypesGenStorageOverride =
   | { type: 'State'; value: Array<[H256, H256]> }
   | { type: 'StateDiff'; value: Array<[H256, H256]> };
 
-export type PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1 = { codeHash: H256; deposit: bigint };
+export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
 export type PalletRevivePrimitivesContractAccessError =
   | { type: 'DoesntExist' }
   | { type: 'KeyDecodingFailed' }
   | { type: 'StorageWriteFailed'; value: DispatchError };
 
-export type PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1 =
-  | { type: 'CallTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerCallTracerConfigV1 | undefined }
-  | { type: 'PrestateTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerPrestateTracerConfigV1 | undefined }
-  | { type: 'ExecutionTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerExecutionTracerConfigV1 | undefined };
+export type PalletReviveEvmApiDebugRpcTypesTracerType =
+  | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
+  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined }
+  | { type: 'ExecutionTracer'; value?: PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig | undefined };
 
-export type PalletReviveTypesRuntimeApiTypesTracerCallTracerConfigV1 = { withLogs: boolean; onlyTopCall: boolean };
+export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
 
-export type PalletReviveTypesRuntimeApiTypesTracerPrestateTracerConfigV1 = {
+export type PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig = {
   diffMode: boolean;
   disableStorage: boolean;
   disableCode: boolean;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTracerExecutionTracerConfigV1 = {
+export type PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig = {
   enableMemory: boolean;
   disableStack: boolean;
   disableStorage: boolean;
@@ -26212,35 +26846,35 @@ export type PalletReviveTypesRuntimeApiTypesTracerExecutionTracerConfigV1 = {
   memoryWordLimit: number;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTracesTraceV1 =
-  | { type: 'Call'; value: PalletReviveTypesRuntimeApiTypesTracesCallTraceV1 }
-  | { type: 'Prestate'; value: PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 }
-  | { type: 'Execution'; value: PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 };
+export type PalletReviveEvmApiDebugRpcTypesTrace =
+  | { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace }
+  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace }
+  | { type: 'Execution'; value: PalletReviveEvmApiDebugRpcTypesExecutionTrace };
 
-export type PalletReviveTypesRuntimeApiTypesTracesCallTraceV1 = {
+export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   from: H160;
   gas: bigint;
   gasUsed: bigint;
   to: H160;
-  input: PalletReviveTypesCommonByteBytes;
-  output: PalletReviveTypesCommonByteBytes;
+  input: PalletReviveEvmApiByteBytes;
+  output: PalletReviveEvmApiByteBytes;
   error?: string | undefined;
   revertReason?: string | undefined;
-  calls: Array<PalletReviveTypesRuntimeApiTypesTracesCallTraceV1>;
-  logs: Array<PalletReviveTypesRuntimeApiTypesTracesCallLogV1>;
+  calls: Array<PalletReviveEvmApiDebugRpcTypesCallTrace>;
+  logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
   value?: U256 | undefined;
-  callType: PalletReviveTypesRuntimeApiTypesTracesCallTypeV1;
+  callType: PalletReviveEvmApiDebugRpcTypesCallType;
   childCallCount: number;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTracesCallLogV1 = {
+export type PalletReviveEvmApiDebugRpcTypesCallLog = {
   address: H160;
   topics: Array<H256>;
-  data: PalletReviveTypesCommonByteBytes;
+  data: PalletReviveEvmApiByteBytes;
   position: number;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTracesCallTypeV1 =
+export type PalletReviveEvmApiDebugRpcTypesCallType =
   | 'Call'
   | 'StaticCall'
   | 'DelegateCall'
@@ -26248,581 +26882,62 @@ export type PalletReviveTypesRuntimeApiTypesTracesCallTypeV1 =
   | 'Create2'
   | 'Selfdestruct';
 
-export type PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 =
-  | { type: 'Prestate'; value: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]> }
+export type PalletReviveEvmApiDebugRpcTypesPrestateTrace =
+  | { type: 'Prestate'; value: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]> }
   | {
       type: 'DiffMode';
       value: {
-        pre: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]>;
-        post: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]>;
+        pre: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
+        post: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
       };
     };
 
-export type PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1 = {
+export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
   balance?: U256 | undefined;
   nonce?: number | undefined;
-  code?: PalletReviveTypesCommonByteBytes | undefined;
-  storage: Array<[PalletReviveTypesCommonByteBytes, PalletReviveTypesCommonByteBytes | undefined]>;
+  code?: PalletReviveEvmApiByteBytes | undefined;
+  storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 = {
+export type PalletReviveEvmApiDebugRpcTypesExecutionTrace = {
   gas: bigint;
   weightConsumed: SpWeightsWeightV2Weight;
   baseCallWeight: SpWeightsWeightV2Weight;
   failed: boolean;
-  returnValue: PalletReviveTypesCommonByteBytes;
-  structLogs: Array<PalletReviveTypesRuntimeApiTypesTracesExecutionStepV1>;
+  returnValue: PalletReviveEvmApiByteBytes;
+  structLogs: Array<PalletReviveEvmApiDebugRpcTypesExecutionStep>;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTracesExecutionStepV1 = {
+export type PalletReviveEvmApiDebugRpcTypesExecutionStep = {
   gas: bigint;
   gasCost: bigint;
   weightCost: SpWeightsWeightV2Weight;
   depth: number;
-  returnData: PalletReviveTypesCommonByteBytes;
+  returnData: PalletReviveEvmApiByteBytes;
   error?: string | undefined;
-  kind: PalletReviveTypesRuntimeApiTypesTracesExecutionStepKindV1;
+  kind: PalletReviveEvmApiDebugRpcTypesExecutionStepKind;
 };
 
-export type PalletReviveTypesRuntimeApiTypesTracesExecutionStepKindV1 =
+export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
   | {
       type: 'EvmOpcode';
       value: {
         pc: number;
-        op: PalletReviveTypesRuntimeApiTypesTracesEvmOpcodeV1;
-        stack: Array<PalletReviveTypesCommonByteBytes>;
-        memory: Array<PalletReviveTypesCommonByteBytes>;
-        storage?: Array<[PalletReviveTypesCommonByteBytes, PalletReviveTypesCommonByteBytes]> | undefined;
+        op: number;
+        stack: Array<PalletReviveEvmApiByteBytes>;
+        memory: Array<PalletReviveEvmApiByteBytes>;
+        storage?: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes]> | undefined;
       };
     }
-  | {
-      type: 'PvmSyscall';
-      value: {
-        op: PalletReviveTypesRuntimeApiTypesTracesPolkavmSyscallV1;
-        args: Array<bigint>;
-        returned?: bigint | undefined;
-      };
-    };
+  | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
 
-export type PalletReviveTypesRuntimeApiTypesTracesEvmOpcodeV1 = number;
-
-export type PalletReviveTypesRuntimeApiTypesTracesPolkavmSyscallV1 =
-  | 'Noop'
-  | 'SetStorage'
-  | 'SetStorageOrClear'
-  | 'GetStorage'
-  | 'GetStorageOrZero'
-  | 'Call'
-  | 'CallEvm'
-  | 'DelegateCall'
-  | 'DelegateCallEvm'
-  | 'Instantiate'
-  | 'CallDataSize'
-  | 'CallDataCopy'
-  | 'CallDataLoad'
-  | 'SealReturn'
-  | 'Caller'
-  | 'Origin'
-  | 'CodeHash'
-  | 'CodeSize'
-  | 'Address'
-  | 'GetImmutableData'
-  | 'SetImmutableData'
-  | 'Balance'
-  | 'BalanceOf'
-  | 'ChainId'
-  | 'GasLimit'
-  | 'ValueTransferred'
-  | 'GasPrice'
-  | 'BaseFee'
-  | 'Now'
-  | 'DepositEvent'
-  | 'BlockNumber'
-  | 'BlockHash'
-  | 'BlockAuthor'
-  | 'HashKeccak256'
-  | 'ReturnDataSize'
-  | 'ReturnDataCopy'
-  | 'RefTimeLeft'
-  | 'ConsumeAllGas'
-  | 'EcdsaToEthAddress'
-  | 'Sr25519Verify'
-  | 'Terminate'
-  | 'PvmFuel';
-
-export type PalletReviveTypesRuntimeApiTypesStateOverridesTracingConfigV1 = {
-  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+export type PalletReviveEvmApiRpcTypesTracingConfig = {
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
 };
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 
-export type PalletReviveTypesRuntimeApiDeclarationReviveRuntimeApiVersionDeclarations = Array<[string, number]>;
-
-export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthBlockBlockInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockInputPayloadV1 = {};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthBlockBlockOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockOutputPayloadV1 = {
-  block: PalletReviveTypesRuntimeApiTypesBlockBlockV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashInputPayloadV1 = { blockNumber: U256 };
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashOutputPayloadV1 = { blockHash?: H256 | undefined };
-
-export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1 = {};
-
-export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1 = {
-  receiptData: Array<PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1>;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitInputPayloadV1 = {};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitOutputPayloadV1 = { blockGasLimit: U256 };
-
-export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasInputPayloadV1 = {};
-
-export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasOutputPayloadV1 = {
-  maxExtrinsicWeightInGas: U256;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBalanceBalanceInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceInputPayloadV1 = { address: H160 };
-
-export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBalanceBalanceOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceOutputPayloadV1 = { balance: U256 };
-
-export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceInputPayloadV1 = {};
-
-export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceOutputPayloadV1 = { gasPrice: U256 };
-
-export type PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsNonceNonceInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsNonceNonceInputPayloadV1 = { address: H160 };
-
-export type PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsNonceNonceOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsNonceNonceOutputPayloadV1 = { nonce: number };
-
-export type PalletReviveTypesRuntimeApiPayloadsCallCallVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsCallCallInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsCallCallInputPayloadV1 = {
-  origin: AccountId32;
-  dest: H160;
-  value: bigint;
-  gasLimit?: SpWeightsWeightV2Weight | undefined;
-  storageDepositLimit?: bigint | undefined;
-  inputData: Bytes;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsCallCallVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsCallCallOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsCallCallOutputPayloadV1 = {
-  contractResult: PalletReviveTypesRuntimeApiTypesContractContractResultV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateInputPayloadV1 = {
-  origin: AccountId32;
-  value: bigint;
-  gasLimit?: SpWeightsWeightV2Weight | undefined;
-  storageDepositLimit?: bigint | undefined;
-  code: PalletReviveTypesRuntimeApiTypesContractCodeV1;
-  data: Bytes;
-  salt?: FixedBytes<32> | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateOutputPayloadV1 = {
-  contractResult: PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthTransactTransactInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactInputPayloadV1 = {
-  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
-  timestampOverride?: bigint | undefined;
-  performBalanceChecks: boolean;
-  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthTransactTransactOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactOutputPayloadV1 = {
-  transactInfo: PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasInputPayloadV1 = {
-  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
-  timestampOverride?: bigint | undefined;
-  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasOutputPayloadV1 = { gasEstimate: U256 };
-
-export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightInputPayloadV1 = { tx: Bytes };
-
-export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightOutputPayloadV1 = {
-  weight: SpWeightsWeightV2Weight;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeInputPayloadV1 = {
-  origin: AccountId32;
-  code: Bytes;
-  storageDepositLimit?: bigint | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeOutputPayloadV1 = {
-  codeUploadReturnValue: PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageInputPayloadV1 = {
-  address: H160;
-  key: PalletReviveTypesRuntimeApiTypesStorageStorageKeyV1;
-};
-
-export type PalletReviveTypesRuntimeApiTypesStorageStorageKeyV1 =
-  | { type: 'Fixed'; value: FixedBytes<32> }
-  | { type: 'Variable'; value: Bytes };
-
-export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageOutputPayloadV1 = { storage?: Bytes | undefined };
-
-export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressInputPayloadV1 = {};
-
-export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressOutputPayloadV1 = {
-  runtimePalletsAddress: H160;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsCodeCodeInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsCodeCodeInputPayloadV1 = { address: H160 };
-
-export type PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsCodeCodeOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsCodeCodeOutputPayloadV1 = { code: Bytes };
-
-export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdInputPayloadV1 = { address: H160 };
-
-export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdOutputPayloadV1 = { accountId: AccountId32 };
-
-export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustInputPayloadV1 = { balance: U256 };
-
-export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustOutputPayloadV1 = {
-  newBalance: bigint;
-  dust: number;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorInputPayloadV1 = {};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorOutputPayloadV1 = { blockAuthor: H160 };
-
-export type PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsAddressAddressInputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsAddressAddressInputPayloadV1 = { accountId: AccountId32 };
-
-export type PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsAddressAddressOutputPayloadV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsAddressAddressOutputPayloadV1 = { address: H160 };
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedInputPayload =
-  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV1 }
-  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV2 };
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV1 = {
-  block: SpRuntimeBlock;
-  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV2 = {
-  block: SpRuntimeBlock;
-  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedOutputPayload =
-  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV1 }
-  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV2 };
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV1 = {
-  traces: Array<[number, PalletReviveTypesRuntimeApiTypesTracesTraceV1]>;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV2 = {
-  entries: Array<[number, PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1]>;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1 =
-  | { type: 'Traced'; value: PalletReviveTypesRuntimeApiTypesTracesTraceV2 }
-  | { type: 'NotTraced' };
-
-export type PalletReviveTypesRuntimeApiTypesTracesTraceV2 =
-  | { type: 'Call'; value: PalletReviveTypesRuntimeApiTypesTracesCallTraceV2 }
-  | { type: 'Prestate'; value: PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 }
-  | { type: 'Execution'; value: PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 };
-
-export type PalletReviveTypesRuntimeApiTypesTracesCallTraceV2 = {
-  from: H160;
-  gas: bigint;
-  gasUsed: bigint;
-  to: H160;
-  input: PalletReviveTypesCommonByteBytes;
-  output: PalletReviveTypesCommonByteBytes;
-  error?: string | undefined;
-  revertReason?: string | undefined;
-  calls: Array<PalletReviveTypesRuntimeApiTypesTracesCallTraceV2>;
-  logs: Array<PalletReviveTypesRuntimeApiTypesTracesCallLogV2>;
-  value?: U256 | undefined;
-  callType: PalletReviveTypesRuntimeApiTypesTracesCallTypeV1;
-};
-
-export type PalletReviveTypesRuntimeApiTypesTracesCallLogV2 = {
-  address: H160;
-  topics: Array<H256>;
-  data: PalletReviveTypesCommonByteBytes;
-  position: number;
-  index: number;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedInputPayload =
-  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV1 }
-  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV2 };
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV1 = {
-  block: SpRuntimeBlock;
-  txIndex: number;
-  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV2 = {
-  block: SpRuntimeBlock;
-  txIndex: number;
-  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedOutputPayload =
-  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV1 }
-  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV2 };
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV1 = {
-  trace?: PalletReviveTypesRuntimeApiTypesTracesTraceV1 | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV2 = {
-  entry?: PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1 | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedInputPayload =
-  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV1 }
-  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV2 };
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV1 = {
-  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
-  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
-  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV2 = {
-  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
-  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
-  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedOutputPayload =
-  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV1 }
-  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV2 };
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV1 = {
-  trace: PalletReviveTypesRuntimeApiTypesTracesTraceV1;
-};
-
-export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV2 = {
-  trace: PalletReviveTypesRuntimeApiTypesTracesTraceV2;
-};
-
-export type AssetHubPolkadotRuntimeRuntimeError =
+export type AssetHubPaseoRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
   | { pallet: 'Preimage'; palletError: PalletPreimageError }
@@ -26848,9 +26963,10 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'ForeignAssets'; palletError: PalletAssetsError }
   | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
   | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
-  | { pallet: 'Psm'; palletError: PalletPsmError }
   | { pallet: 'AssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'AssetsHolder'; palletError: PalletAssetsHolderError }
+  | { pallet: 'Scarcity'; palletError: IndivPalletScarcityError }
+  | { pallet: 'Psm'; palletError: PalletPsmError }
   | { pallet: 'Treasury'; palletError: PalletTreasuryError }
   | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
   | { pallet: 'Referenda'; palletError: PalletReferendaError }
@@ -26859,6 +26975,7 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'ChildBounties'; palletError: PalletChildBountiesError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'MultiAssetBounties'; palletError: PalletMultiAssetBountiesError }
+  | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
@@ -26866,12 +26983,14 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'MultiBlockElection'; palletError: PalletElectionProviderMultiBlockError }
   | { pallet: 'MultiBlockElectionSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
-  | { pallet: 'Revive'; palletError: PalletReviveError }
-  | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
+  | { pallet: 'NftClaims'; palletError: IndivPalletNftClaimsError }
   | { pallet: 'MembersSubscriber'; palletError: IndivPalletMembersSubscriberError }
   | { pallet: 'AliasAccounts'; palletError: IndivPalletAliasAccountsError }
   | { pallet: 'Pgas'; palletError: IndivPalletPgasError }
+  | { pallet: 'Revive'; palletError: PalletReviveError }
+  | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
   | { pallet: 'DotnsGateway'; palletError: IndivPalletDotnsGatewayError }
   | { pallet: 'OriginRestriction'; palletError: IndivPalletOriginRestrictionError }
   | { pallet: 'NetworkSuffix'; palletError: IndivPalletNetworkSuffixError }
+  | { pallet: 'Sudo'; palletError: PalletSudoError }
   | { pallet: 'AhOps'; palletError: PalletAhOpsError };

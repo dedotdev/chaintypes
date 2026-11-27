@@ -24,20 +24,20 @@ import type {
   U256,
 } from 'dedot/codecs';
 import type {
-  AssetHubPolkadotRuntimeRuntimeCallLike,
+  AssetHubPaseoRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
   FrameSystemEventRecord,
-  AssetHubPolkadotRuntimeRuntimeTask,
+  AssetHubPaseoRuntimeRuntimeTask,
   CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
   CumulusPalletParachainSystemParachainInherentInboundMessagesData,
-  AssetHubPolkadotRuntimeRuntimeParameters,
+  AssetHubPaseoRuntimeRuntimeParameters,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
   PalletBalancesAdjustmentDirection,
   PalletVestingVestingInfo,
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
-  AssetHubPolkadotRuntimeSessionKeys,
+  AssetHubPaseoRuntimeSessionKeys,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
@@ -51,9 +51,9 @@ import type {
   SnowbridgeCoreAssetMetadata,
   StagingXcmV5Asset,
   SnowbridgeCoreRewardMessageId,
-  AssetHubPolkadotRuntimeOriginCaller,
+  AssetHubPaseoRuntimeOriginCaller,
   PalletMultisigTimepoint,
-  AssetHubPolkadotRuntimeProxyType,
+  AssetHubPaseoRuntimeProxyType,
   PalletUniquesDestroyWitness,
   PalletNftsCollectionConfig,
   PalletNftsDestroyWitness,
@@ -68,6 +68,7 @@ import type {
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
+  IndivPalletScarcityTransferability,
   PalletPsmCircuitBreakerLevel,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   ParachainsCommonPayVersionedLocatableAccount,
@@ -75,6 +76,9 @@ import type {
   PalletConvictionVotingConviction,
   FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
+  PalletStateTrieMigrationMigrationLimits,
+  PalletStateTrieMigrationMigrationTask,
+  PalletStateTrieMigrationProgress,
   PalletNominationPoolsBondExtra,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsConfigOp,
@@ -90,7 +94,7 @@ import type {
   PalletElectionProviderMultiBlockAdminOperation,
   PalletElectionProviderMultiBlockPagedRawSolution,
   SpNposElectionsElectionScore,
-  AssetHubPolkadotRuntimeStakingNposCompactSolution16,
+  AssetHubPaseoRuntimeStakingNposCompactSolution16,
   PalletStakingAsyncRewardDestination,
   PalletStakingAsyncValidatorPrefs,
   PalletStakingAsyncPalletConfigOp,
@@ -99,24 +103,28 @@ import type {
   PalletStakingAsyncPalletConfigOpPerbill,
   PalletStakingAsyncPalletConfigOpBool,
   PalletStakingAsyncLedgerUnlockChunk,
+  IndivSupportCreditTreesCreditTreeBatch,
+  IndivPalletNftClaimsClaimantKind,
+  IndivSupportCreditTreesCreditProofNode,
+  IndivPalletNftClaimsItemSelection,
   IndivSupportRealityRingExponent,
   IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch,
   IndivPalletDotnsGatewayBaseLabel,
   IndivPalletDotnsGatewayChatKey,
   IndivPalletDotnsGatewayLink,
-  AssetHubPolkadotRuntimeIndividualityRestrictedEntity,
+  AssetHubPaseoRuntimeRestrictedEntity,
   PolkadotParachainPrimitivesPrimitivesId,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
-  T extends IRuntimeTxCall = AssetHubPolkadotRuntimeRuntimeCallLike,
+  T extends IRuntimeTxCall = AssetHubPaseoRuntimeRuntimeCallLike,
   ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes,
 > = Extrinsic<MultiAddressLike, T, SpRuntimeMultiSignature, ChainKnownTypes['Extra']> &
   ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord>, ChainKnownTypes['AssetId']>;
 
 export type TxCall<ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes> = (
   ...args: any[]
-) => ChainSubmittableExtrinsic<AssetHubPolkadotRuntimeRuntimeCallLike, ChainKnownTypes>;
+) => ChainSubmittableExtrinsic<AssetHubPaseoRuntimeRuntimeCallLike, ChainKnownTypes>;
 
 export interface ChainTx<
   ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes,
@@ -283,15 +291,15 @@ export interface ChainTx<
 
     /**
      *
-     * @param {AssetHubPolkadotRuntimeRuntimeTask} task
+     * @param {AssetHubPaseoRuntimeRuntimeTask} task
      **/
     doTask: GenericTxCall<
-      (task: AssetHubPolkadotRuntimeRuntimeTask) => ChainSubmittableExtrinsic<
+      (task: AssetHubPaseoRuntimeRuntimeTask) => ChainSubmittableExtrinsic<
         {
           pallet: 'System';
           palletCall: {
             name: 'DoTask';
-            params: { task: AssetHubPolkadotRuntimeRuntimeTask };
+            params: { task: AssetHubPaseoRuntimeRuntimeTask };
           };
         },
         ChainKnownTypes
@@ -612,14 +620,14 @@ export interface ChainTx<
      * @param {number} when
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     schedule: GenericTxCall<
       (
         when: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -629,7 +637,7 @@ export interface ChainTx<
               when: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPolkadotRuntimeRuntimeCallLike;
+              call: AssetHubPaseoRuntimeRuntimeCallLike;
             };
           };
         },
@@ -669,7 +677,7 @@ export interface ChainTx<
      * @param {number} when
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     scheduleNamed: GenericTxCall<
       (
@@ -677,7 +685,7 @@ export interface ChainTx<
         when: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -688,7 +696,7 @@ export interface ChainTx<
               when: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPolkadotRuntimeRuntimeCallLike;
+              call: AssetHubPaseoRuntimeRuntimeCallLike;
             };
           };
         },
@@ -720,14 +728,14 @@ export interface ChainTx<
      * @param {number} after
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     scheduleAfter: GenericTxCall<
       (
         after: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -737,7 +745,7 @@ export interface ChainTx<
               after: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPolkadotRuntimeRuntimeCallLike;
+              call: AssetHubPaseoRuntimeRuntimeCallLike;
             };
           };
         },
@@ -752,7 +760,7 @@ export interface ChainTx<
      * @param {number} after
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     scheduleNamedAfter: GenericTxCall<
       (
@@ -760,7 +768,7 @@ export interface ChainTx<
         after: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -771,7 +779,7 @@ export interface ChainTx<
               after: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPolkadotRuntimeRuntimeCallLike;
+              call: AssetHubPaseoRuntimeRuntimeCallLike;
             };
           };
         },
@@ -904,15 +912,15 @@ export interface ChainTx<
      * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
      * deleted by setting them to `None`.
      *
-     * @param {AssetHubPolkadotRuntimeRuntimeParameters} keyValue
+     * @param {AssetHubPaseoRuntimeRuntimeParameters} keyValue
      **/
     setParameter: GenericTxCall<
-      (keyValue: AssetHubPolkadotRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
+      (keyValue: AssetHubPaseoRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
         {
           pallet: 'Parameters';
           palletCall: {
             name: 'SetParameter';
-            params: { keyValue: AssetHubPolkadotRuntimeRuntimeParameters };
+            params: { keyValue: AssetHubPaseoRuntimeRuntimeParameters };
           };
         },
         ChainKnownTypes
@@ -1955,19 +1963,19 @@ export interface ChainTx<
      * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
      * proof format.
      *
-     * @param {AssetHubPolkadotRuntimeSessionKeys} keys
+     * @param {AssetHubPaseoRuntimeSessionKeys} keys
      * @param {BytesLike} proof
      **/
     setKeys: GenericTxCall<
       (
-        keys: AssetHubPolkadotRuntimeSessionKeys,
+        keys: AssetHubPaseoRuntimeSessionKeys,
         proof: BytesLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Session';
           palletCall: {
             name: 'SetKeys';
-            params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: BytesLike };
+            params: { keys: AssetHubPaseoRuntimeSessionKeys; proof: BytesLike };
           };
         },
         ChainKnownTypes
@@ -2986,15 +2994,15 @@ export interface ChainTx<
      * and the error of the failed call. If all were successful, then the `BatchCompleted`
      * event is deposited.
      *
-     * @param {Array<AssetHubPolkadotRuntimeRuntimeCallLike>} calls
+     * @param {Array<AssetHubPaseoRuntimeRuntimeCallLike>} calls
      **/
     batch: GenericTxCall<
-      (calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
+      (calls: Array<AssetHubPaseoRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'Batch';
-            params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> };
+            params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> };
           };
         },
         ChainKnownTypes
@@ -3017,18 +3025,18 @@ export interface ChainTx<
      * The dispatch origin for this call must be _Signed_.
      *
      * @param {number} index
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     asDerivative: GenericTxCall<
       (
         index: number,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'AsDerivative';
-            params: { index: number; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+            params: { index: number; call: AssetHubPaseoRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3050,15 +3058,15 @@ export interface ChainTx<
      * ## Complexity
      * - O(C) where C is the number of calls to be batched.
      *
-     * @param {Array<AssetHubPolkadotRuntimeRuntimeCallLike>} calls
+     * @param {Array<AssetHubPaseoRuntimeRuntimeCallLike>} calls
      **/
     batchAll: GenericTxCall<
-      (calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
+      (calls: Array<AssetHubPaseoRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'BatchAll';
-            params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> };
+            params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> };
           };
         },
         ChainKnownTypes
@@ -3073,19 +3081,19 @@ export interface ChainTx<
      * ## Complexity
      * - O(1).
      *
-     * @param {AssetHubPolkadotRuntimeOriginCaller} asOrigin
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeOriginCaller} asOrigin
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     dispatchAs: GenericTxCall<
       (
-        asOrigin: AssetHubPolkadotRuntimeOriginCaller,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        asOrigin: AssetHubPaseoRuntimeOriginCaller,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'DispatchAs';
-            params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+            params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3107,15 +3115,15 @@ export interface ChainTx<
      * ## Complexity
      * - O(C) where C is the number of calls to be batched.
      *
-     * @param {Array<AssetHubPolkadotRuntimeRuntimeCallLike>} calls
+     * @param {Array<AssetHubPaseoRuntimeRuntimeCallLike>} calls
      **/
     forceBatch: GenericTxCall<
-      (calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
+      (calls: Array<AssetHubPaseoRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'ForceBatch';
-            params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> };
+            params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> };
           };
         },
         ChainKnownTypes
@@ -3130,19 +3138,19 @@ export interface ChainTx<
      *
      * The dispatch origin for this call must be _Root_.
      *
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      * @param {SpWeightsWeightV2Weight} weight
      **/
     withWeight: GenericTxCall<
       (
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
         weight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'WithWeight';
-            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
           };
         },
         ChainKnownTypes
@@ -3174,19 +3182,19 @@ export interface ChainTx<
      * - Some use cases might involve submitting a `batch` type call in either main, fallback
      * or both.
      *
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} main
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} fallback
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} main
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} fallback
      **/
     ifElse: GenericTxCall<
       (
-        main: AssetHubPolkadotRuntimeRuntimeCallLike,
-        fallback: AssetHubPolkadotRuntimeRuntimeCallLike,
+        main: AssetHubPaseoRuntimeRuntimeCallLike,
+        fallback: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'IfElse';
-            params: { main: AssetHubPolkadotRuntimeRuntimeCallLike; fallback: AssetHubPolkadotRuntimeRuntimeCallLike };
+            params: { main: AssetHubPaseoRuntimeRuntimeCallLike; fallback: AssetHubPaseoRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3200,19 +3208,19 @@ export interface ChainTx<
      *
      * The dispatch origin for this call must be _Root_.
      *
-     * @param {AssetHubPolkadotRuntimeOriginCaller} asOrigin
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeOriginCaller} asOrigin
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     dispatchAsFallible: GenericTxCall<
       (
-        asOrigin: AssetHubPolkadotRuntimeOriginCaller,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        asOrigin: AssetHubPaseoRuntimeOriginCaller,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'DispatchAsFallible';
-            params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+            params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3243,18 +3251,18 @@ export interface ChainTx<
      * O(Z + C) where Z is the length of the call and C its execution weight.
      *
      * @param {Array<AccountId32Like>} otherSignatories
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     asMultiThreshold1: GenericTxCall<
       (
         otherSignatories: Array<AccountId32Like>,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Multisig';
           palletCall: {
             name: 'AsMultiThreshold1';
-            params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+            params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPaseoRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3308,7 +3316,7 @@ export interface ChainTx<
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
      * @param {PalletMultisigTimepoint | undefined} maybeTimepoint
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      * @param {SpWeightsWeightV2Weight} maxWeight
      **/
     asMulti: GenericTxCall<
@@ -3316,7 +3324,7 @@ export interface ChainTx<
         threshold: number,
         otherSignatories: Array<AccountId32Like>,
         maybeTimepoint: PalletMultisigTimepoint | undefined,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
         maxWeight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
         {
@@ -3327,7 +3335,7 @@ export interface ChainTx<
               threshold: number;
               otherSignatories: Array<AccountId32Like>;
               maybeTimepoint: PalletMultisigTimepoint | undefined;
-              call: AssetHubPolkadotRuntimeRuntimeCallLike;
+              call: AssetHubPaseoRuntimeRuntimeCallLike;
               maxWeight: SpWeightsWeightV2Weight;
             };
           };
@@ -3515,14 +3523,14 @@ export interface ChainTx<
      * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
-     * @param {AssetHubPolkadotRuntimeProxyType | undefined} forceProxyType
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeProxyType | undefined} forceProxyType
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     proxy: GenericTxCall<
       (
         real: MultiAddressLike,
-        forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        forceProxyType: AssetHubPaseoRuntimeProxyType | undefined,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
@@ -3530,8 +3538,8 @@ export interface ChainTx<
             name: 'Proxy';
             params: {
               real: MultiAddressLike;
-              forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined;
-              call: AssetHubPolkadotRuntimeRuntimeCallLike;
+              forceProxyType: AssetHubPaseoRuntimeProxyType | undefined;
+              call: AssetHubPaseoRuntimeRuntimeCallLike;
             };
           };
         },
@@ -3551,20 +3559,20 @@ export interface ChainTx<
      * zero.
      *
      * @param {MultiAddressLike} delegate
-     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
+     * @param {AssetHubPaseoRuntimeProxyType} proxyType
      * @param {number} delay
      **/
     addProxy: GenericTxCall<
       (
         delegate: MultiAddressLike,
-        proxyType: AssetHubPolkadotRuntimeProxyType,
+        proxyType: AssetHubPaseoRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'AddProxy';
-            params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
           };
         },
         ChainKnownTypes
@@ -3581,20 +3589,20 @@ export interface ChainTx<
      * - `proxy_type`: The permissions currently enabled for the removed proxy account.
      *
      * @param {MultiAddressLike} delegate
-     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
+     * @param {AssetHubPaseoRuntimeProxyType} proxyType
      * @param {number} delay
      **/
     removeProxy: GenericTxCall<
       (
         delegate: MultiAddressLike,
-        proxyType: AssetHubPolkadotRuntimeProxyType,
+        proxyType: AssetHubPaseoRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveProxy';
-            params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
           };
         },
         ChainKnownTypes
@@ -3642,13 +3650,13 @@ export interface ChainTx<
      *
      * Fails if there are insufficient funds to pay for deposit.
      *
-     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
+     * @param {AssetHubPaseoRuntimeProxyType} proxyType
      * @param {number} delay
      * @param {number} index
      **/
     createPure: GenericTxCall<
       (
-        proxyType: AssetHubPolkadotRuntimeProxyType,
+        proxyType: AssetHubPaseoRuntimeProxyType,
         delay: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
@@ -3656,7 +3664,7 @@ export interface ChainTx<
           pallet: 'Proxy';
           palletCall: {
             name: 'CreatePure';
-            params: { proxyType: AssetHubPolkadotRuntimeProxyType; delay: number; index: number };
+            params: { proxyType: AssetHubPaseoRuntimeProxyType; delay: number; index: number };
           };
         },
         ChainKnownTypes
@@ -3682,7 +3690,7 @@ export interface ChainTx<
      * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
-     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
+     * @param {AssetHubPaseoRuntimeProxyType} proxyType
      * @param {number} index
      * @param {number} height
      * @param {number} extIndex
@@ -3690,7 +3698,7 @@ export interface ChainTx<
     killPure: GenericTxCall<
       (
         spawner: MultiAddressLike,
-        proxyType: AssetHubPolkadotRuntimeProxyType,
+        proxyType: AssetHubPaseoRuntimeProxyType,
         index: number,
         height: number,
         extIndex: number,
@@ -3701,7 +3709,7 @@ export interface ChainTx<
             name: 'KillPure';
             params: {
               spawner: MultiAddressLike;
-              proxyType: AssetHubPolkadotRuntimeProxyType;
+              proxyType: AssetHubPaseoRuntimeProxyType;
               index: number;
               height: number;
               extIndex: number;
@@ -3825,15 +3833,15 @@ export interface ChainTx<
      *
      * @param {MultiAddressLike} delegate
      * @param {MultiAddressLike} real
-     * @param {AssetHubPolkadotRuntimeProxyType | undefined} forceProxyType
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeProxyType | undefined} forceProxyType
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     proxyAnnounced: GenericTxCall<
       (
         delegate: MultiAddressLike,
         real: MultiAddressLike,
-        forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        forceProxyType: AssetHubPaseoRuntimeProxyType | undefined,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
@@ -3842,8 +3850,8 @@ export interface ChainTx<
             params: {
               delegate: MultiAddressLike;
               real: MultiAddressLike;
-              forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined;
-              call: AssetHubPolkadotRuntimeRuntimeCallLike;
+              forceProxyType: AssetHubPaseoRuntimeProxyType | undefined;
+              call: AssetHubPaseoRuntimeRuntimeCallLike;
             };
           };
         },
@@ -4606,10 +4614,6 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
-     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-     * blocks the full transfer; clear it and retry.
-     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -4995,18 +4999,16 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the debit spends the approval in full, then any deposit previously reserved by
-     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-     * balance, so a request smaller than the approval can still spend it in full.
+     * If the entire amount approved for transfer is transferred, then any deposit previously
+     * reserved by `approve_transfer` is unreserved.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least the debit
-     * and from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the debited balance will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least `amount` and
+     * from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the asset balance of `amount` will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `Transferred` on success.
+     * Emits `TransferredApproved` on success.
      *
      * Weight: `O(1)`
      *
@@ -5682,10 +5684,6 @@ export interface ChainTx<
      * Change the Owner of a collection.
      *
      * Origin must be Signed and the sender should be the Owner of the `collection`.
-     *
-     * The collection's total deposit is moved from the current to the new owner. Fails with
-     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-     * the full transfer; clear it and retry.
      *
      * - `collection`: The collection whose owner should be changed.
      * - `owner`: The new Owner of this collection. They must have called
@@ -6652,10 +6650,6 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the `collection`.
      *
-     * The collection deposit is moved from the current to the new owner. Fails with
-     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-     * the full transfer; clear it and retry.
-     *
      * - `collection`: The collection whose owner should be changed.
      * - `owner`: The new Owner of this collection. They must have called
      * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -6733,10 +6727,6 @@ export interface ChainTx<
      * Change the Owner of a collection.
      *
      * Origin must be `ForceOrigin`.
-     *
-     * The collection deposit is moved from the current to the new owner. Fails with
-     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
-     * the full transfer; clear it and retry.
      *
      * - `collection`: The identifier of the collection.
      * - `owner`: The new Owner of this collection.
@@ -8237,10 +8227,6 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
-     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-     * blocks the full transfer; clear it and retry.
-     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -8637,18 +8623,16 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the debit spends the approval in full, then any deposit previously reserved by
-     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-     * balance, so a request smaller than the approval can still spend it in full.
+     * If the entire amount approved for transfer is transferred, then any deposit previously
+     * reserved by `approve_transfer` is unreserved.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least the debit
-     * and from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the debited balance will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least `amount` and
+     * from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the asset balance of `amount` will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `Transferred` on success.
+     * Emits `TransferredApproved` on success.
      *
      * Weight: `O(1)`
      *
@@ -9482,10 +9466,6 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
-     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
-     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
-     * blocks the full transfer; clear it and retry.
-     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -9871,18 +9851,16 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the debit spends the approval in full, then any deposit previously reserved by
-     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
-     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
-     * balance, so a request smaller than the approval can still spend it in full.
+     * If the entire amount approved for transfer is transferred, then any deposit previously
+     * reserved by `approve_transfer` is unreserved.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least the debit
-     * and from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the debited balance will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least `amount` and
+     * from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the asset balance of `amount` will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `Transferred` on success.
+     * Emits `TransferredApproved` on success.
      *
      * Weight: `O(1)`
      *
@@ -10405,35 +10383,55 @@ export interface ChainTx<
     >;
 
     /**
-     * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
-     * global [`Config::LPFee`].
-     *
-     * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
-     * `fee` must not exceed [`Config::MaxSwapFee`].
-     *
-     * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
-     *
-     * @param {AccountId32Like} creator
-     * @param {StagingXcmV5Location} asset1
-     * @param {StagingXcmV5Location} asset2
-     * @param {Permill} fee
+     * Generic pallet tx call
      **/
-    createPoolWithFee: GenericTxCall<
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Scarcity`'s transaction calls
+   **/
+  scarcity: {
+    /**
+     * Create a collection owned by the signer.
+     *
+     **/
+    createCollection: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'CreateCollection';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Define one immutable item and its shared metadata defaults.
+     *
+     * The supplied metadata is inherited by every instance minted from this definition.
+     * Instance-specific values belong on [`Self::mint`] or [`Self::set_instance_metadata`].
+     * `transferability` is fixed here and cannot be changed once instances exist.
+     *
+     * @param {number} collection
+     * @param {IndivPalletScarcityTransferability} transferability
+     * @param {Array<[BytesLike, BytesLike]>} metadata
+     **/
+    defineItem: GenericTxCall<
       (
-        creator: AccountId32Like,
-        asset1: StagingXcmV5Location,
-        asset2: StagingXcmV5Location,
-        fee: Permill,
+        collection: number,
+        transferability: IndivPalletScarcityTransferability,
+        metadata: Array<[BytesLike, BytesLike]>,
       ) => ChainSubmittableExtrinsic<
         {
-          pallet: 'AssetConversion';
+          pallet: 'Scarcity';
           palletCall: {
-            name: 'CreatePoolWithFee';
+            name: 'DefineItem';
             params: {
-              creator: AccountId32Like;
-              asset1: StagingXcmV5Location;
-              asset2: StagingXcmV5Location;
-              fee: Permill;
+              collection: number;
+              transferability: IndivPalletScarcityTransferability;
+              metadata: Array<[BytesLike, BytesLike]>;
             };
           };
         },
@@ -10442,26 +10440,326 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the per-pool swap `fee` for an existing pool, overriding the global
-     * [`Config::LPFee`].
+     * Mint an instance of an immutable item definition into an empty purse key.
      *
-     * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+     * The destination gives no consent; any empty key is a valid target. See the module
+     * documentation on purse-key occupancy.
      *
-     * Emits [`Event::PoolFeeSet`] on success.
+     * `metadata` contains instance-specific overrides. Item metadata remains the shared
+     * default for every instance minted from the definition.
      *
-     * @param {[StagingXcmV5Location, StagingXcmV5Location]} poolId
-     * @param {Permill} fee
+     * @param {number} collection
+     * @param {number} item
+     * @param {AccountId32Like} to
+     * @param {Array<[BytesLike, BytesLike]>} metadata
      **/
-    setPoolFee: GenericTxCall<
+    mint: GenericTxCall<
       (
-        poolId: [StagingXcmV5Location, StagingXcmV5Location],
-        fee: Permill,
+        collection: number,
+        item: number,
+        to: AccountId32Like,
+        metadata: Array<[BytesLike, BytesLike]>,
       ) => ChainSubmittableExtrinsic<
         {
-          pallet: 'AssetConversion';
+          pallet: 'Scarcity';
           palletCall: {
-            name: 'SetPoolFee';
-            params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill };
+            name: 'Mint';
+            params: { collection: number; item: number; to: AccountId32Like; metadata: Array<[BytesLike, BytesLike]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Transfer an NFT held by the `Origin::Nft` purse-key origin.
+     *
+     * Fails for an instance of a [`Transferability::Soulbound`] definition.
+     *
+     * @param {AccountId32Like} to
+     **/
+    transfer: GenericTxCall<
+      (to: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'Transfer';
+            params: { to: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Burn an NFT held by the `Origin::Nft` purse-key origin.
+     *
+     * Item-definition supply counts minted-ever instances and is deliberately monotonic.
+     * Item metadata belongs to the definition and remains untouched. Instance metadata is
+     * removed and its exact deposits are released.
+     *
+     **/
+    burn: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'Burn';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Nominate an account to claim ownership of a collection.
+     *
+     * Only the current owner may nominate or clear a prospective owner. Nomination does not
+     * change authority or move deposits.
+     *
+     * @param {number} collection
+     * @param {AccountId32Like | undefined} pendingOwner
+     **/
+    nominateCollectionOwner: GenericTxCall<
+      (
+        collection: number,
+        pendingOwner: AccountId32Like | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'NominateCollectionOwner';
+            params: { collection: number; pendingOwner: AccountId32Like | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set or remove a collection-level metadata default.
+     *
+     * Only the collection owner may mutate metadata. `None` releases an existing entry's
+     * deposit; when the key is absent it is a successful no-op.
+     *
+     * @param {number} collection
+     * @param {BytesLike} key
+     * @param {BytesLike | undefined} value
+     **/
+    setCollectionMetadata: GenericTxCall<
+      (
+        collection: number,
+        key: BytesLike,
+        value: BytesLike | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'SetCollectionMetadata';
+            params: { collection: number; key: BytesLike; value: BytesLike | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set or remove a metadata default shared by every instance of an item.
+     *
+     * This scope overrides the collection default without changing any instance-specific
+     * override. Only the collection owner may mutate metadata. `None` releases an existing
+     * entry's deposit; when the key is absent it is a successful no-op.
+     *
+     * @param {number} collection
+     * @param {number} item
+     * @param {BytesLike} key
+     * @param {BytesLike | undefined} value
+     **/
+    setItemMetadata: GenericTxCall<
+      (
+        collection: number,
+        item: number,
+        key: BytesLike,
+        value: BytesLike | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'SetItemMetadata';
+            params: { collection: number; item: number; key: BytesLike; value: BytesLike | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Claim a collection after nomination by its current owner.
+     *
+     * An equivalent aggregate consideration is first created for the claimant and then the
+     * previous owner's ticket is dropped. The operation is atomic: failure to establish the
+     * claimant's consideration leaves ownership and both tickets unchanged.
+     *
+     * @param {number} collection
+     **/
+    claimCollectionOwnership: GenericTxCall<
+      (collection: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'ClaimCollectionOwnership';
+            params: { collection: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set or remove an instance-specific metadata override.
+     *
+     * Only the collection owner may mutate metadata. `None` releases an existing entry's
+     * deposit; when the key is absent it is a successful no-op.
+     *
+     * @param {bigint} instance
+     * @param {BytesLike} key
+     * @param {BytesLike | undefined} value
+     **/
+    setInstanceMetadata: GenericTxCall<
+      (
+        instance: bigint,
+        key: BytesLike,
+        value: BytesLike | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'SetInstanceMetadata';
+            params: { instance: bigint; key: BytesLike; value: BytesLike | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Force-burn one live instance as its collection owner.
+     *
+     * The collection layer intentionally applies no holder-level ACL. When a runtime exposes
+     * this call to its contract environment, a contract-owned collection can enforce its own
+     * consent and game rules before calling it.
+     *
+     * @param {bigint} instance
+     **/
+    forceBurn: GenericTxCall<
+      (instance: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'ForceBurn';
+            params: { instance: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Delete an unused item definition owned by the signer.
+     *
+     * Every live instance must be burned and every item metadata entry removed first.
+     * Deleted item indices are never reused, and the collection's next index does not drop, so
+     * anything selecting an item by that index can select a deleted one and fail. Defining a
+     * replacement raises the index rather than filling the hole, which changes what every
+     * outstanding selection resolves to.
+     *
+     * @param {number} collection
+     * @param {number} item
+     **/
+    deleteItem: GenericTxCall<
+      (
+        collection: number,
+        item: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'DeleteItem';
+            params: { collection: number; item: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Delete an empty collection owned by the signer.
+     *
+     * Every item definition and collection metadata entry must be removed first. Deleted
+     * collection identifiers are never reused.
+     *
+     * @param {number} collection
+     **/
+    deleteCollection: GenericTxCall<
+      (collection: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'DeleteCollection';
+            params: { collection: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Force-transfer one live instance as its collection owner.
+     *
+     * The collection layer intentionally applies no holder-level ACL. When a runtime exposes
+     * this call to its contract environment, a contract-owned collection can enforce its own
+     * consent and game rules before calling it. The move increments the instance state nonce,
+     * invalidating prior holder authorizations.
+     *
+     * @param {bigint} instance
+     * @param {AccountId32Like} to
+     **/
+    forceTransfer: GenericTxCall<
+      (
+        instance: bigint,
+        to: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'ForceTransfer';
+            params: { instance: bigint; to: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move the instance the signer holds, with the fee paid from the signer's account.
+     *
+     * The move refills the feeless move budget of [`Config::MaximumMoves`].
+     *
+     * Fails for an instance of a [`Transferability::Soulbound`] definition.
+     *
+     * @param {bigint} instance
+     * @param {AccountId32Like} to
+     **/
+    transferByHolder: GenericTxCall<
+      (
+        instance: bigint,
+        to: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Scarcity';
+          palletCall: {
+            name: 'TransferByHolder';
+            params: { instance: bigint; to: AccountId32Like };
           };
         },
         ChainKnownTypes
@@ -10490,8 +10788,7 @@ export interface ChainTx<
      * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
      * caller minus the minting fee. The fee is calculated using ceiling rounding
      * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-     * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
-     * if that account cannot receive it.
+     * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
      *
      * ## Parameters
      *
@@ -10557,9 +10854,8 @@ export interface ChainTx<
      * ## Details
      *
      * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-     * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
-     * receive it), then transfers the resulting amount in `external_asset` from the PSM
-     * reserve to the caller. The fee is
+     * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+     * amount in `external_asset` from the PSM reserve to the caller. The fee is
      * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
      * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
      * was registered, allowing existing positions to unwind even if live metadata later
@@ -10638,8 +10934,7 @@ export interface ChainTx<
      * fungibles backend; must not already have a PSM registered.
      * - `full_admin`: Origin granted full management of the new PSM.
      * - `emergency_admin`: Origin granted emergency management of the new PSM.
-     * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
-     * it cannot receive the internal asset.
+     * - `fee_destination`: Account that will receive mint/redeem fees.
      * - `max_debt`: Initial absolute internal-asset debt ceiling.
      * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
      * Must be non-zero.
@@ -10647,7 +10942,6 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
-     * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
      * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
      * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
      * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -10659,8 +10953,8 @@ export interface ChainTx<
      * - [`Event::PsmCreated`].
      *
      * @param {StagingXcmV5Location} internalAsset
-     * @param {AssetHubPolkadotRuntimeOriginCaller} fullAdmin
-     * @param {AssetHubPolkadotRuntimeOriginCaller} emergencyAdmin
+     * @param {AssetHubPaseoRuntimeOriginCaller} fullAdmin
+     * @param {AssetHubPaseoRuntimeOriginCaller} emergencyAdmin
      * @param {AccountId32Like} feeDestination
      * @param {bigint} maxDebt
      * @param {bigint} minSwapAmount
@@ -10668,8 +10962,8 @@ export interface ChainTx<
     createPsm: GenericTxCall<
       (
         internalAsset: StagingXcmV5Location,
-        fullAdmin: AssetHubPolkadotRuntimeOriginCaller,
-        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller,
+        fullAdmin: AssetHubPaseoRuntimeOriginCaller,
+        emergencyAdmin: AssetHubPaseoRuntimeOriginCaller,
         feeDestination: AccountId32Like,
         maxDebt: bigint,
         minSwapAmount: bigint,
@@ -10680,8 +10974,8 @@ export interface ChainTx<
             name: 'CreatePsm';
             params: {
               internalAsset: StagingXcmV5Location;
-              fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
-              emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+              fullAdmin: AssetHubPaseoRuntimeOriginCaller;
+              emergencyAdmin: AssetHubPaseoRuntimeOriginCaller;
               feeDestination: AccountId32Like;
               maxDebt: bigint;
               minSwapAmount: bigint;
@@ -10960,10 +11254,6 @@ export interface ChainTx<
      * Snapshots the external asset's live decimals at registration time and
      * increments [`PsmInfo::external_count`].
      *
-     * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
-     * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
-     * `touch_other`).
-     *
      * ## Dispatch Origin
      *
      * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -10983,8 +11273,6 @@ export interface ChainTx<
      * fungibles backend.
      * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
      * [`MAX_DECIMALS_DIFF`].
-     * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
-     * `external_asset`.
      *
      * ## Events
      *
@@ -11070,25 +11358,24 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
-     * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
      *
      * ## Events
      *
      * - [`Event::FullAdminChanged`].
      *
      * @param {StagingXcmV5Location} internalAsset
-     * @param {AssetHubPolkadotRuntimeOriginCaller} newAdmin
+     * @param {AssetHubPaseoRuntimeOriginCaller} newAdmin
      **/
     setFullAdmin: GenericTxCall<
       (
         internalAsset: StagingXcmV5Location,
-        newAdmin: AssetHubPolkadotRuntimeOriginCaller,
+        newAdmin: AssetHubPaseoRuntimeOriginCaller,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetFullAdmin';
-            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPaseoRuntimeOriginCaller };
           };
         },
         ChainKnownTypes
@@ -11110,25 +11397,24 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
-     * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
      *
      * ## Events
      *
      * - [`Event::EmergencyAdminChanged`].
      *
      * @param {StagingXcmV5Location} internalAsset
-     * @param {AssetHubPolkadotRuntimeOriginCaller} newAdmin
+     * @param {AssetHubPaseoRuntimeOriginCaller} newAdmin
      **/
     setEmergencyAdmin: GenericTxCall<
       (
         internalAsset: StagingXcmV5Location,
-        newAdmin: AssetHubPolkadotRuntimeOriginCaller,
+        newAdmin: AssetHubPaseoRuntimeOriginCaller,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetEmergencyAdmin';
-            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPaseoRuntimeOriginCaller };
           };
         },
         ChainKnownTypes
@@ -11647,13 +11933,13 @@ export interface ChainTx<
      *
      * Emits `Submitted`.
      *
-     * @param {AssetHubPolkadotRuntimeOriginCaller} proposalOrigin
+     * @param {AssetHubPaseoRuntimeOriginCaller} proposalOrigin
      * @param {FrameSupportPreimagesBounded} proposal
      * @param {FrameSupportScheduleDispatchTime} enactmentMoment
      **/
     submit: GenericTxCall<
       (
-        proposalOrigin: AssetHubPolkadotRuntimeOriginCaller,
+        proposalOrigin: AssetHubPaseoRuntimeOriginCaller,
         proposal: FrameSupportPreimagesBounded,
         enactmentMoment: FrameSupportScheduleDispatchTime,
       ) => ChainSubmittableExtrinsic<
@@ -11662,7 +11948,7 @@ export interface ChainTx<
           palletCall: {
             name: 'Submit';
             params: {
-              proposalOrigin: AssetHubPolkadotRuntimeOriginCaller;
+              proposalOrigin: AssetHubPaseoRuntimeOriginCaller;
               proposal: FrameSupportPreimagesBounded;
               enactmentMoment: FrameSupportScheduleDispatchTime;
             };
@@ -11934,32 +12220,15 @@ export interface ChainTx<
 
     /**
      *
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      **/
     dispatchWhitelistedCallWithPreimage: GenericTxCall<
-      (call: AssetHubPolkadotRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+      (call: AssetHubPaseoRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
         {
           pallet: 'Whitelist';
           palletCall: {
             name: 'DispatchWhitelistedCallWithPreimage';
-            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {H256} callHash
-     **/
-    removeDeferredDispatch: GenericTxCall<
-      (callHash: H256) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Whitelist';
-          palletCall: {
-            name: 'RemoveDeferredDispatch';
-            params: { callHash: H256 };
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -12290,34 +12559,6 @@ export interface ChainTx<
           pallet: 'Bounties';
           palletCall: {
             name: 'PokeDeposit';
-            params: { bountyId: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Reclaim funds stranded in a closed bounty's account back to the treasury.
-     *
-     * Permissionless. Moves all remaining assets from a closed bounty's account back to the
-     * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
-     * configuration.
-     *
-     * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
-     * used to grief the network. Emits `BountyFundsReclaimed` on success.
-     *
-     * ## Complexity
-     * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
-     *
-     * @param {number} bountyId
-     **/
-    reclaimBountyFunds: GenericTxCall<
-      (bountyId: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Bounties';
-          palletCall: {
-            name: 'ReclaimBountyFunds';
             params: { bountyId: number };
           };
         },
@@ -13184,6 +13425,185 @@ export interface ChainTx<
           palletCall: {
             name: 'IncreaseValue';
             params: { parentBountyId: number; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s transaction calls
+   **/
+  stateTrieMigration: {
+    /**
+     * Control the automatic migration.
+     *
+     * The dispatch origin of this call must be [`Config::ControlOrigin`].
+     *
+     * @param {PalletStateTrieMigrationMigrationLimits | undefined} maybeConfig
+     **/
+    controlAutoMigration: GenericTxCall<
+      (maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StateTrieMigration';
+          palletCall: {
+            name: 'ControlAutoMigration';
+            params: { maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Continue the migration for the given `limits`.
+     *
+     * The dispatch origin of this call can be any signed account.
+     *
+     * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+     * Upon successful execution, the transaction fee is returned.
+     *
+     * The (potentially over-estimated) of the byte length of all the data read must be
+     * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+     * that executing the current `MigrationTask` with the given `limits` will not exceed
+     * `real_size_upper` bytes of read data.
+     *
+     * The `witness_task` is merely a helper to prevent the caller from being slashed or
+     * generally trigger a migration that they do not intend. This parameter is just a message
+     * from caller, saying that they believed `witness_task` was the last state of the
+     * migration, and they only wish for their transaction to do anything, if this assumption
+     * holds. In case `witness_task` does not match, the transaction fails.
+     *
+     * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+     * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+     * `size` limit can always be overwritten.
+     *
+     * @param {PalletStateTrieMigrationMigrationLimits} limits
+     * @param {number} realSizeUpper
+     * @param {PalletStateTrieMigrationMigrationTask} witnessTask
+     **/
+    continueMigrate: GenericTxCall<
+      (
+        limits: PalletStateTrieMigrationMigrationLimits,
+        realSizeUpper: number,
+        witnessTask: PalletStateTrieMigrationMigrationTask,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StateTrieMigration';
+          palletCall: {
+            name: 'ContinueMigrate';
+            params: {
+              limits: PalletStateTrieMigrationMigrationLimits;
+              realSizeUpper: number;
+              witnessTask: PalletStateTrieMigrationMigrationTask;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Migrate the list of top keys by iterating each of them one by one.
+     *
+     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+     * should only be used in case any keys are leftover due to a bug.
+     *
+     * @param {Array<BytesLike>} keys
+     * @param {number} witnessSize
+     **/
+    migrateCustomTop: GenericTxCall<
+      (
+        keys: Array<BytesLike>,
+        witnessSize: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StateTrieMigration';
+          palletCall: {
+            name: 'MigrateCustomTop';
+            params: { keys: Array<BytesLike>; witnessSize: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Migrate the list of child keys by iterating each of them one by one.
+     *
+     * All of the given child keys must be present under one `child_root`.
+     *
+     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+     * should only be used in case any keys are leftover due to a bug.
+     *
+     * @param {BytesLike} root
+     * @param {Array<BytesLike>} childKeys
+     * @param {number} totalSize
+     **/
+    migrateCustomChild: GenericTxCall<
+      (
+        root: BytesLike,
+        childKeys: Array<BytesLike>,
+        totalSize: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StateTrieMigration';
+          palletCall: {
+            name: 'MigrateCustomChild';
+            params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the maximum limit of the signed migration.
+     *
+     * @param {PalletStateTrieMigrationMigrationLimits} limits
+     **/
+    setSignedMaxLimits: GenericTxCall<
+      (limits: PalletStateTrieMigrationMigrationLimits) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StateTrieMigration';
+          palletCall: {
+            name: 'SetSignedMaxLimits';
+            params: { limits: PalletStateTrieMigrationMigrationLimits };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Forcefully set the progress the running migration.
+     *
+     * This is only useful in one case: the next key to migrate is too big to be migrated with
+     * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+     * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+     * used, so probably it is already migrated.
+     *
+     * In case you mess things up, you can also, in principle, use this to reset the migration
+     * process.
+     *
+     * @param {PalletStateTrieMigrationProgress} progressTop
+     * @param {PalletStateTrieMigrationProgress} progressChild
+     **/
+    forceSetProgress: GenericTxCall<
+      (
+        progressTop: PalletStateTrieMigrationProgress,
+        progressChild: PalletStateTrieMigrationProgress,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StateTrieMigration';
+          palletCall: {
+            name: 'ForceSetProgress';
+            params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
           };
         },
         ChainKnownTypes
@@ -14365,23 +14785,22 @@ export interface ChainTx<
      *
      * `maybe_solution` can be set to `None` to erase the page.
      *
-     * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
-     * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
-     * part.
+     * Collects deposits from the signed origin based on [`Config::DepositBase`] and
+     * [`Config::DepositPerPage`].
      *
      * @param {number} page
-     * @param {AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
+     * @param {AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
      **/
     submitPage: GenericTxCall<
       (
         page: number,
-        maybeSolution: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined,
+        maybeSolution: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'SubmitPage';
-            params: { page: number; maybeSolution: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined };
+            params: { page: number; maybeSolution: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined };
           };
         },
         ChainKnownTypes
@@ -14449,25 +14868,6 @@ export interface ChainTx<
           palletCall: {
             name: 'SetInvulnerables';
             params: { inv: Array<AccountId32Like> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
-     * call it for any round. Free on success, normal fee on failure to discourage spam.
-     *
-     * @param {number} round
-     **/
-    claimUnpaidReward: GenericTxCall<
-      (round: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'MultiBlockElectionSigned';
-          palletCall: {
-            name: 'ClaimUnpaidReward';
-            params: { round: number };
           };
         },
         ChainKnownTypes
@@ -15065,9 +15465,6 @@ export interface ChainTx<
      * should be filled in order for the `chill_other` transaction to work.
      * * `min_commission`: The minimum amount of commission that each validators must maintain.
      * This is checked only upon calling `validate`. Existing validators are not affected.
-     * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
-     * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
-     * inactivity.
      *
      * RuntimeOrigin must be Root to call this function.
      *
@@ -15082,7 +15479,6 @@ export interface ChainTx<
      * @param {PalletStakingAsyncPalletConfigOpPerbill} minCommission
      * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
      * @param {PalletStakingAsyncPalletConfigOpBool} areNominatorsSlashable
-     * @param {PalletStakingAsyncPalletConfigOpU32} chillInactiveThreshold
      **/
     setStakingConfigs: GenericTxCall<
       (
@@ -15094,7 +15490,6 @@ export interface ChainTx<
         minCommission: PalletStakingAsyncPalletConfigOpPerbill,
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool,
-        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Staking';
@@ -15109,7 +15504,6 @@ export interface ChainTx<
               minCommission: PalletStakingAsyncPalletConfigOpPerbill;
               maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
               areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
-              chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
             };
           };
         },
@@ -15494,72 +15888,35 @@ export interface ChainTx<
     >;
 
     /**
-     * Chill an inactive validator.
-     *
-     * This extrinsic can be called by anyone, given that the valid inactivity proof is
-     * provided. Inactivity proof is a vector of eras where the given validator was inactive.
-     *
-     * Requirements for the inactivity proof:
-     * - The length must be equal to [`ChillInactiveThreshold`].
-     * - It must be sorted in ascending order.
-     * - It must not contain duplicate entries.
-     * - For every era the `stash` account must be exposed.
-     * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
-     * - Every era must be less than the active era.
-     *
-     * On a successfull execution, caller doesn't pay fees.
-     *
-     * @param {AccountId32Like} stash
-     * @param {Array<number>} proof
-     **/
-    chillInactive: GenericTxCall<
-      (
-        stash: AccountId32Like,
-        proof: Array<number>,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ChillInactive';
-            params: { stash: AccountId32Like; proof: Array<number> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
-   * Pallet `Revive`'s transaction calls
+   * Pallet `NftClaims`'s transaction calls
    **/
-  revive: {
+  nftClaims: {
     /**
-     * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+     * Stores the credit trees of a batch sent by the game pallet.
      *
-     * # Parameters
+     * ## Origin
+     * Requires the game chain's XCM origin (`EnsureGameChainOrigin`).
      *
-     * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+     * This does not store a tree past its deadline, nor one for a block whose tree it holds
+     * already.
      *
-     * # Note
+     * ## Parameters
+     * - `batch`: The credit trees to store, in ascending block order.
      *
-     * This call cannot be dispatched directly; attempting to do so will result in a failed
-     * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
-     * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
-     * signer and validating the transaction.
-     *
-     * @param {BytesLike} payload
+     * @param {IndivSupportCreditTreesCreditTreeBatch} batch
      **/
-    ethTransact: GenericTxCall<
-      (payload: BytesLike) => ChainSubmittableExtrinsic<
+    receiveCreditTrees: GenericTxCall<
+      (batch: IndivSupportCreditTreesCreditTreeBatch) => ChainSubmittableExtrinsic<
         {
-          pallet: 'Revive';
+          pallet: 'NftClaims';
           palletCall: {
-            name: 'EthTransact';
-            params: { payload: BytesLike };
+            name: 'ReceiveCreditTrees';
+            params: { batch: IndivSupportCreditTreesCreditTreeBatch };
           };
         },
         ChainKnownTypes
@@ -15567,47 +15924,69 @@ export interface ChainTx<
     >;
 
     /**
-     * Makes a call to an account, optionally transferring some balance.
+     * Mints the NFT of one NFT claim credit the game chain committed in `block`'s tree.
      *
-     * # Parameters
+     * The credit is spent by the claim: its leaf is recorded, and a second claim of the same
+     * credit fails, whoever submits it.
      *
-     * * `dest`: Address of the contract to call.
-     * * `value`: The balance to transfer from the `origin` to `dest`.
-     * * `weight_limit`: The weight limit enforced when executing the constructor.
-     * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
-     * caller to pay for the storage consumed.
-     * * `data`: The input data to pass to the contract.
+     * ## Origin
+     * The signer of the claimant the credit was awarded to ([`Config::EnsureClaimant`]).
      *
-     * * If the account is a smart-contract account, the associated code will be
-     * executed and any value will be transferred.
-     * * If the account is a regular account, any value will be transferred.
-     * * If no account exists and the call value is not less than `existential_deposit`,
-     * a regular account will be created and any value will be transferred.
+     * ## Parameters
+     * - `claimant`: Which of the signer's identities the credit was awarded to. A person
+     * claims as [`ClaimantKind::Person`], which resolves to the alias their account is bound
+     * to.
+     * - `block`: The People-chain block whose tree committed the credit, which is the tree the
+     * proof is verified against. It is at or after the block the credit was earned in.
+     * - `credit`: The credit being claimed. Hashed together with the origin's identity into
+     * the leaf, so a credit of somebody else's rehashes to a leaf that is in no tree.
+     * - `leaf_index`: The position of that leaf in the block's leaves, in award order.
+     * - `proof`: The sibling hashes that rehash the leaf up to the tree's root, bottom layer
+     * first, as the game chain's `nft_claim_credit_proofs` returns them.
+     * - `collection`: The Scarcity collection the NFT is minted into, which has to be
+     * registered through [`Pallet::set_collection_minter`]. Its [`ItemSelection`] decides
+     * the item.
+     * - `mint_to`: The Scarcity purse key the NFT is minted to. A purse key holds one NFT, so
+     * this has to be an empty one, and holders are meant to use a fresh key they control
+     * rather than an account that already holds something.
      *
-     * @param {H160} dest
-     * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} weightLimit
-     * @param {bigint} storageDepositLimit
-     * @param {BytesLike} data
+     * The claim that spends the tree's last credit also removes the tree and queues its
+     * deletion for the game chain, and the call is charged for that. The claims that came
+     * before decide which claim that is, not the call's arguments, so a claim that leaves
+     * credits behind is refunded down to a plain claim of the kind the call names. A
+     * contract-registered collection also reserves [`CollectionSelector::max_weight`],
+     * refunded down to what the selection consumed, including on the error path.
+     *
+     * @param {IndivPalletNftClaimsClaimantKind} claimant
+     * @param {number} block
+     * @param {FixedBytes<32>} credit
+     * @param {number} leafIndex
+     * @param {Array<IndivSupportCreditTreesCreditProofNode>} proof
+     * @param {number} collection
+     * @param {AccountId32Like} mintTo
      **/
-    call: GenericTxCall<
+    claim: GenericTxCall<
       (
-        dest: H160,
-        value: bigint,
-        weightLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
-        data: BytesLike,
+        claimant: IndivPalletNftClaimsClaimantKind,
+        block: number,
+        credit: FixedBytes<32>,
+        leafIndex: number,
+        proof: Array<IndivSupportCreditTreesCreditProofNode>,
+        collection: number,
+        mintTo: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
         {
-          pallet: 'Revive';
+          pallet: 'NftClaims';
           palletCall: {
-            name: 'Call';
+            name: 'Claim';
             params: {
-              dest: H160;
-              value: bigint;
-              weightLimit: SpWeightsWeightV2Weight;
-              storageDepositLimit: bigint;
-              data: BytesLike;
+              claimant: IndivPalletNftClaimsClaimantKind;
+              block: number;
+              credit: FixedBytes<32>;
+              leafIndex: number;
+              proof: Array<IndivSupportCreditTreesCreditProofNode>;
+              collection: number;
+              mintTo: AccountId32Like;
             };
           };
         },
@@ -15616,40 +15995,41 @@ export interface ChainTx<
     >;
 
     /**
-     * Instantiates a contract from a previously deployed vm binary.
+     * Registers `collection` for claims with `selection` deciding the minted item, or
+     * withdraws it with `None`.
      *
-     * This function is identical to [`Self::instantiate_with_code`] but without the
-     * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
-     * must be supplied.
+     * Registration is the owner's opt-in to deposit-free supply growth: without it no claim
+     * can mint into the collection. Withdrawing stops further claims and spends nothing
+     * already claimed. Deleting the collection or handing it to a new owner clears its
+     * registration through [`indiv_pallet_scarcity::OnCollectionDeleted`] and
+     * [`indiv_pallet_scarcity::OnCollectionOwnerChanged`], so a new owner has to register
+     * again. A contract selection is validated through [`CollectionSelector::validate`], so
+     * an address with no code fails here rather than on the first claim.
      *
-     * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} weightLimit
-     * @param {bigint} storageDepositLimit
-     * @param {H256} codeHash
-     * @param {BytesLike} data
-     * @param {FixedBytes<32> | undefined} salt
+     * Registering a contract selection commits the owner's funds: the owner pays the
+     * storage deposit of every minter call, up to the runtime's per-call limit. The
+     * claimant pays for the contract's execution, on failure too.
+     *
+     * ## Origin
+     * The collection's Scarcity owner.
+     *
+     * ## Parameters
+     * - `collection`: The Scarcity collection to register or withdraw.
+     * - `selection`: How claims pick the item to mint, or `None` to withdraw.
+     *
+     * @param {number} collection
+     * @param {IndivPalletNftClaimsItemSelection | undefined} selection
      **/
-    instantiate: GenericTxCall<
+    setCollectionMinter: GenericTxCall<
       (
-        value: bigint,
-        weightLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
-        codeHash: H256,
-        data: BytesLike,
-        salt: FixedBytes<32> | undefined,
+        collection: number,
+        selection: IndivPalletNftClaimsItemSelection | undefined,
       ) => ChainSubmittableExtrinsic<
         {
-          pallet: 'Revive';
+          pallet: 'NftClaims';
           palletCall: {
-            name: 'Instantiate';
-            params: {
-              value: bigint;
-              weightLimit: SpWeightsWeightV2Weight;
-              storageDepositLimit: bigint;
-              codeHash: H256;
-              data: BytesLike;
-              salt: FixedBytes<32> | undefined;
-            };
+            name: 'SetCollectionMinter';
+            params: { collection: number; selection: IndivPalletNftClaimsItemSelection | undefined };
           };
         },
         ChainKnownTypes
@@ -15657,62 +16037,30 @@ export interface ChainTx<
     >;
 
     /**
-     * Instantiates a new contract from the supplied `code` optionally transferring
-     * some balance.
+     * Removes the trees whose deadline has passed, oldest first, and queues their deletion
+     * for the game chain.
      *
-     * This dispatchable has the same effect as calling [`Self::upload_code`] +
-     * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
-     * also check the documentation of [`Self::upload_code`].
+     * This pallet's offchain worker submits this authorized call. It is accepted from a local
+     * or in-block source only, so no external submission reaches it.
      *
-     * # Parameters
+     * `oldest` must be the timestamp [`TreeExpiries`] holds its oldest entry under, which
+     * makes a retry that raced a successful sweep stale instead of a second pass. One call
+     * removes at most [`Config::MaxTreeDeletionsPerMessage`] trees, so clearing more trees
+     * than that takes several blocks.
      *
-     * * `value`: The balance to transfer from the `origin` to the newly created contract.
-     * * `weight_limit`: The weight limit enforced when executing the constructor.
-     * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
-     * from the caller to pay for the storage consumed.
-     * * `code`: The contract code to deploy in raw bytes.
-     * * `data`: The input data to pass to the contract constructor.
-     * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
-     * semantics are used. If `None` then `CRATE1` is used.
-     *
-     *
-     * Instantiation is executed as follows:
-     *
-     * - The supplied `code` is deployed, and a `code_hash` is created for that code.
-     * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
-     * - The destination address is computed based on the sender, code_hash and the salt.
-     * - The smart-contract account is created at the computed address.
-     * - The `value` is transferred to the new account.
-     * - The `deploy` function is executed in the context of the newly-created account.
-     *
-     * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} weightLimit
-     * @param {bigint} storageDepositLimit
-     * @param {BytesLike} code
-     * @param {BytesLike} data
-     * @param {FixedBytes<32> | undefined} salt
+     * @param {number} oldest
+     * @param {number} discriminator
      **/
-    instantiateWithCode: GenericTxCall<
+    sweepExpiredTrees: GenericTxCall<
       (
-        value: bigint,
-        weightLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
-        code: BytesLike,
-        data: BytesLike,
-        salt: FixedBytes<32> | undefined,
+        oldest: number,
+        discriminator: number,
       ) => ChainSubmittableExtrinsic<
         {
-          pallet: 'Revive';
+          pallet: 'NftClaims';
           palletCall: {
-            name: 'InstantiateWithCode';
-            params: {
-              value: bigint;
-              weightLimit: SpWeightsWeightV2Weight;
-              storageDepositLimit: bigint;
-              code: BytesLike;
-              data: BytesLike;
-              salt: FixedBytes<32> | undefined;
-            };
+            name: 'SweepExpiredTrees';
+            params: { oldest: number; discriminator: number };
           };
         },
         ChainKnownTypes
@@ -15720,322 +16068,28 @@ export interface ChainTx<
     >;
 
     /**
-     * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
-     * by an EVM transaction through the EVM compatibility layer.
+     * Tells the game chain about the queued tree deletions that fit one XCM message.
      *
-     * # Parameters
+     * This pallet's offchain worker submits this authorized call. It is accepted from a local
+     * or in-block source only, so no external submission reaches it.
      *
-     * * `value`: The balance to transfer from the `origin` to the newly created contract.
-     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-     * payment
-     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-     * * `code`: The contract code to deploy in raw bytes.
-     * * `data`: The input data to pass to the contract constructor.
-     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-     * is used for building the Ethereum transaction root.
-     * * effective_gas_price: the price of a unit of gas
-     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     * `front` must be the block at the front of [`PendingTreeDeletions`], which a successful
+     * send replaces. A retry that raced that send is stale instead of a second send. The next
+     * batch's send names a new front, so it carries a transaction hash of its own.
      *
-     * Calling this dispatchable ensures that the origin's nonce is bumped only once,
-     * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
-     * also bumps the nonce after contract instantiation, since it may be invoked multiple
-     * times within a batch call transaction.
-     *
-     * @param {U256} value
-     * @param {SpWeightsWeightV2Weight} weightLimit
-     * @param {U256} ethGasLimit
-     * @param {BytesLike} code
-     * @param {BytesLike} data
-     * @param {BytesLike} transactionEncoded
-     * @param {U256} effectiveGasPrice
-     * @param {number} encodedLen
+     * @param {number} front
+     * @param {number} discriminator
      **/
-    ethInstantiateWithCode: GenericTxCall<
+    sendTreeDeletions: GenericTxCall<
       (
-        value: U256,
-        weightLimit: SpWeightsWeightV2Weight,
-        ethGasLimit: U256,
-        code: BytesLike,
-        data: BytesLike,
-        transactionEncoded: BytesLike,
-        effectiveGasPrice: U256,
-        encodedLen: number,
+        front: number,
+        discriminator: number,
       ) => ChainSubmittableExtrinsic<
         {
-          pallet: 'Revive';
+          pallet: 'NftClaims';
           palletCall: {
-            name: 'EthInstantiateWithCode';
-            params: {
-              value: U256;
-              weightLimit: SpWeightsWeightV2Weight;
-              ethGasLimit: U256;
-              code: BytesLike;
-              data: BytesLike;
-              transactionEncoded: BytesLike;
-              effectiveGasPrice: U256;
-              encodedLen: number;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Same as [`Self::call`], but intended to be dispatched **only**
-     * by an EVM transaction through the EVM compatibility layer.
-     *
-     * # Parameters
-     *
-     * * `dest`: The Ethereum address of the account to be called
-     * * `value`: The balance to transfer from the `origin` to the newly created contract.
-     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
-     * payment
-     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
-     * * `data`: The input data to pass to the contract constructor.
-     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
-     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
-     * is used for building the Ethereum transaction root.
-     * * effective_gas_price: the price of a unit of gas
-     * * encoded len: the byte code size of the `eth_transact` extrinsic
-     *
-     * @param {H160} dest
-     * @param {U256} value
-     * @param {SpWeightsWeightV2Weight} weightLimit
-     * @param {U256} ethGasLimit
-     * @param {BytesLike} data
-     * @param {BytesLike} transactionEncoded
-     * @param {U256} effectiveGasPrice
-     * @param {number} encodedLen
-     **/
-    ethCall: GenericTxCall<
-      (
-        dest: H160,
-        value: U256,
-        weightLimit: SpWeightsWeightV2Weight,
-        ethGasLimit: U256,
-        data: BytesLike,
-        transactionEncoded: BytesLike,
-        effectiveGasPrice: U256,
-        encodedLen: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'EthCall';
-            params: {
-              dest: H160;
-              value: U256;
-              weightLimit: SpWeightsWeightV2Weight;
-              ethGasLimit: U256;
-              data: BytesLike;
-              transactionEncoded: BytesLike;
-              effectiveGasPrice: U256;
-              encodedLen: number;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Executes a Substrate runtime call from an Ethereum transaction.
-     *
-     * This dispatchable is intended to be called **only** through the EVM compatibility
-     * layer. The provided call will be dispatched using `RawOrigin::Signed`.
-     *
-     * # Parameters
-     *
-     * * `origin`: Must be an [`Origin::EthTransaction`] origin.
-     * * `call`: The Substrate runtime call to execute.
-     * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
-     *
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
-     * @param {BytesLike} transactionEncoded
-     **/
-    ethSubstrateCall: GenericTxCall<
-      (
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
-        transactionEncoded: BytesLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'EthSubstrateCall';
-            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Upload new `code` without instantiating a contract from it.
-     *
-     * If the code does not already exist a deposit is reserved from the caller
-     * The size of the reserve depends on the size of the supplied `code`.
-     *
-     * # Note
-     *
-     * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
-     * To avoid this situation a constructor could employ access control so that it can
-     * only be instantiated by permissioned entities. The same is true when uploading
-     * through [`Self::instantiate_with_code`].
-     *
-     * If the refcount of the code reaches zero after terminating the last contract that
-     * references this code, the code will be removed automatically.
-     *
-     * @param {BytesLike} code
-     * @param {bigint} storageDepositLimit
-     **/
-    uploadCode: GenericTxCall<
-      (
-        code: BytesLike,
-        storageDepositLimit: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'UploadCode';
-            params: { code: BytesLike; storageDepositLimit: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove the code stored under `code_hash` and refund the deposit to its owner.
-     *
-     * A code can only be removed by its original uploader (its owner) and only if it is
-     * not used by any contract.
-     *
-     * @param {H256} codeHash
-     **/
-    removeCode: GenericTxCall<
-      (codeHash: H256) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'RemoveCode';
-            params: { codeHash: H256 };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Privileged function that changes the code of an existing contract.
-     *
-     * This takes care of updating refcounts and all other necessary operations. Returns
-     * an error if either the `code_hash` or `dest` do not exist.
-     *
-     * # Note
-     *
-     * This does **not** change the address of the contract in question. This means
-     * that the contract address is no longer derived from its code hash after calling
-     * this dispatchable.
-     *
-     * @param {H160} dest
-     * @param {H256} codeHash
-     **/
-    setCode: GenericTxCall<
-      (
-        dest: H160,
-        codeHash: H256,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'SetCode';
-            params: { dest: H160; codeHash: H256 };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Register the callers account id so that it can be used in contract interactions.
-     *
-     * This will error if the origin is already mapped or is a eth native `Address20`. It will
-     * take a deposit that can be released by calling [`Self::unmap_account`].
-     *
-     * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
-     * on creation via [`AutoMapper`].
-     *
-     **/
-    mapAccount: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'MapAccount';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
-     *
-     * @param {Array<AccountId32Like>} accounts
-     **/
-    batchMapAccounts: GenericTxCall<
-      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'BatchMapAccounts';
-            params: { accounts: Array<AccountId32Like> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Unregister the callers account id in order to free the deposit.
-     *
-     * There is no reason to ever call this function other than freeing up the deposit.
-     * This is only useful when the account should no longer be used.
-     *
-     * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
-     * on kill via [`AutoMapper`].
-     *
-     **/
-    unmapAccount: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'UnmapAccount';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Dispatch an `call` with the origin set to the callers fallback address.
-     *
-     * Every `AccountId32` can control its corresponding fallback account. The fallback account
-     * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
-     * recovery function in case an `AccountId20` was used without creating a mapping first.
-     *
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
-     **/
-    dispatchAsFallbackAccount: GenericTxCall<
-      (call: AssetHubPolkadotRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Revive';
-          palletCall: {
-            name: 'DispatchAsFallbackAccount';
-            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike };
+            name: 'SendTreeDeletions';
+            params: { front: number; discriminator: number };
           };
         },
         ChainKnownTypes
@@ -16517,6 +16571,520 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
+   * Pallet `Revive`'s transaction calls
+   **/
+  revive: {
+    /**
+     * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+     *
+     * # Parameters
+     *
+     * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+     *
+     * # Note
+     *
+     * This call cannot be dispatched directly; attempting to do so will result in a failed
+     * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+     * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+     * signer and validating the transaction.
+     *
+     * @param {BytesLike} payload
+     **/
+    ethTransact: GenericTxCall<
+      (payload: BytesLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthTransact';
+            params: { payload: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Makes a call to an account, optionally transferring some balance.
+     *
+     * # Parameters
+     *
+     * * `dest`: Address of the contract to call.
+     * * `value`: The balance to transfer from the `origin` to `dest`.
+     * * `weight_limit`: The weight limit enforced when executing the constructor.
+     * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+     * caller to pay for the storage consumed.
+     * * `data`: The input data to pass to the contract.
+     *
+     * * If the account is a smart-contract account, the associated code will be
+     * executed and any value will be transferred.
+     * * If the account is a regular account, any value will be transferred.
+     * * If no account exists and the call value is not less than `existential_deposit`,
+     * a regular account will be created and any value will be transferred.
+     *
+     * @param {H160} dest
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} data
+     **/
+    call: GenericTxCall<
+      (
+        dest: H160,
+        value: bigint,
+        weightLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        data: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'Call';
+            params: {
+              dest: H160;
+              value: bigint;
+              weightLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              data: BytesLike;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Instantiates a contract from a previously deployed vm binary.
+     *
+     * This function is identical to [`Self::instantiate_with_code`] but without the
+     * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
+     * must be supplied.
+     *
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {bigint} storageDepositLimit
+     * @param {H256} codeHash
+     * @param {BytesLike} data
+     * @param {FixedBytes<32> | undefined} salt
+     **/
+    instantiate: GenericTxCall<
+      (
+        value: bigint,
+        weightLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        codeHash: H256,
+        data: BytesLike,
+        salt: FixedBytes<32> | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'Instantiate';
+            params: {
+              value: bigint;
+              weightLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              codeHash: H256;
+              data: BytesLike;
+              salt: FixedBytes<32> | undefined;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Instantiates a new contract from the supplied `code` optionally transferring
+     * some balance.
+     *
+     * This dispatchable has the same effect as calling [`Self::upload_code`] +
+     * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+     * also check the documentation of [`Self::upload_code`].
+     *
+     * # Parameters
+     *
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `weight_limit`: The weight limit enforced when executing the constructor.
+     * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+     * from the caller to pay for the storage consumed.
+     * * `code`: The contract code to deploy in raw bytes.
+     * * `data`: The input data to pass to the contract constructor.
+     * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+     * semantics are used. If `None` then `CRATE1` is used.
+     *
+     *
+     * Instantiation is executed as follows:
+     *
+     * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+     * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+     * - The destination address is computed based on the sender, code_hash and the salt.
+     * - The smart-contract account is created at the computed address.
+     * - The `value` is transferred to the new account.
+     * - The `deploy` function is executed in the context of the newly-created account.
+     *
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} code
+     * @param {BytesLike} data
+     * @param {FixedBytes<32> | undefined} salt
+     **/
+    instantiateWithCode: GenericTxCall<
+      (
+        value: bigint,
+        weightLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        code: BytesLike,
+        data: BytesLike,
+        salt: FixedBytes<32> | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'InstantiateWithCode';
+            params: {
+              value: bigint;
+              weightLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              code: BytesLike;
+              data: BytesLike;
+              salt: FixedBytes<32> | undefined;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+     * by an EVM transaction through the EVM compatibility layer.
+     *
+     * # Parameters
+     *
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+     * payment
+     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+     * * `code`: The contract code to deploy in raw bytes.
+     * * `data`: The input data to pass to the contract constructor.
+     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+     * is used for building the Ethereum transaction root.
+     * * effective_gas_price: the price of a unit of gas
+     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     *
+     * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+     * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+     * also bumps the nonce after contract instantiation, since it may be invoked multiple
+     * times within a batch call transaction.
+     *
+     * @param {U256} value
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {U256} ethGasLimit
+     * @param {BytesLike} code
+     * @param {BytesLike} data
+     * @param {BytesLike} transactionEncoded
+     * @param {U256} effectiveGasPrice
+     * @param {number} encodedLen
+     **/
+    ethInstantiateWithCode: GenericTxCall<
+      (
+        value: U256,
+        weightLimit: SpWeightsWeightV2Weight,
+        ethGasLimit: U256,
+        code: BytesLike,
+        data: BytesLike,
+        transactionEncoded: BytesLike,
+        effectiveGasPrice: U256,
+        encodedLen: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthInstantiateWithCode';
+            params: {
+              value: U256;
+              weightLimit: SpWeightsWeightV2Weight;
+              ethGasLimit: U256;
+              code: BytesLike;
+              data: BytesLike;
+              transactionEncoded: BytesLike;
+              effectiveGasPrice: U256;
+              encodedLen: number;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Same as [`Self::call`], but intended to be dispatched **only**
+     * by an EVM transaction through the EVM compatibility layer.
+     *
+     * # Parameters
+     *
+     * * `dest`: The Ethereum address of the account to be called
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+     * payment
+     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+     * * `data`: The input data to pass to the contract constructor.
+     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+     * is used for building the Ethereum transaction root.
+     * * effective_gas_price: the price of a unit of gas
+     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     *
+     * @param {H160} dest
+     * @param {U256} value
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {U256} ethGasLimit
+     * @param {BytesLike} data
+     * @param {BytesLike} transactionEncoded
+     * @param {U256} effectiveGasPrice
+     * @param {number} encodedLen
+     **/
+    ethCall: GenericTxCall<
+      (
+        dest: H160,
+        value: U256,
+        weightLimit: SpWeightsWeightV2Weight,
+        ethGasLimit: U256,
+        data: BytesLike,
+        transactionEncoded: BytesLike,
+        effectiveGasPrice: U256,
+        encodedLen: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthCall';
+            params: {
+              dest: H160;
+              value: U256;
+              weightLimit: SpWeightsWeightV2Weight;
+              ethGasLimit: U256;
+              data: BytesLike;
+              transactionEncoded: BytesLike;
+              effectiveGasPrice: U256;
+              encodedLen: number;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Executes a Substrate runtime call from an Ethereum transaction.
+     *
+     * This dispatchable is intended to be called **only** through the EVM compatibility
+     * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+     *
+     * # Parameters
+     *
+     * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+     * * `call`: The Substrate runtime call to execute.
+     * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+     *
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {BytesLike} transactionEncoded
+     **/
+    ethSubstrateCall: GenericTxCall<
+      (
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        transactionEncoded: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthSubstrateCall';
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Upload new `code` without instantiating a contract from it.
+     *
+     * If the code does not already exist a deposit is reserved from the caller
+     * The size of the reserve depends on the size of the supplied `code`.
+     *
+     * # Note
+     *
+     * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+     * To avoid this situation a constructor could employ access control so that it can
+     * only be instantiated by permissioned entities. The same is true when uploading
+     * through [`Self::instantiate_with_code`].
+     *
+     * If the refcount of the code reaches zero after terminating the last contract that
+     * references this code, the code will be removed automatically.
+     *
+     * @param {BytesLike} code
+     * @param {bigint} storageDepositLimit
+     **/
+    uploadCode: GenericTxCall<
+      (
+        code: BytesLike,
+        storageDepositLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'UploadCode';
+            params: { code: BytesLike; storageDepositLimit: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove the code stored under `code_hash` and refund the deposit to its owner.
+     *
+     * A code can only be removed by its original uploader (its owner) and only if it is
+     * not used by any contract.
+     *
+     * @param {H256} codeHash
+     **/
+    removeCode: GenericTxCall<
+      (codeHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'RemoveCode';
+            params: { codeHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Privileged function that changes the code of an existing contract.
+     *
+     * This takes care of updating refcounts and all other necessary operations. Returns
+     * an error if either the `code_hash` or `dest` do not exist.
+     *
+     * # Note
+     *
+     * This does **not** change the address of the contract in question. This means
+     * that the contract address is no longer derived from its code hash after calling
+     * this dispatchable.
+     *
+     * @param {H160} dest
+     * @param {H256} codeHash
+     **/
+    setCode: GenericTxCall<
+      (
+        dest: H160,
+        codeHash: H256,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'SetCode';
+            params: { dest: H160; codeHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Register the callers account id so that it can be used in contract interactions.
+     *
+     * This will error if the origin is already mapped or is a eth native `Address20`. It will
+     * take a deposit that can be released by calling [`Self::unmap_account`].
+     *
+     * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+     * on creation via [`AutoMapper`].
+     *
+     **/
+    mapAccount: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'MapAccount';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    batchMapAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'BatchMapAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unregister the callers account id in order to free the deposit.
+     *
+     * There is no reason to ever call this function other than freeing up the deposit.
+     * This is only useful when the account should no longer be used.
+     *
+     * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+     * on kill via [`AutoMapper`].
+     *
+     **/
+    unmapAccount: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'UnmapAccount';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Dispatch an `call` with the origin set to the callers fallback address.
+     *
+     * Every `AccountId32` can control its corresponding fallback account. The fallback account
+     * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+     * recovery function in case an `AccountId20` was used without creating a mapping first.
+     *
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsFallbackAccount: GenericTxCall<
+      (call: AssetHubPaseoRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'DispatchAsFallbackAccount';
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
    * Pallet `DotnsGateway`'s transaction calls
    **/
   dotnsGateway: {
@@ -16533,10 +17101,9 @@ export interface ChainTx<
      * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
      * signer of `candidate_signature`.
      * - `candidate_signature`: signature over the bytes returned by
-     * `Pallet::construct_reservation_message` in the personhood signing context (see
-     * [`Pallet::account_signing_payload`]). The message is a SCALE-encoded tuple binding the
-     * attester, candidate, the candidate's chosen *base* username and chat key. The digit
-     * suffix of `lite_label` is **not** part of the signed message (the digits are allocated
+     * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
+     * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
+     * `lite_label` is **not** part of the signed message (the digits are allocated
      * server-side after the candidate signs, so the candidate cannot commit to them at
      * signing time).
      * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
@@ -16706,15 +17273,15 @@ export interface ChainTx<
      * Allow to clean usage associated with an entity when it is zero or when there is no
      * longer any allowance for the origin.
      *
-     * @param {AssetHubPolkadotRuntimeIndividualityRestrictedEntity} entity
+     * @param {AssetHubPaseoRuntimeRestrictedEntity} entity
      **/
     cleanUsage: GenericTxCall<
-      (entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity) => ChainSubmittableExtrinsic<
+      (entity: AssetHubPaseoRuntimeRestrictedEntity) => ChainSubmittableExtrinsic<
         {
           pallet: 'OriginRestriction';
           palletCall: {
             name: 'CleanUsage';
-            params: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity };
+            params: { entity: AssetHubPaseoRuntimeRestrictedEntity };
           };
         },
         ChainKnownTypes
@@ -16742,6 +17309,121 @@ export interface ChainTx<
           palletCall: {
             name: 'SetNetworkSuffix';
             params: { networkSuffix: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Sudo`'s transaction calls
+   **/
+  sudo: {
+    /**
+     * Authenticates the sudo key and dispatches a function call with `Root` origin.
+     *
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     **/
+    sudo: GenericTxCall<
+      (call: AssetHubPaseoRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'Sudo';
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Authenticates the sudo key and dispatches a function call with `Root` origin.
+     * This function does not check the weight of the call, and instead allows the
+     * Sudo user to specify the weight of the call.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {SpWeightsWeightV2Weight} weight
+     **/
+    sudoUncheckedWeight: GenericTxCall<
+      (
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        weight: SpWeightsWeightV2Weight,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'SudoUncheckedWeight';
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
+     * key.
+     *
+     * @param {MultiAddressLike} new_
+     **/
+    setKey: GenericTxCall<
+      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'SetKey';
+            params: { new: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Authenticates the sudo key and dispatches a function call with `Signed` origin from
+     * a given account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * @param {MultiAddressLike} who
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     **/
+    sudoAs: GenericTxCall<
+      (
+        who: MultiAddressLike,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'SudoAs';
+            params: { who: MultiAddressLike; call: AssetHubPaseoRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Permanently removes the sudo key.
+     *
+     * **This cannot be un-done.**
+     *
+     **/
+    removeKey: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'RemoveKey';
           };
         },
         ChainKnownTypes

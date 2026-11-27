@@ -13,6 +13,7 @@ import type {
   FixedBytes,
   FixedU128,
   Data,
+  Permill,
   Era,
   Phase,
   DispatchError,
@@ -30,6 +31,9 @@ export type PeoplePaseoRuntimeRuntimeCall =
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
+  | { pallet: 'OriginRestriction'; palletCall: IndivPalletOriginRestrictionCall }
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall002 }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
@@ -40,6 +44,24 @@ export type PeoplePaseoRuntimeRuntimeCall =
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
+  | { pallet: 'People'; palletCall: IndivPalletPeopleCall }
+  | { pallet: 'MobRule'; palletCall: IndivPalletMobRuleCall }
+  | { pallet: 'ProofOfInk'; palletCall: IndivPalletProofOfInkCall }
+  | { pallet: 'Game'; palletCall: IndivPalletGameCall }
+  | { pallet: 'Score'; palletCall: IndivPalletScoreCall }
+  | { pallet: 'NftCredits'; palletCall: IndivPalletNftCreditsCall }
+  | { pallet: 'DummyDim'; palletCall: IndivPalletDummyDimCall }
+  | { pallet: 'PeopleLite'; palletCall: IndivPalletPeopleLiteCall }
+  | { pallet: 'Resources'; palletCall: IndivPalletResourcesCall }
+  | { pallet: 'ChunksManager'; palletCall: IndivPalletChunksManagerCall }
+  | { pallet: 'Members'; palletCall: IndivPalletMembersCall }
+  | { pallet: 'Coinage'; palletCall: IndivPalletCoinageCall }
+  | { pallet: 'MembersNotifier'; palletCall: IndivPalletMembersNotifierCall }
+  | { pallet: 'Airdrop'; palletCall: IndivPalletAirdropCall }
+  | { pallet: 'Honour'; palletCall: IndivPalletHonourCall }
+  | { pallet: 'PeopleAirdrops'; palletCall: IndivPalletPeopleAirdropsCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
+  | { pallet: 'NetworkSuffix'; palletCall: IndivPalletNetworkSuffixCall }
   | { pallet: 'Sudo'; palletCall: PalletSudoCall };
 
 export type PeoplePaseoRuntimeRuntimeCallLike =
@@ -51,6 +73,9 @@ export type PeoplePaseoRuntimeRuntimeCallLike =
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
+  | { pallet: 'OriginRestriction'; palletCall: IndivPalletOriginRestrictionCallLike }
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike002 }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
@@ -61,6 +86,24 @@ export type PeoplePaseoRuntimeRuntimeCallLike =
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
+  | { pallet: 'People'; palletCall: IndivPalletPeopleCallLike }
+  | { pallet: 'MobRule'; palletCall: IndivPalletMobRuleCallLike }
+  | { pallet: 'ProofOfInk'; palletCall: IndivPalletProofOfInkCallLike }
+  | { pallet: 'Game'; palletCall: IndivPalletGameCallLike }
+  | { pallet: 'Score'; palletCall: IndivPalletScoreCallLike }
+  | { pallet: 'NftCredits'; palletCall: IndivPalletNftCreditsCallLike }
+  | { pallet: 'DummyDim'; palletCall: IndivPalletDummyDimCallLike }
+  | { pallet: 'PeopleLite'; palletCall: IndivPalletPeopleLiteCallLike }
+  | { pallet: 'Resources'; palletCall: IndivPalletResourcesCallLike }
+  | { pallet: 'ChunksManager'; palletCall: IndivPalletChunksManagerCallLike }
+  | { pallet: 'Members'; palletCall: IndivPalletMembersCallLike }
+  | { pallet: 'Coinage'; palletCall: IndivPalletCoinageCallLike }
+  | { pallet: 'MembersNotifier'; palletCall: IndivPalletMembersNotifierCallLike }
+  | { pallet: 'Airdrop'; palletCall: IndivPalletAirdropCallLike }
+  | { pallet: 'Honour'; palletCall: IndivPalletHonourCallLike }
+  | { pallet: 'PeopleAirdrops'; palletCall: IndivPalletPeopleAirdropsCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
+  | { pallet: 'NetworkSuffix'; palletCall: IndivPalletNetworkSuffixCallLike }
   | { pallet: 'Sudo'; palletCall: PalletSudoCallLike };
 
 /**
@@ -631,7 +674,8 @@ export type PalletAssetsCall =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -651,8 +695,18 @@ export type PalletAssetsCall =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -1207,7 +1261,10 @@ export type PalletAssetsCall =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetReserves'; params: { id: StagingXcmV5Location; reserves: Array<[]> } };
+  | {
+      name: 'SetReserves';
+      params: { id: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> };
+    };
 
 export type PalletAssetsCallLike =
   /**
@@ -1221,7 +1278,8 @@ export type PalletAssetsCallLike =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -1241,8 +1299,18 @@ export type PalletAssetsCallLike =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -1805,7 +1873,10 @@ export type PalletAssetsCallLike =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetReserves'; params: { id: StagingXcmV5Location; reserves: Array<[]> } };
+  | {
+      name: 'SetReserves';
+      params: { id: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> };
+    };
 
 export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
 
@@ -1861,6 +1932,11 @@ export type XcmV3JunctionBodyPart =
   | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
   | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
 
+export type AssetsCommonLocalAndForeignAssetsForeignAssetReserveData = {
+  reserve: StagingXcmV5Location;
+  teleportable: boolean;
+};
+
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
@@ -1909,6 +1985,1427 @@ export type PalletAssetRateCallLike =
    * - O(1)
    **/
   | { name: 'Remove'; params: { assetKind: StagingXcmV5Location } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletOriginRestrictionCall =
+  /**
+   * Allow to clean usage associated with an entity when it is zero or when there is no
+   * longer any allowance for the origin.
+   **/
+  { name: 'CleanUsage'; params: { entity: PeoplePaseoRuntimePeopleRestrictedEntity } };
+
+export type IndivPalletOriginRestrictionCallLike =
+  /**
+   * Allow to clean usage associated with an entity when it is zero or when there is no
+   * longer any allowance for the origin.
+   **/
+  { name: 'CleanUsage'; params: { entity: PeoplePaseoRuntimePeopleRestrictedEntity } };
+
+export type PeoplePaseoRuntimePeopleRestrictedEntity =
+  | { type: 'PersonalAlias'; value: FixedBytes<32> }
+  | { type: 'PersonalIdentity'; value: bigint }
+  | { type: 'ReferredCandidate'; value: AccountId32 }
+  | { type: 'AccountParticipant'; value: AccountId32 }
+  | { type: 'InvitedCandidate'; value: AccountId32 }
+  | { type: 'LitePerson'; value: AccountId32 };
+
+/**
+ * Pallet's callable functions.
+ **/
+export type PalletAssetConversionCall =
+  /**
+   * Creates an empty liquidity pool and an associated new `lp_token` asset
+   * (the id of which is returned in the `Event::PoolCreated` event).
+   *
+   * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
+   **/
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Provide liquidity into the pool of `asset1` and `asset2`.
+   * NOTE: an optimal amount of asset1 and asset2 will be calculated and
+   * might be different than the provided `amount1_desired`/`amount2_desired`
+   * thus you should provide the min amount you're happy to provide.
+   * Params `amount1_min`/`amount2_min` represent that.
+   * `mint_to` will be sent the liquidity tokens that represent this share of the pool.
+   *
+   * NOTE: when encountering an incorrect exchange rate and non-withdrawable pool liquidity,
+   * batch an atomic call with [`Pallet::add_liquidity`] and
+   * [`Pallet::swap_exact_tokens_for_tokens`] or [`Pallet::swap_tokens_for_exact_tokens`]
+   * calls to render the liquidity withdrawable and rectify the exchange rate.
+   *
+   * Once liquidity is added, someone may successfully call
+   * [`Pallet::swap_exact_tokens_for_tokens`].
+   **/
+  | {
+      name: 'AddLiquidity';
+      params: {
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
+        amount1Desired: bigint;
+        amount2Desired: bigint;
+        amount1Min: bigint;
+        amount2Min: bigint;
+        mintTo: AccountId32;
+      };
+    }
+  /**
+   * Allows you to remove liquidity by providing the `lp_token_burn` tokens that will be
+   * burned in the process. With the usage of `amount1_min_receive`/`amount2_min_receive`
+   * it's possible to control the min amount of returned tokens you're happy with.
+   **/
+  | {
+      name: 'RemoveLiquidity';
+      params: {
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
+        lpTokenBurn: bigint;
+        amount1MinReceive: bigint;
+        amount2MinReceive: bigint;
+        withdrawTo: AccountId32;
+      };
+    }
+  /**
+   * Swap the exact amount of `asset1` into `asset2`.
+   * `amount_out_min` param allows you to specify the min amount of the `asset2`
+   * you're happy to receive.
+   *
+   * [`AssetConversionApi::quote_price_exact_tokens_for_tokens`] runtime call can be called
+   * for a quote.
+   **/
+  | {
+      name: 'SwapExactTokensForTokens';
+      params: {
+        path: Array<StagingXcmV5Location>;
+        amountIn: bigint;
+        amountOutMin: bigint;
+        sendTo: AccountId32;
+        keepAlive: boolean;
+      };
+    }
+  /**
+   * Swap any amount of `asset1` to get the exact amount of `asset2`.
+   * `amount_in_max` param allows to specify the max amount of the `asset1`
+   * you're happy to provide.
+   *
+   * [`AssetConversionApi::quote_price_tokens_for_exact_tokens`] runtime call can be called
+   * for a quote.
+   **/
+  | {
+      name: 'SwapTokensForExactTokens';
+      params: {
+        path: Array<StagingXcmV5Location>;
+        amountOut: bigint;
+        amountInMax: bigint;
+        sendTo: AccountId32;
+        keepAlive: boolean;
+      };
+    }
+  /**
+   * Touch an existing pool to fulfill prerequisites before providing liquidity, such as
+   * ensuring that the pool's accounts are in place. It is typically useful when a pool
+   * creator removes the pool's accounts and does not provide a liquidity. This action may
+   * involve holding assets from the caller as a deposit for creating the pool's accounts.
+   *
+   * The origin must be Signed.
+   *
+   * - `asset1`: The asset ID of an existing pool with a pair (asset1, asset2).
+   * - `asset2`: The asset ID of an existing pool with a pair (asset1, asset2).
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+
+export type PalletAssetConversionCallLike =
+  /**
+   * Creates an empty liquidity pool and an associated new `lp_token` asset
+   * (the id of which is returned in the `Event::PoolCreated` event).
+   *
+   * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
+   **/
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Provide liquidity into the pool of `asset1` and `asset2`.
+   * NOTE: an optimal amount of asset1 and asset2 will be calculated and
+   * might be different than the provided `amount1_desired`/`amount2_desired`
+   * thus you should provide the min amount you're happy to provide.
+   * Params `amount1_min`/`amount2_min` represent that.
+   * `mint_to` will be sent the liquidity tokens that represent this share of the pool.
+   *
+   * NOTE: when encountering an incorrect exchange rate and non-withdrawable pool liquidity,
+   * batch an atomic call with [`Pallet::add_liquidity`] and
+   * [`Pallet::swap_exact_tokens_for_tokens`] or [`Pallet::swap_tokens_for_exact_tokens`]
+   * calls to render the liquidity withdrawable and rectify the exchange rate.
+   *
+   * Once liquidity is added, someone may successfully call
+   * [`Pallet::swap_exact_tokens_for_tokens`].
+   **/
+  | {
+      name: 'AddLiquidity';
+      params: {
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
+        amount1Desired: bigint;
+        amount2Desired: bigint;
+        amount1Min: bigint;
+        amount2Min: bigint;
+        mintTo: AccountId32Like;
+      };
+    }
+  /**
+   * Allows you to remove liquidity by providing the `lp_token_burn` tokens that will be
+   * burned in the process. With the usage of `amount1_min_receive`/`amount2_min_receive`
+   * it's possible to control the min amount of returned tokens you're happy with.
+   **/
+  | {
+      name: 'RemoveLiquidity';
+      params: {
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
+        lpTokenBurn: bigint;
+        amount1MinReceive: bigint;
+        amount2MinReceive: bigint;
+        withdrawTo: AccountId32Like;
+      };
+    }
+  /**
+   * Swap the exact amount of `asset1` into `asset2`.
+   * `amount_out_min` param allows you to specify the min amount of the `asset2`
+   * you're happy to receive.
+   *
+   * [`AssetConversionApi::quote_price_exact_tokens_for_tokens`] runtime call can be called
+   * for a quote.
+   **/
+  | {
+      name: 'SwapExactTokensForTokens';
+      params: {
+        path: Array<StagingXcmV5Location>;
+        amountIn: bigint;
+        amountOutMin: bigint;
+        sendTo: AccountId32Like;
+        keepAlive: boolean;
+      };
+    }
+  /**
+   * Swap any amount of `asset1` to get the exact amount of `asset2`.
+   * `amount_in_max` param allows to specify the max amount of the `asset1`
+   * you're happy to provide.
+   *
+   * [`AssetConversionApi::quote_price_tokens_for_exact_tokens`] runtime call can be called
+   * for a quote.
+   **/
+  | {
+      name: 'SwapTokensForExactTokens';
+      params: {
+        path: Array<StagingXcmV5Location>;
+        amountOut: bigint;
+        amountInMax: bigint;
+        sendTo: AccountId32Like;
+        keepAlive: boolean;
+      };
+    }
+  /**
+   * Touch an existing pool to fulfill prerequisites before providing liquidity, such as
+   * ensuring that the pool's accounts are in place. It is typically useful when a pool
+   * creator removes the pool's accounts and does not provide a liquidity. This action may
+   * involve holding assets from the caller as a deposit for creating the pool's accounts.
+   *
+   * The origin must be Signed.
+   *
+   * - `asset1`: The asset ID of an existing pool with a pair (asset1, asset2).
+   * - `asset2`: The asset ID of an existing pool with a pair (asset1, asset2).
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletAssetsCall002 =
+  /**
+   * Issue a new class of fungible assets from a public origin.
+   *
+   * This new asset class has no assets initially and its owner is the origin.
+   *
+   * The origin must conform to the configured `CreateOrigin` and have sufficient funds free.
+   *
+   * Funds of sender are reserved by `AssetDeposit`.
+   *
+   * Parameters:
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
+   * - `admin`: The admin of this class of assets. The admin is the initial address of each
+   * member of the asset class's admin team.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `Created` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Create'; params: { id: number; admin: MultiAddress; minBalance: bigint } }
+  /**
+   * Issue a new class of fungible assets from a privileged origin.
+   *
+   * This new asset class has no assets initially.
+   *
+   * The origin must conform to `ForceOrigin`.
+   *
+   * Unlike `create`, no funds are reserved.
+   *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset, and must never have been in use previously (see warning above).
+   * - `owner`: The owner of this class of assets. The owner has full superuser permissions
+   * over this asset, but may later change and configure the permissions using
+   * `transfer_ownership` and `set_team`.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `ForceCreated` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceCreate'; params: { id: number; owner: MultiAddress; isSufficient: boolean; minBalance: bigint } }
+  /**
+   * Start the process of destroying a fungible asset class.
+   *
+   * `start_destroy` is the first in a series of extrinsics that should be called, to allow
+   * destruction of an asset class.
+   *
+   * The origin must conform to `ForceOrigin` or must be `Signed` by the asset's `owner`.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
+   **/
+  | { name: 'StartDestroy'; params: { id: number } }
+  /**
+   * Destroy all accounts associated with a given asset.
+   *
+   * `destroy_accounts` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all accounts. It will destroy `RemoveItemsLimit` accounts at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedAccounts` event.
+   **/
+  | { name: 'DestroyAccounts'; params: { id: number } }
+  /**
+   * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
+   *
+   * `destroy_approvals` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all approvals. It will destroy `RemoveItemsLimit` approvals at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedApprovals` event.
+   **/
+  | { name: 'DestroyApprovals'; params: { id: number } }
+  /**
+   * Complete destroying asset and unreserve currency.
+   *
+   * `finish_destroy` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state. All accounts or approvals should be destroyed before
+   * hand.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each successful call emits the `Event::Destroyed` event.
+   **/
+  | { name: 'FinishDestroy'; params: { id: number } }
+  /**
+   * Mint assets of a particular class.
+   *
+   * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount minted.
+   * - `beneficiary`: The account to be credited with the minted assets.
+   * - `amount`: The amount of the asset to be minted.
+   *
+   * Emits `Issued` event when successful.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
+   **/
+  | { name: 'Mint'; params: { id: number; beneficiary: MultiAddress; amount: bigint } }
+  /**
+   * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+   *
+   * Origin must be Signed and the sender should be the Manager of the asset `id`.
+   *
+   * Bails with `NoAccount` if the `who` is already dead.
+   *
+   * - `id`: The identifier of the asset to have some amount burned.
+   * - `who`: The account to be debited from.
+   * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+   *
+   * Emits `Burned` with the actual amount burned. If this takes the balance to below the
+   * minimum for the asset, then the amount burned is increased to take it to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
+   **/
+  | { name: 'Burn'; params: { id: number; who: MultiAddress; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'Transfer'; params: { id: number; target: MultiAddress; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another, keeping the sender account alive.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'TransferKeepAlive'; params: { id: number; target: MultiAddress; amount: bigint } }
+  /**
+   * Move some assets from one account to another.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `source`: The account to be debited.
+   * - `dest`: The account to be credited.
+   * - `amount`: The amount by which the `source`'s balance of assets should be reduced and
+   * `dest`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the `source` balance above zero but
+   * below the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
+   * `dest`.
+   **/
+  | { name: 'ForceTransfer'; params: { id: number; source: MultiAddress; dest: MultiAddress; amount: bigint } }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
+   * must already exist as an entry in `Account`s of the asset. If you want to freeze an
+   * account that does not have an entry, use `touch_other` first.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Freeze'; params: { id: number; who: MultiAddress } }
+  /**
+   * Allow unprivileged transfers to and from an account again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be unfrozen.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Thaw'; params: { id: number; who: MultiAddress } }
+  /**
+   * Disallow further unprivileged transfers for the asset class.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'FreezeAsset'; params: { id: number } }
+  /**
+   * Allow unprivileged transfers for the asset again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be thawed.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ThawAsset'; params: { id: number } }
+  /**
+   * Change the Owner of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   *
+   * Emits `OwnerChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'TransferOwnership'; params: { id: number; owner: MultiAddress } }
+  /**
+   * Change the Issuer, Admin and Freezer of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   *
+   * Emits `TeamChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'SetTeam'; params: { id: number; issuer: MultiAddress; admin: MultiAddress; freezer: MultiAddress } }
+  /**
+   * Set the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Funds of sender are reserved according to the formula:
+   * `MetadataDepositBase + MetadataDepositPerByte * (name.len + symbol.len)` taking into
+   * account any already reserved funds.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'SetMetadata'; params: { id: number; name: Bytes; symbol: Bytes; decimals: number } }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Any deposit is freed for the asset owner.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ClearMetadata'; params: { id: number } }
+  /**
+   * Force the metadata for an asset to some value.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is left alone.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
+   **/
+  | {
+      name: 'ForceSetMetadata';
+      params: { id: number; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
+    }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is returned.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceClearMetadata'; params: { id: number } }
+  /**
+   * Alter the attributes of a given asset.
+   *
+   * Origin must be `ForceOrigin`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+   * value to account for the state bloat associated with its balance storage. If set to
+   * `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+   * an ED in the Balances pallet or whatever else is used to control user-account state
+   * growth).
+   * - `is_frozen`: Whether this asset class is frozen except for permissioned/admin
+   * instructions.
+   *
+   * Emits `AssetStatusChanged` with the identity of the asset.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'ForceAssetStatus';
+      params: {
+        id: number;
+        owner: MultiAddress;
+        issuer: MultiAddress;
+        admin: MultiAddress;
+        freezer: MultiAddress;
+        minBalance: bigint;
+        isSufficient: boolean;
+        isFrozen: boolean;
+      };
+    }
+  /**
+   * Approve an amount of asset for transfer by a delegated third-party account.
+   *
+   * Origin must be Signed.
+   *
+   * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from signing account
+   * for the purpose of holding the approval. If some non-zero amount of assets is already
+   * approved from signing account to `delegate`, then it is topped up or unreserved to
+   * meet the right value.
+   *
+   * NOTE: The signing account does not need to own `amount` of assets at the point of
+   * making this call.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account to delegate permission to transfer asset.
+   * - `amount`: The amount of asset that may be transferred by `delegate`. If there is
+   * already an approval in place, then this acts additively.
+   *
+   * Emits `ApprovedTransfer` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ApproveTransfer'; params: { id: number; delegate: MultiAddress; amount: bigint } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be Signed and there must be an approval in place between signer and
+   * `delegate`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'CancelApproval'; params: { id: number; delegate: MultiAddress } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be either ForceOrigin or Signed origin with the signer being the Admin
+   * account of the asset `id`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceCancelApproval'; params: { id: number; owner: MultiAddress; delegate: MultiAddress } }
+  /**
+   * Transfer some asset balance from a previously delegated account to some third-party
+   * account.
+   *
+   * Origin must be Signed and there must be an approval in place by the `owner` to the
+   * signer.
+   *
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `amount`: The amount of assets to transfer.
+   *
+   * Emits `TransferredApproved` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'TransferApproved'; params: { id: number; owner: MultiAddress; destination: MultiAddress; amount: bigint } }
+  /**
+   * Create an asset account for non-provider assets.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'Touch'; params: { id: number } }
+  /**
+   * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
+   * account.
+   *
+   * The origin must be Signed.
+   *
+   * - `id`: The identifier of the asset for which the caller would like the deposit
+   * refunded.
+   * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
+  /**
+   * Sets the minimum balance of an asset.
+   *
+   * Only works if there aren't any accounts that are holding the asset or if
+   * the new value of `min_balance` is less than the old one.
+   *
+   * Origin must be Signed and the sender has to be the Owner of the
+   * asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `min_balance`: The new value of `min_balance`.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetMinBalance'; params: { id: number; minBalance: bigint } }
+  /**
+   * Create an asset account for `who`.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
+   * - `who`: The account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'TouchOther'; params: { id: number; who: MultiAddress } }
+  /**
+   * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
+   *
+   * The origin must be Signed and either the account owner, depositor, or asset `Admin`. In
+   * order to burn a non-zero balance of the asset, the caller must be the account and should
+   * use `refund`.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'RefundOther'; params: { id: number; who: MultiAddress } }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the account's asset.
+   * - `who`: The account to be unblocked.
+   *
+   * Emits `Blocked`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Block'; params: { id: number; who: MultiAddress } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
+
+export type PalletAssetsCallLike002 =
+  /**
+   * Issue a new class of fungible assets from a public origin.
+   *
+   * This new asset class has no assets initially and its owner is the origin.
+   *
+   * The origin must conform to the configured `CreateOrigin` and have sufficient funds free.
+   *
+   * Funds of sender are reserved by `AssetDeposit`.
+   *
+   * Parameters:
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
+   * - `admin`: The admin of this class of assets. The admin is the initial address of each
+   * member of the asset class's admin team.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `Created` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Create'; params: { id: number; admin: MultiAddressLike; minBalance: bigint } }
+  /**
+   * Issue a new class of fungible assets from a privileged origin.
+   *
+   * This new asset class has no assets initially.
+   *
+   * The origin must conform to `ForceOrigin`.
+   *
+   * Unlike `create`, no funds are reserved.
+   *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset, and must never have been in use previously (see warning above).
+   * - `owner`: The owner of this class of assets. The owner has full superuser permissions
+   * over this asset, but may later change and configure the permissions using
+   * `transfer_ownership` and `set_team`.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `ForceCreated` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceCreate'; params: { id: number; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint } }
+  /**
+   * Start the process of destroying a fungible asset class.
+   *
+   * `start_destroy` is the first in a series of extrinsics that should be called, to allow
+   * destruction of an asset class.
+   *
+   * The origin must conform to `ForceOrigin` or must be `Signed` by the asset's `owner`.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
+   **/
+  | { name: 'StartDestroy'; params: { id: number } }
+  /**
+   * Destroy all accounts associated with a given asset.
+   *
+   * `destroy_accounts` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all accounts. It will destroy `RemoveItemsLimit` accounts at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedAccounts` event.
+   **/
+  | { name: 'DestroyAccounts'; params: { id: number } }
+  /**
+   * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
+   *
+   * `destroy_approvals` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all approvals. It will destroy `RemoveItemsLimit` approvals at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedApprovals` event.
+   **/
+  | { name: 'DestroyApprovals'; params: { id: number } }
+  /**
+   * Complete destroying asset and unreserve currency.
+   *
+   * `finish_destroy` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state. All accounts or approvals should be destroyed before
+   * hand.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each successful call emits the `Event::Destroyed` event.
+   **/
+  | { name: 'FinishDestroy'; params: { id: number } }
+  /**
+   * Mint assets of a particular class.
+   *
+   * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount minted.
+   * - `beneficiary`: The account to be credited with the minted assets.
+   * - `amount`: The amount of the asset to be minted.
+   *
+   * Emits `Issued` event when successful.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
+   **/
+  | { name: 'Mint'; params: { id: number; beneficiary: MultiAddressLike; amount: bigint } }
+  /**
+   * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+   *
+   * Origin must be Signed and the sender should be the Manager of the asset `id`.
+   *
+   * Bails with `NoAccount` if the `who` is already dead.
+   *
+   * - `id`: The identifier of the asset to have some amount burned.
+   * - `who`: The account to be debited from.
+   * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+   *
+   * Emits `Burned` with the actual amount burned. If this takes the balance to below the
+   * minimum for the asset, then the amount burned is increased to take it to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
+   **/
+  | { name: 'Burn'; params: { id: number; who: MultiAddressLike; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'Transfer'; params: { id: number; target: MultiAddressLike; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another, keeping the sender account alive.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'TransferKeepAlive'; params: { id: number; target: MultiAddressLike; amount: bigint } }
+  /**
+   * Move some assets from one account to another.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `source`: The account to be debited.
+   * - `dest`: The account to be credited.
+   * - `amount`: The amount by which the `source`'s balance of assets should be reduced and
+   * `dest`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the `source` balance above zero but
+   * below the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
+   * `dest`.
+   **/
+  | { name: 'ForceTransfer'; params: { id: number; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint } }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
+   * must already exist as an entry in `Account`s of the asset. If you want to freeze an
+   * account that does not have an entry, use `touch_other` first.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Freeze'; params: { id: number; who: MultiAddressLike } }
+  /**
+   * Allow unprivileged transfers to and from an account again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be unfrozen.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Thaw'; params: { id: number; who: MultiAddressLike } }
+  /**
+   * Disallow further unprivileged transfers for the asset class.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'FreezeAsset'; params: { id: number } }
+  /**
+   * Allow unprivileged transfers for the asset again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be thawed.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ThawAsset'; params: { id: number } }
+  /**
+   * Change the Owner of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   *
+   * Emits `OwnerChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'TransferOwnership'; params: { id: number; owner: MultiAddressLike } }
+  /**
+   * Change the Issuer, Admin and Freezer of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   *
+   * Emits `TeamChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'SetTeam';
+      params: { id: number; issuer: MultiAddressLike; admin: MultiAddressLike; freezer: MultiAddressLike };
+    }
+  /**
+   * Set the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Funds of sender are reserved according to the formula:
+   * `MetadataDepositBase + MetadataDepositPerByte * (name.len + symbol.len)` taking into
+   * account any already reserved funds.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'SetMetadata'; params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number } }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Any deposit is freed for the asset owner.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ClearMetadata'; params: { id: number } }
+  /**
+   * Force the metadata for an asset to some value.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is left alone.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
+   **/
+  | {
+      name: 'ForceSetMetadata';
+      params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
+    }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is returned.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceClearMetadata'; params: { id: number } }
+  /**
+   * Alter the attributes of a given asset.
+   *
+   * Origin must be `ForceOrigin`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+   * value to account for the state bloat associated with its balance storage. If set to
+   * `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+   * an ED in the Balances pallet or whatever else is used to control user-account state
+   * growth).
+   * - `is_frozen`: Whether this asset class is frozen except for permissioned/admin
+   * instructions.
+   *
+   * Emits `AssetStatusChanged` with the identity of the asset.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'ForceAssetStatus';
+      params: {
+        id: number;
+        owner: MultiAddressLike;
+        issuer: MultiAddressLike;
+        admin: MultiAddressLike;
+        freezer: MultiAddressLike;
+        minBalance: bigint;
+        isSufficient: boolean;
+        isFrozen: boolean;
+      };
+    }
+  /**
+   * Approve an amount of asset for transfer by a delegated third-party account.
+   *
+   * Origin must be Signed.
+   *
+   * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from signing account
+   * for the purpose of holding the approval. If some non-zero amount of assets is already
+   * approved from signing account to `delegate`, then it is topped up or unreserved to
+   * meet the right value.
+   *
+   * NOTE: The signing account does not need to own `amount` of assets at the point of
+   * making this call.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account to delegate permission to transfer asset.
+   * - `amount`: The amount of asset that may be transferred by `delegate`. If there is
+   * already an approval in place, then this acts additively.
+   *
+   * Emits `ApprovedTransfer` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ApproveTransfer'; params: { id: number; delegate: MultiAddressLike; amount: bigint } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be Signed and there must be an approval in place between signer and
+   * `delegate`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'CancelApproval'; params: { id: number; delegate: MultiAddressLike } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be either ForceOrigin or Signed origin with the signer being the Admin
+   * account of the asset `id`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceCancelApproval'; params: { id: number; owner: MultiAddressLike; delegate: MultiAddressLike } }
+  /**
+   * Transfer some asset balance from a previously delegated account to some third-party
+   * account.
+   *
+   * Origin must be Signed and there must be an approval in place by the `owner` to the
+   * signer.
+   *
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `amount`: The amount of assets to transfer.
+   *
+   * Emits `TransferredApproved` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'TransferApproved';
+      params: { id: number; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
+    }
+  /**
+   * Create an asset account for non-provider assets.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'Touch'; params: { id: number } }
+  /**
+   * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
+   * account.
+   *
+   * The origin must be Signed.
+   *
+   * - `id`: The identifier of the asset for which the caller would like the deposit
+   * refunded.
+   * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
+  /**
+   * Sets the minimum balance of an asset.
+   *
+   * Only works if there aren't any accounts that are holding the asset or if
+   * the new value of `min_balance` is less than the old one.
+   *
+   * Origin must be Signed and the sender has to be the Owner of the
+   * asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `min_balance`: The new value of `min_balance`.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetMinBalance'; params: { id: number; minBalance: bigint } }
+  /**
+   * Create an asset account for `who`.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
+   * - `who`: The account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'TouchOther'; params: { id: number; who: MultiAddressLike } }
+  /**
+   * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
+   *
+   * The origin must be Signed and either the account owner, depositor, or asset `Admin`. In
+   * order to burn a non-zero balance of the asset, the caller must be the account and should
+   * use `refund`.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'RefundOther'; params: { id: number; who: MultiAddressLike } }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the account's asset.
+   * - `who`: The account to be unblocked.
+   *
+   * Emits `Blocked`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Block'; params: { id: number; who: MultiAddressLike } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2477,6 +3974,8 @@ export type PalletXcmCall =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -2813,6 +4312,8 @@ export type PalletXcmCallLike =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -3927,7 +5428,16 @@ export type PalletUtilityCallLike =
 export type PeoplePaseoRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
-  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin };
+  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
+  | { type: 'People'; value: IndivPalletPeopleOrigin }
+  | { type: 'ProofOfInk'; value: IndivPalletProofOfInkOrigin }
+  | { type: 'Game'; value: IndivPalletGameOrigin }
+  | { type: 'Score'; value: IndivPalletScoreOrigin }
+  | { type: 'PeopleLite'; value: IndivPalletPeopleLiteOrigin }
+  | { type: 'Resources'; value: IndivPalletResourcesOrigin }
+  | { type: 'Members'; value: IndivPalletMembersOrigin }
+  | { type: 'Coinage'; value: IndivPalletCoinageOrigin }
+  | { type: 'Honour'; value: IndivPalletHonourOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -3942,6 +5452,62 @@ export type PalletXcmOrigin =
 export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
+
+export type IndivPalletPeopleOrigin =
+  | { type: 'PersonalIdentity'; value: bigint }
+  | { type: 'PersonalAlias'; value: IndivSupportRealityRevisedContextualAlias };
+
+export type IndivSupportRealityRevisedContextualAlias = {
+  revision: number;
+  ring: number;
+  ca: IndivSupportRealityContextualAlias;
+};
+
+export type IndivSupportRealityContextualAlias = { alias: FixedBytes<32>; context: FixedBytes<32> };
+
+export type IndivPalletProofOfInkOrigin =
+  | { type: 'AuthorizedApplyWithSig'; value: AccountId32 }
+  | { type: 'ReferredCandidate'; value: AccountId32 }
+  | { type: 'InvitedCandidate'; value: AccountId32 };
+
+export type IndivPalletGameOrigin = { type: 'Invited'; value: AccountId32 };
+
+export type IndivPalletScoreOrigin = { type: 'AccountParticipant'; value: AccountId32 };
+
+export type IndivPalletPeopleLiteOrigin =
+  | { type: 'LitePerson'; value: AccountId32 }
+  | { type: 'LiteAlias'; value: IndivSupportRealityRevisedContextualAlias };
+
+export type IndivPalletResourcesOrigin =
+  | { type: 'NotificationAlias'; value: FixedBytes<32> }
+  | { type: 'StmtStoreAlias'; value: FixedBytes<32> }
+  | { type: 'LongTermStorageClaim'; value: [FixedBytes<32>, IndivPalletResourcesMembershipCollection] };
+
+export type IndivPalletResourcesMembershipCollection = 'People' | 'LitePeople';
+
+export type IndivPalletMembersOrigin =
+  | { type: 'MemberAlias'; value: [FixedBytes<32>, IndivSupportRealityRevisedContextualAlias] }
+  | { type: 'SelfInclude'; value: FixedBytes<32> };
+
+export type PeoplePaseoRuntimeRuntime = {};
+
+export type IndivPalletCoinageOrigin =
+  | { type: 'Coin'; value: { coinId: AccountId32; coin: IndivPalletCoinageCoin } }
+  | {
+      type: 'UnloadToken';
+      value: { aliasProofs: Array<Bytes>; provenMsg: FixedBytes<32>; fee: IndivPalletCoinageUnloadFee };
+    }
+  | { type: 'InfallibleUnpaidSigned'; value: { who: AccountId32 } };
+
+export type IndivPalletCoinageCoin = { instanceId: number; value: number; age: number };
+
+export type IndivPalletCoinageUnloadFee =
+  | { type: 'Prepaid' }
+  | { type: 'FromOutput'; value: { feeRecyclerValue: number; feeRecyclerIndex: number } };
+
+export type IndivPalletHonourOrigin = { type: 'Voter'; value: { aliases: IndivPalletHonourVoteAliases } };
+
+export type IndivPalletHonourVoteAliases = { subjectAlias: FixedBytes<32>; pointAlias: FixedBytes<32> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4663,7 +6229,8 @@ export type PeoplePaseoRuntimeProxyType =
   | 'CancelProxy'
   | 'Identity'
   | 'IdentityJudgement'
-  | 'Collator';
+  | 'Collator'
+  | 'SafeSudo';
 
 /**
  * Identity pallet declaration.
@@ -5205,6 +6772,5244 @@ export type SpRuntimeMultiSignature =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type IndivPalletPeopleCall =
+  /**
+   * Dispatch a call under an alias using the `account <-> alias` mapping.
+   *
+   * This is a call version of the transaction extension `AsPersonalAliasWithAccount`.
+   * It is recommended to use the transaction extension instead when suitable.
+   **/
+  | { name: 'UnderAlias'; params: { call: PeoplePaseoRuntimeRuntimeCall } }
+  /**
+   * This transaction is refunded if successful and no alias was previously set.
+   *
+   * The call is valid from `call_valid_at` until
+   * `call_valid_at + account_setup_time_tolerance`.
+   * `account_setup_time_tolerance` is a constant available in the metadata.
+   *
+   * This call is authorized through the `AsPersonalAliasWithProof` variant of the `AsPerson`
+   * transaction extension, which provides no nonce-based replay protection. Replay is only
+   * prevented for as long as the alias still points at the account this call sets. As soon
+   * as the alias is pointed at a different account (by another `set_alias_account`), this
+   * call becomes replayable again until its validity period elapses. Consequently, if 2
+   * such transactions setting 2 different accounts have overlapping validity periods, they
+   * can be replayed against each other indefinitely for the duration of the overlap. To
+   * avoid this, the caller must not have 2 such transactions alive (within their validity
+   * period) at the same time.
+   *
+   * Parameters:
+   * - `account`: The account to set the alias for.
+   * - `call_valid_at`: The block number when the call becomes valid.
+   **/
+  | { name: 'SetAliasAccount'; params: { account: AccountId32; callValidAt: number } }
+  /**
+   * Remove the mapping from a particular alias to its registered account.
+   **/
+  | { name: 'UnsetAliasAccount' }
+  /**
+   * Recognize a set of people without any additional checks.
+   *
+   * The people are identified by the provided list of keys and will each be assigned, in
+   * order, the next available personal ID.
+   **/
+  | { name: 'ForceRecognizePersonhood'; params: { people: Array<FixedBytes<32>> } }
+  /**
+   * Set a personal id account.
+   *
+   * The account can then be used to sign transactions on behalf of the personal id, and
+   * provide replay protection with the nonce.
+   *
+   * This transaction is refunded if successful and no account was previously set for the
+   * personal id.
+   *
+   * The call is valid from `call_valid_at` until
+   * `call_valid_at + account_setup_time_tolerance`.
+   * `account_setup_time_tolerance` is a constant available in the metadata.
+   *
+   * Parameters:
+   * - `account`: The account to set the alias for.
+   * - `call_valid_at`: The block number when the call becomes valid.
+   **/
+  | { name: 'SetPersonalIdAccount'; params: { account: AccountId32; callValidAt: number } }
+  /**
+   * Unset the personal id account.
+   **/
+  | { name: 'UnsetPersonalIdAccount' }
+  /**
+   * Create the people collection.
+   *
+   * This call is valid only if the collection doesn't exist yet. Once created,
+   * this call cannot be executed again.
+   *
+   * The collection is created with a fixed configuration:
+   * - Owner: Configured via `CollectionOwner` type
+   * - Onboarding size: `PEOPLE_ONBOARDING_SIZE` (10)
+   * - Mode: `Flexible`
+   * - Ring size: `R2e9`
+   **/
+  | { name: 'CreatePeopleCollection' }
+  /**
+   * Remove stale alias <-> account mappings.
+   *
+   * A mapping is stale when:
+   * - its context has been removed from [`Config::AccountContexts`] (governance
+   * reconfiguration, ended airdrop etc.), or
+   * - its ring has been deleted.
+   *
+   * Revision mismatches do not render an alias stale. The user can continue
+   * transacting via `AsPersonalAliasWithAccountRevised` without having to
+   * redo account setup.
+   *
+   * Typically submitted by the OCW, but the dispatch does not trust
+   * the caller. Each alias is re-validated via
+   * `Self::ensure_alias_is_stale`; those that are not stale are
+   * skipped.
+   *
+   * At most [`MAX_BULK_CLEANUP`] aliases are processed per call.
+   *
+   * The transaction source must be local or in-block. Thus, external
+   * invocations are not permitted.
+   **/
+  | { name: 'CleanUpStaleAliases'; params: { aliases: Array<IndivSupportRealityContextualAlias> } };
+
+export type IndivPalletPeopleCallLike =
+  /**
+   * Dispatch a call under an alias using the `account <-> alias` mapping.
+   *
+   * This is a call version of the transaction extension `AsPersonalAliasWithAccount`.
+   * It is recommended to use the transaction extension instead when suitable.
+   **/
+  | { name: 'UnderAlias'; params: { call: PeoplePaseoRuntimeRuntimeCallLike } }
+  /**
+   * This transaction is refunded if successful and no alias was previously set.
+   *
+   * The call is valid from `call_valid_at` until
+   * `call_valid_at + account_setup_time_tolerance`.
+   * `account_setup_time_tolerance` is a constant available in the metadata.
+   *
+   * This call is authorized through the `AsPersonalAliasWithProof` variant of the `AsPerson`
+   * transaction extension, which provides no nonce-based replay protection. Replay is only
+   * prevented for as long as the alias still points at the account this call sets. As soon
+   * as the alias is pointed at a different account (by another `set_alias_account`), this
+   * call becomes replayable again until its validity period elapses. Consequently, if 2
+   * such transactions setting 2 different accounts have overlapping validity periods, they
+   * can be replayed against each other indefinitely for the duration of the overlap. To
+   * avoid this, the caller must not have 2 such transactions alive (within their validity
+   * period) at the same time.
+   *
+   * Parameters:
+   * - `account`: The account to set the alias for.
+   * - `call_valid_at`: The block number when the call becomes valid.
+   **/
+  | { name: 'SetAliasAccount'; params: { account: AccountId32Like; callValidAt: number } }
+  /**
+   * Remove the mapping from a particular alias to its registered account.
+   **/
+  | { name: 'UnsetAliasAccount' }
+  /**
+   * Recognize a set of people without any additional checks.
+   *
+   * The people are identified by the provided list of keys and will each be assigned, in
+   * order, the next available personal ID.
+   **/
+  | { name: 'ForceRecognizePersonhood'; params: { people: Array<FixedBytes<32>> } }
+  /**
+   * Set a personal id account.
+   *
+   * The account can then be used to sign transactions on behalf of the personal id, and
+   * provide replay protection with the nonce.
+   *
+   * This transaction is refunded if successful and no account was previously set for the
+   * personal id.
+   *
+   * The call is valid from `call_valid_at` until
+   * `call_valid_at + account_setup_time_tolerance`.
+   * `account_setup_time_tolerance` is a constant available in the metadata.
+   *
+   * Parameters:
+   * - `account`: The account to set the alias for.
+   * - `call_valid_at`: The block number when the call becomes valid.
+   **/
+  | { name: 'SetPersonalIdAccount'; params: { account: AccountId32Like; callValidAt: number } }
+  /**
+   * Unset the personal id account.
+   **/
+  | { name: 'UnsetPersonalIdAccount' }
+  /**
+   * Create the people collection.
+   *
+   * This call is valid only if the collection doesn't exist yet. Once created,
+   * this call cannot be executed again.
+   *
+   * The collection is created with a fixed configuration:
+   * - Owner: Configured via `CollectionOwner` type
+   * - Onboarding size: `PEOPLE_ONBOARDING_SIZE` (10)
+   * - Mode: `Flexible`
+   * - Ring size: `R2e9`
+   **/
+  | { name: 'CreatePeopleCollection' }
+  /**
+   * Remove stale alias <-> account mappings.
+   *
+   * A mapping is stale when:
+   * - its context has been removed from [`Config::AccountContexts`] (governance
+   * reconfiguration, ended airdrop etc.), or
+   * - its ring has been deleted.
+   *
+   * Revision mismatches do not render an alias stale. The user can continue
+   * transacting via `AsPersonalAliasWithAccountRevised` without having to
+   * redo account setup.
+   *
+   * Typically submitted by the OCW, but the dispatch does not trust
+   * the caller. Each alias is re-validated via
+   * `Self::ensure_alias_is_stale`; those that are not stale are
+   * skipped.
+   *
+   * At most [`MAX_BULK_CLEANUP`] aliases are processed per call.
+   *
+   * The transaction source must be local or in-block. Thus, external
+   * invocations are not permitted.
+   **/
+  | { name: 'CleanUpStaleAliases'; params: { aliases: Array<IndivSupportRealityContextualAlias> } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletMobRuleCall =
+  /**
+   * Feeless on success (determined only by top three lines).
+   **/
+  | { name: 'Vote'; params: { caseIndex: number; opinion: IndivSupportRealityJudgement } }
+  /**
+   * `max_callback_weight` is a caller-declared upper bound on the weight of the callback
+   * dispatched when the case is closed. It is included in this call's declared weight and
+   * checked against the actual callback weight on-chain, with the difference refunded. The
+   * call fails with `CallbackWeightTooLow` if the bound does not cover the callback.
+   **/
+  | { name: 'CloseCase'; params: { caseIndex: number; maxCallbackWeight: SpWeightsWeightV2Weight } }
+  /**
+   * Origin must be authorized. The transaction is authorized in `AuthorizeCall`
+   * when the source is local (e.g. from the offchain worker). For external transactions, use
+   * `clean_vote_signed`.
+   **/
+  | { name: 'CleanVote'; params: { caseIndex: number; voter: FixedBytes<32> } }
+  | { name: 'ReapCase'; params: { caseIndex: number } }
+  /**
+   * `max_callback_weight` is a caller-declared upper bound on the weight of the callback
+   * dispatched when the case is intervened. It is included in this call's declared weight
+   * and checked against the actual callback weight on-chain, with the difference refunded.
+   * The call fails with `CallbackWeightTooLow` if the bound does not cover the callback.
+   **/
+  | {
+      name: 'Intervene';
+      params: { caseIndex: number; verdict: IndivSupportRealityJudgement; maxCallbackWeight: SpWeightsWeightV2Weight };
+    }
+  /**
+   * A person claims the mob credit associated with a correct vote on a case.
+   * The case must be `Done`.
+   **/
+  | { name: 'ClaimVote'; params: { caseIndex: number } }
+  /**
+   * A person converts their claimed mob credit into a direct transfer.
+   **/
+  | { name: 'PayoutRewards'; params: { destination: AccountId32 } }
+  /**
+   * A person claims multiple mob credits associated a correct vote on a case. The
+   * case must be `Done`.
+   **/
+  | { name: 'ClaimVotes'; params: { caseIndices: Array<number> } }
+  | { name: 'StartPayoutRound' }
+  | { name: 'SchedulePayoutRounds'; params: { amount: bigint; count: number; period: number } }
+  | { name: 'RemovePayoutSchedule'; params: { index: number } }
+  | { name: 'ClaimCredit' }
+  | { name: 'CleanPoints'; params: { round: number; voter: FixedBytes<32> } }
+  | { name: 'ForceRipenCase'; params: { caseIndex: number } }
+  | { name: 'TouchCase'; params: { caseIndex: number } }
+  | { name: 'ClearVotingPenalty' }
+  /**
+   * Origin must be signed.
+   **/
+  | { name: 'CleanVoteSigned'; params: { caseIndex: number; voter: FixedBytes<32> } };
+
+export type IndivPalletMobRuleCallLike =
+  /**
+   * Feeless on success (determined only by top three lines).
+   **/
+  | { name: 'Vote'; params: { caseIndex: number; opinion: IndivSupportRealityJudgement } }
+  /**
+   * `max_callback_weight` is a caller-declared upper bound on the weight of the callback
+   * dispatched when the case is closed. It is included in this call's declared weight and
+   * checked against the actual callback weight on-chain, with the difference refunded. The
+   * call fails with `CallbackWeightTooLow` if the bound does not cover the callback.
+   **/
+  | { name: 'CloseCase'; params: { caseIndex: number; maxCallbackWeight: SpWeightsWeightV2Weight } }
+  /**
+   * Origin must be authorized. The transaction is authorized in `AuthorizeCall`
+   * when the source is local (e.g. from the offchain worker). For external transactions, use
+   * `clean_vote_signed`.
+   **/
+  | { name: 'CleanVote'; params: { caseIndex: number; voter: FixedBytes<32> } }
+  | { name: 'ReapCase'; params: { caseIndex: number } }
+  /**
+   * `max_callback_weight` is a caller-declared upper bound on the weight of the callback
+   * dispatched when the case is intervened. It is included in this call's declared weight
+   * and checked against the actual callback weight on-chain, with the difference refunded.
+   * The call fails with `CallbackWeightTooLow` if the bound does not cover the callback.
+   **/
+  | {
+      name: 'Intervene';
+      params: { caseIndex: number; verdict: IndivSupportRealityJudgement; maxCallbackWeight: SpWeightsWeightV2Weight };
+    }
+  /**
+   * A person claims the mob credit associated with a correct vote on a case.
+   * The case must be `Done`.
+   **/
+  | { name: 'ClaimVote'; params: { caseIndex: number } }
+  /**
+   * A person converts their claimed mob credit into a direct transfer.
+   **/
+  | { name: 'PayoutRewards'; params: { destination: AccountId32Like } }
+  /**
+   * A person claims multiple mob credits associated a correct vote on a case. The
+   * case must be `Done`.
+   **/
+  | { name: 'ClaimVotes'; params: { caseIndices: Array<number> } }
+  | { name: 'StartPayoutRound' }
+  | { name: 'SchedulePayoutRounds'; params: { amount: bigint; count: number; period: number } }
+  | { name: 'RemovePayoutSchedule'; params: { index: number } }
+  | { name: 'ClaimCredit' }
+  | { name: 'CleanPoints'; params: { round: number; voter: FixedBytes<32> } }
+  | { name: 'ForceRipenCase'; params: { caseIndex: number } }
+  | { name: 'TouchCase'; params: { caseIndex: number } }
+  | { name: 'ClearVotingPenalty' }
+  /**
+   * Origin must be signed.
+   **/
+  | { name: 'CleanVoteSigned'; params: { caseIndex: number; voter: FixedBytes<32> } };
+
+export type IndivSupportRealityJudgement = { type: 'Truth'; value: IndivSupportRealityTruth } | { type: 'Contempt' };
+
+export type IndivSupportRealityTruth = 'True' | 'False';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletProofOfInkCall =
+  /**
+   * - Declare intention to get a tattoo.
+   * - Deposit is taken.
+   * - `InkType` may not be `ProceduralDerivative`.
+   **/
+  | { name: 'Apply' }
+  /**
+   * - Open a Mob Rule case to judge the `evidence`.
+   * - Requests a judgement for the proof-of-ink evidence statement.
+   * - Needs `SignedExtension` to avoid upfront requirement for fee if `judgements == 0`.
+   * - If `judgements > 0`, then an additional fee should be charged into Treasury.
+   **/
+  | { name: 'SubmitEvidence'; params: { evidence: FixedBytes<32> } }
+  /**
+   * Is called by the Oracle when the evidence has been judged.
+   **/
+  | { name: 'Judged'; params: { ticket: number; context: Bytes; judgement: IndivSupportRealityJudgement } }
+  /**
+   * - Gets a new `index`
+   * - Puts an entry into `People`.
+   * - Calls People/`newPerson(index, key)`
+   *
+   * # Arguments
+   * * `key` - The personal identity to register.
+   * * `destination` - The account receiving the candidate's referral reward.
+   * * `proof_of_ownerhsip` - The signature of predefined prefix `"pop register using"`
+   * concatenated with the sender account id.
+   **/
+  | {
+      name: 'RegisterReferred';
+      params: { key: FixedBytes<32>; destination: AccountId32; proofOfOwnership: FixedBytes<64> };
+    }
+  /**
+   * - Gets a new `index`
+   * - Puts an entry into `People`.
+   * - Calls People/`newPerson(index, key)`
+   *
+   * # Arguments
+   * * `key` - The personal identity to register.
+   * * `destination` - The account receiving rewards.
+   * * `proof_of_ownerhsip` - The signature of predefined prefix `"pop register using"`
+   * concatenated with the sender account id.
+   *
+   * # Warning:
+   *
+   * This call can pay two rewards to the same account for non-referred candidates.
+   * The app is responsible for any additional privacy handling after transfer.
+   **/
+  | {
+      name: 'RegisterNonReferred';
+      params: { key: FixedBytes<32>; destination: AccountId32; proofOfOwnership: FixedBytes<64> };
+    }
+  | { name: 'Reroll' }
+  /**
+   * Commit to a design and authorize the storage for (possibly just initial) evidence.
+   *
+   * If a specific personal identity is required, then this can be placed in `require_id`.
+   * This can be any unused/unreserved personal identity no greater than the `NextId`
+   * counter.
+   **/
+  | { name: 'Commit'; params: { choice: IndivPalletProofOfInkInkChoice; requireId?: bigint | undefined } }
+  | { name: 'AllocateFull' }
+  /**
+   * Once a timeout passes, removes a candidate who is selected but not yet proven.
+   * If the candidate was referred then referral is bad, if candidate applied with deposit,
+   * deposit is slashed.
+   **/
+  | { name: 'Timeout'; params: { account: AccountId32 } }
+  /**
+   * Remove a candidate who has not yet committed.
+   **/
+  | { name: 'Flakeout' }
+  /**
+   * Utilize a referral signature.
+   *
+   * The payload to be signed by the referrer using their registered key pair is the encoded
+   * bytes of the account ID of the candidate.
+   **/
+  | {
+      name: 'ApplyWithSignature';
+      params: { referrer: bigint; signature: SpRuntimeMultiSignature; ticket: AccountId32 };
+    }
+  /**
+   * Apply to the Proof-of-Ink process with an invitation.
+   *
+   * The payload to be signed by the inviter using their registered key pair is the encoded
+   * bytes of the account ID of the candidate.
+   **/
+  | {
+      name: 'ApplyWithInvitation';
+      params: { inviter: AccountId32; ticket: AccountId32; signature: SpRuntimeMultiSignature };
+    }
+  /**
+   * Add a design family. Must have privileged access to do this.
+   **/
+  | { name: 'AddDesignFamily'; params: { index: number; kind: IndivPalletProofOfInkFamilyKind; id: FixedBytes<32> } }
+  /**
+   * Add a referral ticket associated with a person.
+   *
+   * Only one referral ticket may be active at any given time for one person. Calling this
+   * extrinsic while a valid ticket is set will overwrite the existing ticket.
+   *
+   * If any pending referral rewards are present, they need to be registered first.
+   **/
+  | { name: 'SetReferralTicket'; params: { ticket: AccountId32 } }
+  /**
+   * Cancel a referral ticket associated with a person.
+   **/
+  | { name: 'CancelReferralTicket'; params: { ticket: AccountId32 } }
+  | { name: 'RegisterSuccessfulReferralReward'; params: { destination: AccountId32 } }
+  /**
+   * Grants invites to an account so they can distribute them.
+   *
+   * The origin must be `InvitationsOrigin.
+   *
+   * - `account`: The account to give invites to.
+   * - `count`: The number of invites to give.
+   **/
+  | { name: 'GrantInvites'; params: { account: AccountId32; count: number } }
+  /**
+   * Remove all invites given to an account.
+   *
+   * The origin must be `InvitationsOrigin`.
+   *
+   * - `account`: The account to remove all invites from.
+   * - `limit`: The maximum number of pending invites to remove.
+   **/
+  | { name: 'RemoveAvailableAndPendingInvites'; params: { account: AccountId32; limit: number } }
+  /**
+   * Invite an account.
+   *
+   * The origin must be signed by an account and have some invites left.
+   *
+   * - `ticket`: The invite ticket to set.
+   **/
+  | { name: 'SetInviteTicket'; params: { ticket: AccountId32 } }
+  /**
+   * Cancel an invitation.
+   *
+   * The origin must be signed by the account that owns the ticket to cancel.
+   *
+   * - `ticket`: The invite ticket to cancel.
+   **/
+  | { name: 'CancelInviteTicket'; params: { ticket: AccountId32 } }
+  /**
+   * Set the configuration record. Must have privileged access to do this.
+   **/
+  | { name: 'SetConfiguration'; params: { config: IndivPalletProofOfInkConfigRecord } }
+  /**
+   * Set the values of the reimbursement awarded to referred candidates as well as their
+   * referrers, along with the number of reimbursements for each value. These values are
+   * stored in
+   * reverse order of their priority, so the last value in the list will be the first one
+   * to be used by the reimbursement system. The length of the two lists must be equal.
+   *
+   * WARNING!
+   *
+   * After the number of reimbursements is exhausted for a value in the list, the pallet
+   * starts using the next value immediately for future transfers.
+   **/
+  | {
+      name: 'SetReimbursementValues';
+      params: { referredValues: Array<[bigint, number]>; referrerValues: Array<[bigint, number]> };
+    };
+
+export type IndivPalletProofOfInkCallLike =
+  /**
+   * - Declare intention to get a tattoo.
+   * - Deposit is taken.
+   * - `InkType` may not be `ProceduralDerivative`.
+   **/
+  | { name: 'Apply' }
+  /**
+   * - Open a Mob Rule case to judge the `evidence`.
+   * - Requests a judgement for the proof-of-ink evidence statement.
+   * - Needs `SignedExtension` to avoid upfront requirement for fee if `judgements == 0`.
+   * - If `judgements > 0`, then an additional fee should be charged into Treasury.
+   **/
+  | { name: 'SubmitEvidence'; params: { evidence: FixedBytes<32> } }
+  /**
+   * Is called by the Oracle when the evidence has been judged.
+   **/
+  | { name: 'Judged'; params: { ticket: number; context: BytesLike; judgement: IndivSupportRealityJudgement } }
+  /**
+   * - Gets a new `index`
+   * - Puts an entry into `People`.
+   * - Calls People/`newPerson(index, key)`
+   *
+   * # Arguments
+   * * `key` - The personal identity to register.
+   * * `destination` - The account receiving the candidate's referral reward.
+   * * `proof_of_ownerhsip` - The signature of predefined prefix `"pop register using"`
+   * concatenated with the sender account id.
+   **/
+  | {
+      name: 'RegisterReferred';
+      params: { key: FixedBytes<32>; destination: AccountId32Like; proofOfOwnership: FixedBytes<64> };
+    }
+  /**
+   * - Gets a new `index`
+   * - Puts an entry into `People`.
+   * - Calls People/`newPerson(index, key)`
+   *
+   * # Arguments
+   * * `key` - The personal identity to register.
+   * * `destination` - The account receiving rewards.
+   * * `proof_of_ownerhsip` - The signature of predefined prefix `"pop register using"`
+   * concatenated with the sender account id.
+   *
+   * # Warning:
+   *
+   * This call can pay two rewards to the same account for non-referred candidates.
+   * The app is responsible for any additional privacy handling after transfer.
+   **/
+  | {
+      name: 'RegisterNonReferred';
+      params: { key: FixedBytes<32>; destination: AccountId32Like; proofOfOwnership: FixedBytes<64> };
+    }
+  | { name: 'Reroll' }
+  /**
+   * Commit to a design and authorize the storage for (possibly just initial) evidence.
+   *
+   * If a specific personal identity is required, then this can be placed in `require_id`.
+   * This can be any unused/unreserved personal identity no greater than the `NextId`
+   * counter.
+   **/
+  | { name: 'Commit'; params: { choice: IndivPalletProofOfInkInkChoice; requireId?: bigint | undefined } }
+  | { name: 'AllocateFull' }
+  /**
+   * Once a timeout passes, removes a candidate who is selected but not yet proven.
+   * If the candidate was referred then referral is bad, if candidate applied with deposit,
+   * deposit is slashed.
+   **/
+  | { name: 'Timeout'; params: { account: AccountId32Like } }
+  /**
+   * Remove a candidate who has not yet committed.
+   **/
+  | { name: 'Flakeout' }
+  /**
+   * Utilize a referral signature.
+   *
+   * The payload to be signed by the referrer using their registered key pair is the encoded
+   * bytes of the account ID of the candidate.
+   **/
+  | {
+      name: 'ApplyWithSignature';
+      params: { referrer: bigint; signature: SpRuntimeMultiSignature; ticket: AccountId32Like };
+    }
+  /**
+   * Apply to the Proof-of-Ink process with an invitation.
+   *
+   * The payload to be signed by the inviter using their registered key pair is the encoded
+   * bytes of the account ID of the candidate.
+   **/
+  | {
+      name: 'ApplyWithInvitation';
+      params: { inviter: AccountId32Like; ticket: AccountId32Like; signature: SpRuntimeMultiSignature };
+    }
+  /**
+   * Add a design family. Must have privileged access to do this.
+   **/
+  | { name: 'AddDesignFamily'; params: { index: number; kind: IndivPalletProofOfInkFamilyKind; id: FixedBytes<32> } }
+  /**
+   * Add a referral ticket associated with a person.
+   *
+   * Only one referral ticket may be active at any given time for one person. Calling this
+   * extrinsic while a valid ticket is set will overwrite the existing ticket.
+   *
+   * If any pending referral rewards are present, they need to be registered first.
+   **/
+  | { name: 'SetReferralTicket'; params: { ticket: AccountId32Like } }
+  /**
+   * Cancel a referral ticket associated with a person.
+   **/
+  | { name: 'CancelReferralTicket'; params: { ticket: AccountId32Like } }
+  | { name: 'RegisterSuccessfulReferralReward'; params: { destination: AccountId32Like } }
+  /**
+   * Grants invites to an account so they can distribute them.
+   *
+   * The origin must be `InvitationsOrigin.
+   *
+   * - `account`: The account to give invites to.
+   * - `count`: The number of invites to give.
+   **/
+  | { name: 'GrantInvites'; params: { account: AccountId32Like; count: number } }
+  /**
+   * Remove all invites given to an account.
+   *
+   * The origin must be `InvitationsOrigin`.
+   *
+   * - `account`: The account to remove all invites from.
+   * - `limit`: The maximum number of pending invites to remove.
+   **/
+  | { name: 'RemoveAvailableAndPendingInvites'; params: { account: AccountId32Like; limit: number } }
+  /**
+   * Invite an account.
+   *
+   * The origin must be signed by an account and have some invites left.
+   *
+   * - `ticket`: The invite ticket to set.
+   **/
+  | { name: 'SetInviteTicket'; params: { ticket: AccountId32Like } }
+  /**
+   * Cancel an invitation.
+   *
+   * The origin must be signed by the account that owns the ticket to cancel.
+   *
+   * - `ticket`: The invite ticket to cancel.
+   **/
+  | { name: 'CancelInviteTicket'; params: { ticket: AccountId32Like } }
+  /**
+   * Set the configuration record. Must have privileged access to do this.
+   **/
+  | { name: 'SetConfiguration'; params: { config: IndivPalletProofOfInkConfigRecord } }
+  /**
+   * Set the values of the reimbursement awarded to referred candidates as well as their
+   * referrers, along with the number of reimbursements for each value. These values are
+   * stored in
+   * reverse order of their priority, so the last value in the list will be the first one
+   * to be used by the reimbursement system. The length of the two lists must be equal.
+   *
+   * WARNING!
+   *
+   * After the number of reimbursements is exhausted for a value in the list, the pallet
+   * starts using the next value immediately for future transfers.
+   **/
+  | {
+      name: 'SetReimbursementValues';
+      params: { referredValues: Array<[bigint, number]>; referrerValues: Array<[bigint, number]> };
+    };
+
+export type IndivPalletProofOfInkInkChoice =
+  | { type: 'DesignedElective'; value: [number, number] }
+  | { type: 'ProceduralAccount'; value: number }
+  | { type: 'ProceduralPersonal'; value: number }
+  | { type: 'Procedural'; value: [number, number] }
+  | { type: 'ProceduralDerivative'; value: [bigint, bigint | undefined] };
+
+export type IndivPalletProofOfInkFamilyKind =
+  | { type: 'Designed'; value: { count: number } }
+  | { type: 'ProceduralAccount' }
+  | { type: 'ProceduralPersonal' }
+  | { type: 'Procedural'; value: { range: number } };
+
+export type IndivPalletProofOfInkConfigRecord = {
+  rerollTimeout: number;
+  fasttrackCount: number;
+  maximum: number;
+  fullAllocLen: bigint;
+  fullAllocCount: number;
+  initAllocLen: bigint;
+  initAllocCount: number;
+  timeout: number;
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletGameCall =
+  /**
+   * Sign up for the game using an account and an invite.
+   *
+   * This is for new players or archived players, other players should use
+   * [`Pallet::sign_up_with_account`] for free.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * `airdrops` optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled
+   * airdrop event (`airdrops_scheduled` in the [`Game`] storage), in airdrop-index order.
+   * Each entry is bound to its own event id (see [`Pallet::airdrop_event_id`]), seeds the
+   * player's draw slot for that event and proves their identity path: the alias variant if
+   * the player is recognized (pallet-score `recognition` is `Recognized` or
+   * `ExternallyRecognized`), otherwise the account variant. The sign-up fails entirely if
+   * any event does not accept its registration or the number of supplied VRFs does not
+   * match `airdrops_scheduled`. See the documentation of [`AirdropVrfs`] for more details.
+   *
+   * The origin must be a signed by an account and use the `GameAsInvited` extension.
+   **/
+  | {
+      name: 'SignUpWithInvite';
+      params: { identifierKey: FixedBytes<65>; airdrops?: IndivPalletGameAirdropVrfs | undefined };
+    }
+  /**
+   * Sign up for the game using an account.
+   *
+   * If the player is new or archived, then a deposit will be taken from the signer.
+   * Otherwise the call is free.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * `airdrops` optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled
+   * airdrop event (`airdrops_scheduled` in the [`Game`] storage), in airdrop-index order.
+   * Each entry is bound to its own event id (see [`Pallet::airdrop_event_id`]), seeds the
+   * player's draw slot for that event and proves their identity path: the alias variant if
+   * the player is recognized (pallet-score `recognition` is `Recognized` or
+   * `ExternallyRecognized`), otherwise the account variant. The sign-up fails entirely if
+   * any event does not accept its registration or the number of supplied VRFs does not
+   * match `airdrops_scheduled`. See the documentation of [`AirdropVrfs`] for more details.
+   *
+   * The origin must be signed by an account, or, be signed by an account and use
+   * `ScoreAsParticipant` extension.
+   **/
+  | {
+      name: 'SignUpWithAccount';
+      params: { identifierKey: FixedBytes<65>; airdrops?: IndivPalletGameAirdropVrfs | undefined };
+    }
+  /**
+   * Sign up for the game.
+   *
+   * If a player is already recognized by another DIM, they can sign using their alias and
+   * don't need any deposit or invite to prove their initial credibility.
+   * On top of this their score is never going below personhood threshold and the player will
+   * never get archived.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * The origin must be a personal alias.
+   *
+   * Parameters:
+   * - `statement_account`: the account id to use to interact with the statement store during
+   * the game.
+   * - `sig`: the proof of ownership of the account `statement_account` by an alias, it is
+   * the signature of the message `"pop:game:stmt_account_for_alias:"` concatenated to the
+   * alias, and then hashed with `blake2_256` (blake2 256bit output). The base of the
+   * message can be found in the constant: `proof_of_ownership_msg_base`.
+   * - `airdrops`: optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled airdrop
+   * event (`airdrops_scheduled` in the `Game` storage), in airdrop-index order. Each entry
+   * is bound to its own event id (see `Pallet::airdrop_event_id`) and seeds the player's
+   * draw slot for that event; the alias variant must be used for alias-based players given
+   * they are recognized in pallet-score participant information. The sign-up fails
+   * entirely if any event does not accept its registration or the number of supplied VRFs
+   * does not match `airdrops_scheduled`. See the documentation of `AirdropVrfs` for more
+   * details.
+   **/
+  | {
+      name: 'SignUpWithAlias';
+      params: {
+        identifierKey: FixedBytes<65>;
+        statementAccount: AccountId32;
+        sig: SpRuntimeMultiSignature;
+        airdrops?: IndivPalletGameAirdropVrfs | undefined;
+      };
+    }
+  /**
+   * Sign up for the game using an account and a lite invite, the invitation of a lite
+   * person.
+   *
+   * Lite personhood is credible enough to play, so a lite person can invite an account of
+   * their own. It is registered as an account-based player with an invited credibility.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * `airdrops` optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled
+   * airdrop event (`airdrops_scheduled` in the [`Game`] storage), in airdrop-index order.
+   * Each entry is bound to its own event id (see [`Pallet::airdrop_event_id`]), seeds the
+   * player's draw slot for that event and proves their identity path: the alias variant if
+   * the player is recognized (pallet-score `recognition` is `Recognized` or
+   * `ExternallyRecognized`), otherwise the account variant. The sign-up fails entirely if
+   * any event does not accept its registration or the number of supplied VRFs does not
+   * match `airdrops_scheduled`. See the documentation of [`AirdropVrfs`] for more details.
+   *
+   * The origin must be a lite alias in [`indiv_pallet_score::Pallet::score_context`], see
+   * [`Config::EnsureLiteAlias`]. The lite person names the account playing on their behalf
+   * with `account`, so the playing account is not the lite person's own account and stays
+   * unlinkable from it.
+   *
+   * A lite person invites one account, ever: the first account they sign up this way is the
+   * only one they can play with, even after it stopped playing.
+   *
+   * This must be used by lite-people on their first signup or after they have been
+   * archived. Further signups while the player is active must use
+   * [`Pallet::sign_up_with_account`] instead.
+   **/
+  | {
+      name: 'SignUpWithAccountLiteInvite';
+      params: {
+        account: AccountId32;
+        identifierKey: FixedBytes<65>;
+        airdrops?: IndivPalletGameAirdropVrfs | undefined;
+      };
+    }
+  /**
+   * After the game, send the full report.
+   *
+   * The game must be ongoing and in its reporting phase.
+   *
+   * The origin must be an alias, or signed by an account, or signed by an account and use
+   * `ScoreAsParticipant` extension.
+   *
+   * `full_report` holds one entry per round (exactly `game.rounds` of them), and each
+   * round lists one `Report` per co-player in the reporter's group for that round, in
+   * group order and excluding the reporter. A round whose length does not match the
+   * reporter's real group membership is rejected with `Error::InvalidReport`. Each
+   * `Report::Person` vote awards an attendance NFT claim credit to the attestee immediately;
+   * `Report::NotPerson` awards nothing.
+   *
+   * The capacity check requires one free credit slot per `Person` vote in the report. If
+   * capacity is insufficient, the call returns `Error::CreditCapacityExhausted` before
+   * recording any votes or credits. Retry when capacity is available and reporting is
+   * still open.
+   *
+   * After the votes from the report are counted, the reporter and each of the reported
+   * players whose attendance can now be determined are processed early. This lets the
+   * game skip the player-process phase entirely when every player has been processed by
+   * the end of reporting.
+   *
+   * On success the call pays no fee (`Pays::No`). Its weight scales with the number of
+   * co-player entries across all rounds, not the round count, so partial groups are not
+   * overcharged. The pre-dispatch charge assumes every co-player entry plus the reporter
+   * is early-enacted and is refunded down to the actual enactment count post-dispatch.
+   **/
+  | { name: 'Report'; params: { fullReport: Array<Array<IndivPalletGameReport>> } }
+  /**
+   * Offboard a player from the game.
+   *
+   * The origin must be an alias, or signed by an account, or signed by an account and use
+   * `ScoreAsParticipant` extension.
+   *
+   * There must be no game or the existing game must be in registration phase and the player
+   * must have not signed up for the game.
+   *
+   * A player whose pallet-score recognition is `Recognized` has their personhood suspended,
+   * the same as an absence-triggered suspension. Offboarding is permanent. Playing as a
+   * person again after a suspension and then re-recognition requires onboarding under a new
+   * personal id with a new key.
+   **/
+  | { name: 'Offboard' }
+  /**
+   * Kickout a kickable player that is not playing after `NonPlayingKickoutTime`.
+   *
+   * The origin must be signed by an account.
+   *
+   * A player whose pallet-score recognition is `Recognized` has their personhood suspended,
+   * the same as an absence-triggered suspension. The kickout is permanent. Playing as a
+   * person again after a suspension and then re-recognition requires onboarding under a new
+   * personal id with a new key.
+   *
+   * - `player`: The player to kickout. It must be archived and kickable with
+   * `archived_since` older than `NonPlayingKickoutTime`.
+   **/
+  | { name: 'Kickout'; params: { player: AccountId32 } }
+  /**
+   * Grant some invites to an account so they can distribute them.
+   *
+   * The origin must be `InviteIssuer`.
+   *
+   * - `account`: The account to grant invites to.
+   * - `count`: The number of invites to grant.
+   **/
+  | { name: 'GrantInvites'; params: { account: AccountId32; count: number } }
+  /**
+   * Clear all invites given to an account.
+   *
+   * The origin must be `InviteIssuer`.
+   *
+   * - `account`: The account to remove all invites from.
+   * - `limit`: The maximum number of pending invites to remove.
+   **/
+  | { name: 'RemoveAvailableAndPendingInvites'; params: { account: AccountId32; limit: number } }
+  /**
+   * Invite an account.
+   *
+   * The origin must be signed by an account and have some invites left. The call is free on
+   * success.
+   *
+   * - `ticket`: The invite ticket to set.
+   **/
+  | { name: 'SetInviteTicket'; params: { ticket: AccountId32 } }
+  /**
+   * Cancel an invite.
+   *
+   * The origin must be signed by the account that owns the ticket to cancel.
+   *
+   * - `ticket`: The invite ticket to cancel.
+   **/
+  | { name: 'CancelInviteTicket'; params: { ticket: AccountId32 } }
+  /**
+   * Schedules new games according to provided schedules.
+   * Schedules must be in chronological order, and after the ongoing game (if there is any).
+   **/
+  | { name: 'ScheduleGames'; params: { gamesSchedules: Array<IndivPalletGameGameSchedule> } }
+  | { name: 'RemoveScheduledGame'; params: { gamePlayTime: number } }
+  /**
+   * Update the configured play deposit amount for future account signups.
+   **/
+  | { name: 'SetPlayDeposit'; params: { amount: bigint } }
+  /**
+   * Claim a prize from the airdrop event at index `airdrop_index` scheduled for
+   * `game_index`.
+   *
+   * A game schedules one airdrop event per entry in its schedule's `airdrops` (see
+   * [`GameSchedule`]); `airdrop_index` selects which of them to claim from. A player who
+   * won several of the game's airdrop events claims each of them separately.
+   *
+   * Eligibility requires 2 conditions on the claimant to be recognized and have attended the
+   * game. In more details:
+   * * to be either recognized in pallet-score (`recognition.is_recognized()`) or to have
+   * reached the personhood score (`reached_personhood`),
+   * * AND for `game_index` to match the participant's `last_attended_game` — i.e. the most
+   * recent game the claimant actually attended must be exactly the game the airdrop is
+   * tied to. Subsequent game attendance overrides this information so the claim must be
+   * made before attending another game. In particular an airdrop event drawn late relative
+   * to the game play time must be claimed before the claimant attends the next game.
+   *
+   * Claims against a cancelled game are rejected.
+   **/
+  | { name: 'ClaimAirdrop'; params: { gameIndex: number; airdropIndex: number; beneficiary: AccountId32 } }
+  /**
+   * Force start the shuffle before its normal start time.
+   *
+   * This action can only be performed by the root origin and is only meant for testing.
+   **/
+  | { name: 'TestnetForceStartShuffle' }
+  /**
+   * Force end a game's reporting phase before its normal end time.
+   *
+   * This action can only be performed by the root origin and is only meant for testing.
+   **/
+  | { name: 'TestnetForceEndReporting' }
+  /**
+   * Override the game phase durations.
+   *
+   * Restricted to [`Config::ManagerOrigin`] (or root). Until reset, all future
+   * game schedules use these phases instead of [`Config::DefaultPhaseDurations`].
+   * To revert, the manager re-issues the call with the desired explicit
+   * values — there is no separate clear extrinsic.
+   *
+   * Only callable while no game exists or the current game is still in its
+   * Registration phase; otherwise fails with [`Error::InvalidGameState`]. This
+   * prevents changing phase durations once players have committed to a game
+   * whose timing is already locked in.
+   **/
+  | { name: 'SetGamePhases'; params: { phases: IndivPalletGamePhaseDurationValues } }
+  /**
+   * Cancel the current game while it is still in the Registration or Shuffle phase.
+   *
+   * Restricted to [`Config::ManagerOrigin`] (or root).
+   **/
+  | { name: 'CancelGame' };
+
+export type IndivPalletGameCallLike =
+  /**
+   * Sign up for the game using an account and an invite.
+   *
+   * This is for new players or archived players, other players should use
+   * [`Pallet::sign_up_with_account`] for free.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * `airdrops` optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled
+   * airdrop event (`airdrops_scheduled` in the [`Game`] storage), in airdrop-index order.
+   * Each entry is bound to its own event id (see [`Pallet::airdrop_event_id`]), seeds the
+   * player's draw slot for that event and proves their identity path: the alias variant if
+   * the player is recognized (pallet-score `recognition` is `Recognized` or
+   * `ExternallyRecognized`), otherwise the account variant. The sign-up fails entirely if
+   * any event does not accept its registration or the number of supplied VRFs does not
+   * match `airdrops_scheduled`. See the documentation of [`AirdropVrfs`] for more details.
+   *
+   * The origin must be a signed by an account and use the `GameAsInvited` extension.
+   **/
+  | {
+      name: 'SignUpWithInvite';
+      params: { identifierKey: FixedBytes<65>; airdrops?: IndivPalletGameAirdropVrfs | undefined };
+    }
+  /**
+   * Sign up for the game using an account.
+   *
+   * If the player is new or archived, then a deposit will be taken from the signer.
+   * Otherwise the call is free.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * `airdrops` optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled
+   * airdrop event (`airdrops_scheduled` in the [`Game`] storage), in airdrop-index order.
+   * Each entry is bound to its own event id (see [`Pallet::airdrop_event_id`]), seeds the
+   * player's draw slot for that event and proves their identity path: the alias variant if
+   * the player is recognized (pallet-score `recognition` is `Recognized` or
+   * `ExternallyRecognized`), otherwise the account variant. The sign-up fails entirely if
+   * any event does not accept its registration or the number of supplied VRFs does not
+   * match `airdrops_scheduled`. See the documentation of [`AirdropVrfs`] for more details.
+   *
+   * The origin must be signed by an account, or, be signed by an account and use
+   * `ScoreAsParticipant` extension.
+   **/
+  | {
+      name: 'SignUpWithAccount';
+      params: { identifierKey: FixedBytes<65>; airdrops?: IndivPalletGameAirdropVrfs | undefined };
+    }
+  /**
+   * Sign up for the game.
+   *
+   * If a player is already recognized by another DIM, they can sign using their alias and
+   * don't need any deposit or invite to prove their initial credibility.
+   * On top of this their score is never going below personhood threshold and the player will
+   * never get archived.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * The origin must be a personal alias.
+   *
+   * Parameters:
+   * - `statement_account`: the account id to use to interact with the statement store during
+   * the game.
+   * - `sig`: the proof of ownership of the account `statement_account` by an alias, it is
+   * the signature of the message `"pop:game:stmt_account_for_alias:"` concatenated to the
+   * alias, and then hashed with `blake2_256` (blake2 256bit output). The base of the
+   * message can be found in the constant: `proof_of_ownership_msg_base`.
+   * - `airdrops`: optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled airdrop
+   * event (`airdrops_scheduled` in the `Game` storage), in airdrop-index order. Each entry
+   * is bound to its own event id (see `Pallet::airdrop_event_id`) and seeds the player's
+   * draw slot for that event; the alias variant must be used for alias-based players given
+   * they are recognized in pallet-score participant information. The sign-up fails
+   * entirely if any event does not accept its registration or the number of supplied VRFs
+   * does not match `airdrops_scheduled`. See the documentation of `AirdropVrfs` for more
+   * details.
+   **/
+  | {
+      name: 'SignUpWithAlias';
+      params: {
+        identifierKey: FixedBytes<65>;
+        statementAccount: AccountId32Like;
+        sig: SpRuntimeMultiSignature;
+        airdrops?: IndivPalletGameAirdropVrfs | undefined;
+      };
+    }
+  /**
+   * Sign up for the game using an account and a lite invite, the invitation of a lite
+   * person.
+   *
+   * Lite personhood is credible enough to play, so a lite person can invite an account of
+   * their own. It is registered as an account-based player with an invited credibility.
+   *
+   * A game must be ongoing and in its registration phase.
+   *
+   * `airdrops` optionally enters the player into the airdrop draws scheduled for this
+   * game. Pass `None` to skip it; otherwise it holds exactly one VRF per scheduled
+   * airdrop event (`airdrops_scheduled` in the [`Game`] storage), in airdrop-index order.
+   * Each entry is bound to its own event id (see [`Pallet::airdrop_event_id`]), seeds the
+   * player's draw slot for that event and proves their identity path: the alias variant if
+   * the player is recognized (pallet-score `recognition` is `Recognized` or
+   * `ExternallyRecognized`), otherwise the account variant. The sign-up fails entirely if
+   * any event does not accept its registration or the number of supplied VRFs does not
+   * match `airdrops_scheduled`. See the documentation of [`AirdropVrfs`] for more details.
+   *
+   * The origin must be a lite alias in [`indiv_pallet_score::Pallet::score_context`], see
+   * [`Config::EnsureLiteAlias`]. The lite person names the account playing on their behalf
+   * with `account`, so the playing account is not the lite person's own account and stays
+   * unlinkable from it.
+   *
+   * A lite person invites one account, ever: the first account they sign up this way is the
+   * only one they can play with, even after it stopped playing.
+   *
+   * This must be used by lite-people on their first signup or after they have been
+   * archived. Further signups while the player is active must use
+   * [`Pallet::sign_up_with_account`] instead.
+   **/
+  | {
+      name: 'SignUpWithAccountLiteInvite';
+      params: {
+        account: AccountId32Like;
+        identifierKey: FixedBytes<65>;
+        airdrops?: IndivPalletGameAirdropVrfs | undefined;
+      };
+    }
+  /**
+   * After the game, send the full report.
+   *
+   * The game must be ongoing and in its reporting phase.
+   *
+   * The origin must be an alias, or signed by an account, or signed by an account and use
+   * `ScoreAsParticipant` extension.
+   *
+   * `full_report` holds one entry per round (exactly `game.rounds` of them), and each
+   * round lists one `Report` per co-player in the reporter's group for that round, in
+   * group order and excluding the reporter. A round whose length does not match the
+   * reporter's real group membership is rejected with `Error::InvalidReport`. Each
+   * `Report::Person` vote awards an attendance NFT claim credit to the attestee immediately;
+   * `Report::NotPerson` awards nothing.
+   *
+   * The capacity check requires one free credit slot per `Person` vote in the report. If
+   * capacity is insufficient, the call returns `Error::CreditCapacityExhausted` before
+   * recording any votes or credits. Retry when capacity is available and reporting is
+   * still open.
+   *
+   * After the votes from the report are counted, the reporter and each of the reported
+   * players whose attendance can now be determined are processed early. This lets the
+   * game skip the player-process phase entirely when every player has been processed by
+   * the end of reporting.
+   *
+   * On success the call pays no fee (`Pays::No`). Its weight scales with the number of
+   * co-player entries across all rounds, not the round count, so partial groups are not
+   * overcharged. The pre-dispatch charge assumes every co-player entry plus the reporter
+   * is early-enacted and is refunded down to the actual enactment count post-dispatch.
+   **/
+  | { name: 'Report'; params: { fullReport: Array<Array<IndivPalletGameReport>> } }
+  /**
+   * Offboard a player from the game.
+   *
+   * The origin must be an alias, or signed by an account, or signed by an account and use
+   * `ScoreAsParticipant` extension.
+   *
+   * There must be no game or the existing game must be in registration phase and the player
+   * must have not signed up for the game.
+   *
+   * A player whose pallet-score recognition is `Recognized` has their personhood suspended,
+   * the same as an absence-triggered suspension. Offboarding is permanent. Playing as a
+   * person again after a suspension and then re-recognition requires onboarding under a new
+   * personal id with a new key.
+   **/
+  | { name: 'Offboard' }
+  /**
+   * Kickout a kickable player that is not playing after `NonPlayingKickoutTime`.
+   *
+   * The origin must be signed by an account.
+   *
+   * A player whose pallet-score recognition is `Recognized` has their personhood suspended,
+   * the same as an absence-triggered suspension. The kickout is permanent. Playing as a
+   * person again after a suspension and then re-recognition requires onboarding under a new
+   * personal id with a new key.
+   *
+   * - `player`: The player to kickout. It must be archived and kickable with
+   * `archived_since` older than `NonPlayingKickoutTime`.
+   **/
+  | { name: 'Kickout'; params: { player: AccountId32Like } }
+  /**
+   * Grant some invites to an account so they can distribute them.
+   *
+   * The origin must be `InviteIssuer`.
+   *
+   * - `account`: The account to grant invites to.
+   * - `count`: The number of invites to grant.
+   **/
+  | { name: 'GrantInvites'; params: { account: AccountId32Like; count: number } }
+  /**
+   * Clear all invites given to an account.
+   *
+   * The origin must be `InviteIssuer`.
+   *
+   * - `account`: The account to remove all invites from.
+   * - `limit`: The maximum number of pending invites to remove.
+   **/
+  | { name: 'RemoveAvailableAndPendingInvites'; params: { account: AccountId32Like; limit: number } }
+  /**
+   * Invite an account.
+   *
+   * The origin must be signed by an account and have some invites left. The call is free on
+   * success.
+   *
+   * - `ticket`: The invite ticket to set.
+   **/
+  | { name: 'SetInviteTicket'; params: { ticket: AccountId32Like } }
+  /**
+   * Cancel an invite.
+   *
+   * The origin must be signed by the account that owns the ticket to cancel.
+   *
+   * - `ticket`: The invite ticket to cancel.
+   **/
+  | { name: 'CancelInviteTicket'; params: { ticket: AccountId32Like } }
+  /**
+   * Schedules new games according to provided schedules.
+   * Schedules must be in chronological order, and after the ongoing game (if there is any).
+   **/
+  | { name: 'ScheduleGames'; params: { gamesSchedules: Array<IndivPalletGameGameSchedule> } }
+  | { name: 'RemoveScheduledGame'; params: { gamePlayTime: number } }
+  /**
+   * Update the configured play deposit amount for future account signups.
+   **/
+  | { name: 'SetPlayDeposit'; params: { amount: bigint } }
+  /**
+   * Claim a prize from the airdrop event at index `airdrop_index` scheduled for
+   * `game_index`.
+   *
+   * A game schedules one airdrop event per entry in its schedule's `airdrops` (see
+   * [`GameSchedule`]); `airdrop_index` selects which of them to claim from. A player who
+   * won several of the game's airdrop events claims each of them separately.
+   *
+   * Eligibility requires 2 conditions on the claimant to be recognized and have attended the
+   * game. In more details:
+   * * to be either recognized in pallet-score (`recognition.is_recognized()`) or to have
+   * reached the personhood score (`reached_personhood`),
+   * * AND for `game_index` to match the participant's `last_attended_game` — i.e. the most
+   * recent game the claimant actually attended must be exactly the game the airdrop is
+   * tied to. Subsequent game attendance overrides this information so the claim must be
+   * made before attending another game. In particular an airdrop event drawn late relative
+   * to the game play time must be claimed before the claimant attends the next game.
+   *
+   * Claims against a cancelled game are rejected.
+   **/
+  | { name: 'ClaimAirdrop'; params: { gameIndex: number; airdropIndex: number; beneficiary: AccountId32Like } }
+  /**
+   * Force start the shuffle before its normal start time.
+   *
+   * This action can only be performed by the root origin and is only meant for testing.
+   **/
+  | { name: 'TestnetForceStartShuffle' }
+  /**
+   * Force end a game's reporting phase before its normal end time.
+   *
+   * This action can only be performed by the root origin and is only meant for testing.
+   **/
+  | { name: 'TestnetForceEndReporting' }
+  /**
+   * Override the game phase durations.
+   *
+   * Restricted to [`Config::ManagerOrigin`] (or root). Until reset, all future
+   * game schedules use these phases instead of [`Config::DefaultPhaseDurations`].
+   * To revert, the manager re-issues the call with the desired explicit
+   * values — there is no separate clear extrinsic.
+   *
+   * Only callable while no game exists or the current game is still in its
+   * Registration phase; otherwise fails with [`Error::InvalidGameState`]. This
+   * prevents changing phase durations once players have committed to a game
+   * whose timing is already locked in.
+   **/
+  | { name: 'SetGamePhases'; params: { phases: IndivPalletGamePhaseDurationValues } }
+  /**
+   * Cancel the current game while it is still in the Registration or Shuffle phase.
+   *
+   * Restricted to [`Config::ManagerOrigin`] (or root).
+   **/
+  | { name: 'CancelGame' };
+
+export type IndivPalletGameAirdropVrfs =
+  | { type: 'Account'; value: Array<SpCoreSr25519VrfVrfSignature> }
+  | { type: 'Alias'; value: { proofs: Array<Bytes>; ringIndex: number; revision: number } };
+
+export type SpCoreSr25519VrfVrfSignature = { preOutput: FixedBytes<32>; proof: FixedBytes<64> };
+
+export type IndivPalletGameReport = 'Person' | 'NotPerson';
+
+export type IndivPalletGameGameSchedule = {
+  gamePlayTime: number;
+  rounds: number;
+  maxGroupSize: number;
+  airdrops: Array<IndivPalletGameGameAirdrop>;
+};
+
+export type IndivPalletGameGameAirdrop = {
+  drawOffset: number;
+  claimWindow: number;
+  prize: IndivPalletAirdropAirdropPrize;
+};
+
+export type IndivPalletAirdropAirdropPrize = {
+  assetId: StagingXcmV5Location;
+  assetAmount: bigint;
+  maxWinners: number;
+  winnerCap: Permill;
+};
+
+export type IndivPalletGamePhaseDurationValues = {
+  registration: number;
+  shuffle: number;
+  postShuffleMargin: number;
+  reporting: number;
+  playerProcess: number;
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletScoreCall =
+  /**
+   * Schedule payout rounds.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'SchedulePayoutRounds'; params: { amount: bigint; count: number; duration: number } }
+  /**
+   * Remove a scheduled payout round.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'RemovePayoutSchedule'; params: { index: number } }
+  /**
+   * Start a new round.
+   *
+   * This is valid if the current round is finished, or if the current round doesn't have
+   * planning and a schedule exists to plan it.
+   *
+   * This is a task, and can be called from anybody.
+   **/
+  | { name: 'TransitionRound'; params: { roundIndex: number } }
+  /**
+   * Operate some round paying out.
+   *
+   * Drains round's participants, up to a limit. For each participant, add the calculated
+   * reward (`base_reward + remainder_portion`) to their `credit` balance.
+   *
+   * Then, moves funds on the pot account from Payout to Credit, so they are owed to specific
+   * participants rather than the round pool.
+   *
+   * Finally, release the leftover from the Payout hold back to the pot's free balance
+   * (funds are recycled).
+   *
+   * This is a task, and can be called from anybody.
+   *
+   * * round_index: The index of the round to operate.
+   * * limit: The maximum number of participants to operate in this call.
+   **/
+  | { name: 'OperatePayoutRound'; params: { roundIndex: number; limit: number } }
+  /**
+   * Cash out half of the score, rounded up. Converts the score into points for the current
+   * payout round. Caller must have never reached personhood since onboarding.
+   *
+   * It can be called once per game session (era).
+   *
+   * Origin must be signed or participant (signed extrinsic using ScoreAsParticipant
+   * transaction extension)
+   *
+   * Alias origin is not allowed as they can't cash out.
+   **/
+  | { name: 'CashOut' }
+  /**
+   * Redeem full accumulated credit, transferring it to the provided destination account.
+   *
+   * Credit is converted from points during payout processing.
+   *
+   * Origin must be a person alias, a signed account or a participant (signed extrinsic
+   * using ScoreAsParticipant transaction extension).
+   **/
+  | { name: 'RedeemCredit'; params: { destination: AccountId32 } }
+  /**
+   * Register as a person, or resume personhood after suspension.
+   *
+   * Requires score >= personhood threshold (or having previously reached it).
+   *
+   * If the participant was previously recognised and is now suspended, they must not provide
+   * a key. The existing key is reused.
+   *
+   * If the participant was never recognised, they must provide a key and a proof of
+   * ownership (`key` parameter): a signature over `"pop register using" ||
+   * sender_account_id`.
+   *
+   * Origin must be signed or a participant (signed extrinsic using ScoreAsParticipant
+   * transaction extension).
+   **/
+  | { name: 'Register'; params: { key?: [FixedBytes<32>, FixedBytes<64>] | undefined } }
+  /**
+   * Set the absence grace schedule.
+   *
+   * Every tier must satisfy: `0 <= window <= 8` and `allowed_misses < window`.
+   * `allowed_misses = 0` disables grace entirely (any absence immediately
+   * suspends).
+   *
+   * Tiers must be provided in ascending order of `population_size_threshold`.
+   *
+   * An empty schedule disables the grace period entirely (immediate
+   * suspension on any missed game). The new ratio takes effect at the start
+   * of the next report session when `update_thresholds()` recalculates
+   * `AbsenceGraceRatio`.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'SetAbsenceGraceSchedule'; params: { schedule: Array<IndivPalletScoreAbsenceGraceTier> } }
+  /**
+   * Set the personhood-threshold schedule.
+   *
+   * Tiers must be:
+   * - non-empty,
+   * - sorted ascending by `population_size_threshold`,
+   * - capped by a final tier with `population_size_threshold == u32::MAX`,
+   * - per-tier: `0 < score_threshold <= MAX_PERSONHOOD_THRESHOLD` (= 21),
+   * - have non-decreasing `score_threshold` across tiers.
+   *
+   * The new curve takes effect at the start of the next report session
+   * when `update_thresholds()` recalculates `PersonhoodThreshold`.
+   *
+   * Already-recognized participants are NOT retroactively suspended:
+   * the new bar only gates future score evaluations in `set_attendance`.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'SetPersonhoodThresholdSchedule'; params: { schedule: Array<IndivPalletScorePersonhoodThresholdTier> } }
+  /**
+   * Set the attendance of a participant for `game_index`, bypassing the game.
+   *
+   * This wraps [`Pallet::set_attendance`] in its own attendance report session, so it
+   * has the exact same effect on the participant's score, streak, attendance history
+   * and recognition as a regular attendance report by the game. Starting the session
+   * also refreshes the personhood threshold and absence-grace ratio, like any other
+   * session.
+   *
+   * Fails with [`Error::NoScore`] if `who` is not a participant, or with the underlying
+   * [`Config::People`] error if a mutation session cannot be started at the moment.
+   *
+   * Called from root only.
+   **/
+  | {
+      name: 'ForceSetAttendance';
+      params: { who: IndivSupportIdentityAccountOrPerson; attended: boolean; gameIndex: number };
+    };
+
+export type IndivPalletScoreCallLike =
+  /**
+   * Schedule payout rounds.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'SchedulePayoutRounds'; params: { amount: bigint; count: number; duration: number } }
+  /**
+   * Remove a scheduled payout round.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'RemovePayoutSchedule'; params: { index: number } }
+  /**
+   * Start a new round.
+   *
+   * This is valid if the current round is finished, or if the current round doesn't have
+   * planning and a schedule exists to plan it.
+   *
+   * This is a task, and can be called from anybody.
+   **/
+  | { name: 'TransitionRound'; params: { roundIndex: number } }
+  /**
+   * Operate some round paying out.
+   *
+   * Drains round's participants, up to a limit. For each participant, add the calculated
+   * reward (`base_reward + remainder_portion`) to their `credit` balance.
+   *
+   * Then, moves funds on the pot account from Payout to Credit, so they are owed to specific
+   * participants rather than the round pool.
+   *
+   * Finally, release the leftover from the Payout hold back to the pot's free balance
+   * (funds are recycled).
+   *
+   * This is a task, and can be called from anybody.
+   *
+   * * round_index: The index of the round to operate.
+   * * limit: The maximum number of participants to operate in this call.
+   **/
+  | { name: 'OperatePayoutRound'; params: { roundIndex: number; limit: number } }
+  /**
+   * Cash out half of the score, rounded up. Converts the score into points for the current
+   * payout round. Caller must have never reached personhood since onboarding.
+   *
+   * It can be called once per game session (era).
+   *
+   * Origin must be signed or participant (signed extrinsic using ScoreAsParticipant
+   * transaction extension)
+   *
+   * Alias origin is not allowed as they can't cash out.
+   **/
+  | { name: 'CashOut' }
+  /**
+   * Redeem full accumulated credit, transferring it to the provided destination account.
+   *
+   * Credit is converted from points during payout processing.
+   *
+   * Origin must be a person alias, a signed account or a participant (signed extrinsic
+   * using ScoreAsParticipant transaction extension).
+   **/
+  | { name: 'RedeemCredit'; params: { destination: AccountId32Like } }
+  /**
+   * Register as a person, or resume personhood after suspension.
+   *
+   * Requires score >= personhood threshold (or having previously reached it).
+   *
+   * If the participant was previously recognised and is now suspended, they must not provide
+   * a key. The existing key is reused.
+   *
+   * If the participant was never recognised, they must provide a key and a proof of
+   * ownership (`key` parameter): a signature over `"pop register using" ||
+   * sender_account_id`.
+   *
+   * Origin must be signed or a participant (signed extrinsic using ScoreAsParticipant
+   * transaction extension).
+   **/
+  | { name: 'Register'; params: { key?: [FixedBytes<32>, FixedBytes<64>] | undefined } }
+  /**
+   * Set the absence grace schedule.
+   *
+   * Every tier must satisfy: `0 <= window <= 8` and `allowed_misses < window`.
+   * `allowed_misses = 0` disables grace entirely (any absence immediately
+   * suspends).
+   *
+   * Tiers must be provided in ascending order of `population_size_threshold`.
+   *
+   * An empty schedule disables the grace period entirely (immediate
+   * suspension on any missed game). The new ratio takes effect at the start
+   * of the next report session when `update_thresholds()` recalculates
+   * `AbsenceGraceRatio`.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'SetAbsenceGraceSchedule'; params: { schedule: Array<IndivPalletScoreAbsenceGraceTier> } }
+  /**
+   * Set the personhood-threshold schedule.
+   *
+   * Tiers must be:
+   * - non-empty,
+   * - sorted ascending by `population_size_threshold`,
+   * - capped by a final tier with `population_size_threshold == u32::MAX`,
+   * - per-tier: `0 < score_threshold <= MAX_PERSONHOOD_THRESHOLD` (= 21),
+   * - have non-decreasing `score_threshold` across tiers.
+   *
+   * The new curve takes effect at the start of the next report session
+   * when `update_thresholds()` recalculates `PersonhoodThreshold`.
+   *
+   * Already-recognized participants are NOT retroactively suspended:
+   * the new bar only gates future score evaluations in `set_attendance`.
+   *
+   * Called from `ManagerOrigin` or root.
+   **/
+  | { name: 'SetPersonhoodThresholdSchedule'; params: { schedule: Array<IndivPalletScorePersonhoodThresholdTier> } }
+  /**
+   * Set the attendance of a participant for `game_index`, bypassing the game.
+   *
+   * This wraps [`Pallet::set_attendance`] in its own attendance report session, so it
+   * has the exact same effect on the participant's score, streak, attendance history
+   * and recognition as a regular attendance report by the game. Starting the session
+   * also refreshes the personhood threshold and absence-grace ratio, like any other
+   * session.
+   *
+   * Fails with [`Error::NoScore`] if `who` is not a participant, or with the underlying
+   * [`Config::People`] error if a mutation session cannot be started at the moment.
+   *
+   * Called from root only.
+   **/
+  | {
+      name: 'ForceSetAttendance';
+      params: { who: IndivSupportIdentityAccountOrPerson; attended: boolean; gameIndex: number };
+    };
+
+export type IndivPalletScoreAbsenceGraceTier = {
+  populationSizeThreshold: number;
+  window: number;
+  allowedMisses: number;
+};
+
+export type IndivPalletScorePersonhoodThresholdTier = { populationSizeThreshold: number; scoreThreshold: number };
+
+export type IndivSupportIdentityAccountOrPerson =
+  | { type: 'Account'; value: AccountId32 }
+  | { type: 'Person'; value: FixedBytes<32> };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletNftCreditsCall =
+  /**
+   * Delivers the queued credit trees that fit one XCM message to the NFT claims chain.
+   *
+   * Authorized call submitted by this pallet's offchain worker: it is accepted from a
+   * local or in-block source only, so it cannot be submitted externally.
+   *
+   * `first_sequence` must be the sequence at the front of `CreditTreeDeliveryQueue`, which
+   * makes a retry that raced a successful delivery stale rather than a second send.
+   **/
+  | { name: 'SendCreditTrees'; params: { firstSequence: bigint; discriminator: number } }
+  /**
+   * Resends the credit trees of `blocks` to the NFT claims chain.
+   *
+   * Permissionless: a credit tree is a public commitment the claims chain is meant to hold,
+   * and the trees are read from [`NftClaimCreditRoots`] rather than supplied by the caller.
+   * Blocks without a tree are skipped. A resent tree carries no sequence number, so this
+   * cannot disturb the claims chain's tracking of the live stream, and one the claims chain
+   * already holds is ignored there rather than overwriting anything.
+   *
+   * One replay runs per [`Config::ReplayCooldownSeconds`], counted from the last one by
+   * [`LastReplayTime`].
+   *
+   * The caller pays for the remote work, [`Config::NftClaimsRemoteWeight`] per tree on top
+   * of this call's own weight.
+   *
+   * ## Parameters
+   * - `blocks`: The tree blocks to resend, in strictly ascending order.
+   **/
+  | { name: 'ReplayCreditTrees'; params: { blocks: Array<number> } }
+  /**
+   * Removes the roots of `blocks`, which the claims chain is finished with.
+   *
+   * Every credit those roots committed to has been minted, or the claims chain's deadline
+   * for them has passed, so no proof can be built against them again. The call is
+   * idempotent: it skips a block whose root is already gone without reporting it, because
+   * [`Pallet::root_ttl`] can remove a root in the same window its deletion is in flight.
+   *
+   * [`Config::AwardRetentionTtl`] removes the awards, and its own ring removes a
+   * claimant's [`NftClaimCreditBlocks`] entry. The index resolves against the roots, so a
+   * block whose root is gone drops out of the answer by itself.
+   *
+   * ## Origin
+   * Requires the claims chain's XCM origin ([`Config::EnsureClaimsChainOrigin`]).
+   *
+   * ## Parameters
+   * - `blocks`: The tree blocks whose roots to remove.
+   **/
+  | { name: 'ReceiveTreeDeletions'; params: { blocks: Array<number> } }
+  /**
+   * Removes the roots whose [`Pallet::root_ttl`] has run out, oldest first.
+   *
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
+   *
+   * The claims chain's TTL is the shorter one, so the sweep only removes roots that chain
+   * has already given up on and strands nothing mintable. `oldest` must be the timestamp
+   * [`RootExpiries`] holds its oldest entry under, which makes a retry that raced a
+   * successful sweep stale instead of a second pass.
+   **/
+  | { name: 'SweepExpiredRoots'; params: { oldest: number; discriminator: number } }
+  /**
+   * Removes the awards whose [`Config::AwardRetentionTtl`] has run out, oldest first.
+   *
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
+   *
+   * The block's root stays, on the longer [`Pallet::root_ttl`], so nothing mintable is
+   * stranded: a proof for a swept block comes from its `NftClaimCreditAwarded` events
+   * instead. `oldest` must be the timestamp [`NftClaimCreditAwardExpiries`] holds its oldest
+   * entry under, which makes a retry that raced a successful sweep stale instead of a
+   * second pass.
+   **/
+  | { name: 'SweepExpiredAwards'; params: { oldest: number; discriminator: number } }
+  /**
+   * Award an NFT claim credit to `claimant` outside of a game.
+   *
+   * This action can only be performed by the root origin and is only meant for testing.
+   * It exists because a credit is otherwise only earned by a `Person` vote in a played
+   * game, which makes the claim chain's minting path hard to exercise on its own. The
+   * credit it awards is a normal one: it goes into the buffer [`CreditBufferCursor`] names,
+   * is committed by that block's tree and is claimed with the same proof as any other.
+   *
+   * The credit is the one `attester` would earn `claimant` by reporting them a person in
+   * `round` of `game_index`, so it does not need any of those to exist. A slot is used
+   * once per claimant and game: repeating a call with the same `game_index`, `round` and
+   * `attester_position` for the same `claimant` fails rather than awarding a second credit.
+   * Vary any of them to award more than one.
+   *
+   * Parameters:
+   * - `claimant`: who the credit is awarded to, and the only identity that can mint it.
+   * - `attester`: the reporter the credit is attributed to, which along with `game_index`
+   * and `round` is what makes the credit distinct from another claimant's.
+   * - `game_index`: the game the credit is attributed to. All the credits a block awards
+   * must name the same game, since the block's tree is labelled with one.
+   * - `round`: the round of that game, below `MaxRounds`.
+   * - `attester_position`: the attester's place in the group, below `MaxGroupSize`. Together
+   * with `round` it picks the claimant's credit slot for the game.
+   **/
+  | {
+      name: 'TestnetGrantNftClaimCredit';
+      params: {
+        claimant: IndivSupportIdentityAccountOrPerson;
+        attester: IndivSupportIdentityAccountOrPerson;
+        gameIndex: number;
+        round: number;
+        attesterPosition: number;
+      };
+    };
+
+export type IndivPalletNftCreditsCallLike =
+  /**
+   * Delivers the queued credit trees that fit one XCM message to the NFT claims chain.
+   *
+   * Authorized call submitted by this pallet's offchain worker: it is accepted from a
+   * local or in-block source only, so it cannot be submitted externally.
+   *
+   * `first_sequence` must be the sequence at the front of `CreditTreeDeliveryQueue`, which
+   * makes a retry that raced a successful delivery stale rather than a second send.
+   **/
+  | { name: 'SendCreditTrees'; params: { firstSequence: bigint; discriminator: number } }
+  /**
+   * Resends the credit trees of `blocks` to the NFT claims chain.
+   *
+   * Permissionless: a credit tree is a public commitment the claims chain is meant to hold,
+   * and the trees are read from [`NftClaimCreditRoots`] rather than supplied by the caller.
+   * Blocks without a tree are skipped. A resent tree carries no sequence number, so this
+   * cannot disturb the claims chain's tracking of the live stream, and one the claims chain
+   * already holds is ignored there rather than overwriting anything.
+   *
+   * One replay runs per [`Config::ReplayCooldownSeconds`], counted from the last one by
+   * [`LastReplayTime`].
+   *
+   * The caller pays for the remote work, [`Config::NftClaimsRemoteWeight`] per tree on top
+   * of this call's own weight.
+   *
+   * ## Parameters
+   * - `blocks`: The tree blocks to resend, in strictly ascending order.
+   **/
+  | { name: 'ReplayCreditTrees'; params: { blocks: Array<number> } }
+  /**
+   * Removes the roots of `blocks`, which the claims chain is finished with.
+   *
+   * Every credit those roots committed to has been minted, or the claims chain's deadline
+   * for them has passed, so no proof can be built against them again. The call is
+   * idempotent: it skips a block whose root is already gone without reporting it, because
+   * [`Pallet::root_ttl`] can remove a root in the same window its deletion is in flight.
+   *
+   * [`Config::AwardRetentionTtl`] removes the awards, and its own ring removes a
+   * claimant's [`NftClaimCreditBlocks`] entry. The index resolves against the roots, so a
+   * block whose root is gone drops out of the answer by itself.
+   *
+   * ## Origin
+   * Requires the claims chain's XCM origin ([`Config::EnsureClaimsChainOrigin`]).
+   *
+   * ## Parameters
+   * - `blocks`: The tree blocks whose roots to remove.
+   **/
+  | { name: 'ReceiveTreeDeletions'; params: { blocks: Array<number> } }
+  /**
+   * Removes the roots whose [`Pallet::root_ttl`] has run out, oldest first.
+   *
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
+   *
+   * The claims chain's TTL is the shorter one, so the sweep only removes roots that chain
+   * has already given up on and strands nothing mintable. `oldest` must be the timestamp
+   * [`RootExpiries`] holds its oldest entry under, which makes a retry that raced a
+   * successful sweep stale instead of a second pass.
+   **/
+  | { name: 'SweepExpiredRoots'; params: { oldest: number; discriminator: number } }
+  /**
+   * Removes the awards whose [`Config::AwardRetentionTtl`] has run out, oldest first.
+   *
+   * This pallet's offchain worker submits this authorized call. It is accepted from a local
+   * or in-block source only, so no external submission reaches it.
+   *
+   * The block's root stays, on the longer [`Pallet::root_ttl`], so nothing mintable is
+   * stranded: a proof for a swept block comes from its `NftClaimCreditAwarded` events
+   * instead. `oldest` must be the timestamp [`NftClaimCreditAwardExpiries`] holds its oldest
+   * entry under, which makes a retry that raced a successful sweep stale instead of a
+   * second pass.
+   **/
+  | { name: 'SweepExpiredAwards'; params: { oldest: number; discriminator: number } }
+  /**
+   * Award an NFT claim credit to `claimant` outside of a game.
+   *
+   * This action can only be performed by the root origin and is only meant for testing.
+   * It exists because a credit is otherwise only earned by a `Person` vote in a played
+   * game, which makes the claim chain's minting path hard to exercise on its own. The
+   * credit it awards is a normal one: it goes into the buffer [`CreditBufferCursor`] names,
+   * is committed by that block's tree and is claimed with the same proof as any other.
+   *
+   * The credit is the one `attester` would earn `claimant` by reporting them a person in
+   * `round` of `game_index`, so it does not need any of those to exist. A slot is used
+   * once per claimant and game: repeating a call with the same `game_index`, `round` and
+   * `attester_position` for the same `claimant` fails rather than awarding a second credit.
+   * Vary any of them to award more than one.
+   *
+   * Parameters:
+   * - `claimant`: who the credit is awarded to, and the only identity that can mint it.
+   * - `attester`: the reporter the credit is attributed to, which along with `game_index`
+   * and `round` is what makes the credit distinct from another claimant's.
+   * - `game_index`: the game the credit is attributed to. All the credits a block awards
+   * must name the same game, since the block's tree is labelled with one.
+   * - `round`: the round of that game, below `MaxRounds`.
+   * - `attester_position`: the attester's place in the group, below `MaxGroupSize`. Together
+   * with `round` it picks the claimant's credit slot for the game.
+   **/
+  | {
+      name: 'TestnetGrantNftClaimCredit';
+      params: {
+        claimant: IndivSupportIdentityAccountOrPerson;
+        attester: IndivSupportIdentityAccountOrPerson;
+        gameIndex: number;
+        round: number;
+        attesterPosition: number;
+      };
+    };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletDummyDimCall =
+  /**
+   * Reserve a number of personal IDs.
+   **/
+  | { name: 'ReserveIds'; params: { count: number } }
+  /**
+   * Renew a personal ID. The ID must not be in use.
+   **/
+  | { name: 'RenewIdReservation'; params: { id: bigint } }
+  /**
+   * Cancel a personal ID reservation.
+   **/
+  | { name: 'CancelIdReservation'; params: { id: bigint } }
+  /**
+   * Grant personhood for a list of candidates that have reserved personal IDs.
+   **/
+  | { name: 'RecognizePersonhood'; params: { idsAndKeys: Array<[bigint, FixedBytes<32>]> } }
+  /**
+   * Suspend the personhood of a list of recognized people. The people must not currently be
+   * suspended.
+   **/
+  | { name: 'SuspendPersonhood'; params: { ids: Array<bigint> } }
+  /**
+   * Resume someone's personhood. The person must currently be suspended.
+   **/
+  | { name: 'ResumePersonhood'; params: { id: bigint } }
+  /**
+   * Start a mutation session in the underlying `People` interface. This call does not check
+   * whether a mutation session is already ongoing and can start new sessions.
+   **/
+  | { name: 'StartMutationSession' }
+  /**
+   * End a mutation session in the underlying `People` interface. This call can end multiple
+   * mutation sessions, even ones not started by this pallet.
+   *
+   * This call will fail if no mutation session is ongoing.
+   **/
+  | { name: 'EndMutationSession' };
+
+export type IndivPalletDummyDimCallLike =
+  /**
+   * Reserve a number of personal IDs.
+   **/
+  | { name: 'ReserveIds'; params: { count: number } }
+  /**
+   * Renew a personal ID. The ID must not be in use.
+   **/
+  | { name: 'RenewIdReservation'; params: { id: bigint } }
+  /**
+   * Cancel a personal ID reservation.
+   **/
+  | { name: 'CancelIdReservation'; params: { id: bigint } }
+  /**
+   * Grant personhood for a list of candidates that have reserved personal IDs.
+   **/
+  | { name: 'RecognizePersonhood'; params: { idsAndKeys: Array<[bigint, FixedBytes<32>]> } }
+  /**
+   * Suspend the personhood of a list of recognized people. The people must not currently be
+   * suspended.
+   **/
+  | { name: 'SuspendPersonhood'; params: { ids: Array<bigint> } }
+  /**
+   * Resume someone's personhood. The person must currently be suspended.
+   **/
+  | { name: 'ResumePersonhood'; params: { id: bigint } }
+  /**
+   * Start a mutation session in the underlying `People` interface. This call does not check
+   * whether a mutation session is already ongoing and can start new sessions.
+   **/
+  | { name: 'StartMutationSession' }
+  /**
+   * End a mutation session in the underlying `People` interface. This call can end multiple
+   * mutation sessions, even ones not started by this pallet.
+   *
+   * This call will fail if no mutation session is ongoing.
+   **/
+  | { name: 'EndMutationSession' };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletPeopleLiteCall =
+  /**
+   * Grant some attestation allowance to an account so they can attest people.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   *
+   * - `account`: The account to grant attestations to.
+   * - `count`: The number of attestations to grant.
+   **/
+  | { name: 'IncreaseAttestationAllowance'; params: { account: AccountId32; count: number } }
+  /**
+   * Clear all attestation allowance for an account.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   *
+   * - `account`: The account to remove all attestations from.
+   **/
+  | { name: 'ClearAttestationAllowance'; params: { account: AccountId32 } }
+  /**
+   * Attest an account.
+   *
+   * The origin must be signed by an account and have some attestation allowance left.
+   *
+   * The authority will have to get two signatures from the user:
+   * - one created using their account key attesting to the ownership of the `candidate`
+   * account;
+   * - one created using their ring-vrf key attesting to the ownership of the `ring_vrf_key`
+   * key.
+   *
+   * The message to be signed by both keys from which the signatures are generated is created
+   * by concatenating the bytes "pop:people-lite:register using" with the encoded bytes of
+   * the user's account (`candidate`), and the encoded bytes of the ring VRF key
+   * (`ring_vrf_key`).
+   *
+   * On success, this call:
+   * - stores lite registration data in `LitePeople`,
+   * - adds the user's ring VRF key to the lite member collection.
+   *
+   * The lite member collection must already have been created (via the
+   * `migration::CreateLitePeopleCollection` runtime upgrade or
+   * [`Call::create_lite_people_collection`]).
+   *
+   * - `candidate`: The candidate to be recognized as a lite person.
+   * - `candidate_signature`: The signature, provided by the candidate, to allow the attester
+   * to complete the registration process on their behalf.
+   * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
+   * - `ring_vrf_key_signature`: The ring VRF signature, provided by the candidate, to allow
+   * the attester to complete the registration process. This also prove the ownership of
+   * the ring VRF key by the candidate.
+   * - consumer_registration: Optional parameter which can contain the necessary information
+   * to forward a consumer registration request to the `LiteConsumerRegistrar` service. If
+   * present, it also contains a signature created by the user in order to validate the
+   * intent. More information on the signing payload generation available in
+   * [types::LiteConsumerRegistrationParams::signing_payload].
+   **/
+  | {
+      name: 'Attest';
+      params: {
+        candidate: AccountId32;
+        candidateSignature: SpRuntimeMultiSignature;
+        ringVrfKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+        consumerRegistration?: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined;
+      };
+    }
+  /**
+   * Register as a lite person by paying the configured native registration fee.
+   *
+   * The origin must be the candidate's signed account. The candidate proves ownership of the
+   * `ring_vrf_key` by signing the same registration message used by [`Self::attest`].
+   *
+   * On success, this call transfers the configured fee to the pallet pot, stores lite
+   * registration data in `LitePeople` and adds the ring VRF key to the lite member
+   * collection. The fee is not refunded.
+   *
+   * The lite member collection must already have been created via the
+   * `migration::CreateLitePeopleCollection` runtime upgrade or
+   * [`Call::create_lite_people_collection`].
+   *
+   * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
+   * - `proof_of_ownership`: The ring VRF signature proving ownership of `ring_vrf_key`.
+   * - `consumer_registration`: Optional parameters to register the candidate as a lite
+   * consumer. The request must contain a signature over the usual consumer payload with
+   * the signed candidate account in both the account and verifier positions.
+   **/
+  | {
+      name: 'RegisterWithFee';
+      params: {
+        ringVrfKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+        consumerRegistration?: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined;
+      };
+    }
+  | { name: 'DispatchAsSigner'; params: { call: PeoplePaseoRuntimeRuntimeCall } }
+  /**
+   * Set the account associated with a lite alias.
+   *
+   * The call is valid from `valid_at_block` until
+   * `valid_at_block + account_setup_block_tolerance`.
+   *
+   * This call is authorized through the `AsLiteAliasWithProof` variant of the
+   * `PeopleLiteAuth` transaction extension, which provides no nonce-based replay
+   * protection. Replay is only prevented for as long as the alias still points at the
+   * account this call sets. As soon as the alias is pointed at a different account (by
+   * another `set_alias_account`), this call becomes replayable again until its validity
+   * period elapses. Consequently, if 2 such transactions setting 2 different accounts have
+   * overlapping validity periods, they can be replayed against each other indefinitely for
+   * the duration of the overlap. To avoid this, the caller must not have 2 such
+   * transactions alive (within their validity period) at the same time.
+   **/
+  | { name: 'SetAliasAccount'; params: { account: AccountId32; validAtBlock: number } }
+  | { name: 'UnsetAliasAccount' }
+  /**
+   * Create the lite people collection.
+   *
+   * This call is valid only if the collection doesn't exist yet. Once created,
+   * this call cannot be executed again.
+   *
+   * The collection is created with a fixed configuration:
+   * - Owner: Configured via `CollectionOwner` type
+   * - Onboarding size: `LiteOnboardingSize`
+   * - Mode: `AppendOnly`
+   * - Ring size: `LiteRingExponent`
+   **/
+  | { name: 'CreateLitePeopleCollection' };
+
+export type IndivPalletPeopleLiteCallLike =
+  /**
+   * Grant some attestation allowance to an account so they can attest people.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   *
+   * - `account`: The account to grant attestations to.
+   * - `count`: The number of attestations to grant.
+   **/
+  | { name: 'IncreaseAttestationAllowance'; params: { account: AccountId32Like; count: number } }
+  /**
+   * Clear all attestation allowance for an account.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   *
+   * - `account`: The account to remove all attestations from.
+   **/
+  | { name: 'ClearAttestationAllowance'; params: { account: AccountId32Like } }
+  /**
+   * Attest an account.
+   *
+   * The origin must be signed by an account and have some attestation allowance left.
+   *
+   * The authority will have to get two signatures from the user:
+   * - one created using their account key attesting to the ownership of the `candidate`
+   * account;
+   * - one created using their ring-vrf key attesting to the ownership of the `ring_vrf_key`
+   * key.
+   *
+   * The message to be signed by both keys from which the signatures are generated is created
+   * by concatenating the bytes "pop:people-lite:register using" with the encoded bytes of
+   * the user's account (`candidate`), and the encoded bytes of the ring VRF key
+   * (`ring_vrf_key`).
+   *
+   * On success, this call:
+   * - stores lite registration data in `LitePeople`,
+   * - adds the user's ring VRF key to the lite member collection.
+   *
+   * The lite member collection must already have been created (via the
+   * `migration::CreateLitePeopleCollection` runtime upgrade or
+   * [`Call::create_lite_people_collection`]).
+   *
+   * - `candidate`: The candidate to be recognized as a lite person.
+   * - `candidate_signature`: The signature, provided by the candidate, to allow the attester
+   * to complete the registration process on their behalf.
+   * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
+   * - `ring_vrf_key_signature`: The ring VRF signature, provided by the candidate, to allow
+   * the attester to complete the registration process. This also prove the ownership of
+   * the ring VRF key by the candidate.
+   * - consumer_registration: Optional parameter which can contain the necessary information
+   * to forward a consumer registration request to the `LiteConsumerRegistrar` service. If
+   * present, it also contains a signature created by the user in order to validate the
+   * intent. More information on the signing payload generation available in
+   * [types::LiteConsumerRegistrationParams::signing_payload].
+   **/
+  | {
+      name: 'Attest';
+      params: {
+        candidate: AccountId32Like;
+        candidateSignature: SpRuntimeMultiSignature;
+        ringVrfKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+        consumerRegistration?: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined;
+      };
+    }
+  /**
+   * Register as a lite person by paying the configured native registration fee.
+   *
+   * The origin must be the candidate's signed account. The candidate proves ownership of the
+   * `ring_vrf_key` by signing the same registration message used by [`Self::attest`].
+   *
+   * On success, this call transfers the configured fee to the pallet pot, stores lite
+   * registration data in `LitePeople` and adds the ring VRF key to the lite member
+   * collection. The fee is not refunded.
+   *
+   * The lite member collection must already have been created via the
+   * `migration::CreateLitePeopleCollection` runtime upgrade or
+   * [`Call::create_lite_people_collection`].
+   *
+   * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
+   * - `proof_of_ownership`: The ring VRF signature proving ownership of `ring_vrf_key`.
+   * - `consumer_registration`: Optional parameters to register the candidate as a lite
+   * consumer. The request must contain a signature over the usual consumer payload with
+   * the signed candidate account in both the account and verifier positions.
+   **/
+  | {
+      name: 'RegisterWithFee';
+      params: {
+        ringVrfKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+        consumerRegistration?: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined;
+      };
+    }
+  | { name: 'DispatchAsSigner'; params: { call: PeoplePaseoRuntimeRuntimeCallLike } }
+  /**
+   * Set the account associated with a lite alias.
+   *
+   * The call is valid from `valid_at_block` until
+   * `valid_at_block + account_setup_block_tolerance`.
+   *
+   * This call is authorized through the `AsLiteAliasWithProof` variant of the
+   * `PeopleLiteAuth` transaction extension, which provides no nonce-based replay
+   * protection. Replay is only prevented for as long as the alias still points at the
+   * account this call sets. As soon as the alias is pointed at a different account (by
+   * another `set_alias_account`), this call becomes replayable again until its validity
+   * period elapses. Consequently, if 2 such transactions setting 2 different accounts have
+   * overlapping validity periods, they can be replayed against each other indefinitely for
+   * the duration of the overlap. To avoid this, the caller must not have 2 such
+   * transactions alive (within their validity period) at the same time.
+   **/
+  | { name: 'SetAliasAccount'; params: { account: AccountId32Like; validAtBlock: number } }
+  | { name: 'UnsetAliasAccount' }
+  /**
+   * Create the lite people collection.
+   *
+   * This call is valid only if the collection doesn't exist yet. Once created,
+   * this call cannot be executed again.
+   *
+   * The collection is created with a fixed configuration:
+   * - Owner: Configured via `CollectionOwner` type
+   * - Onboarding size: `LiteOnboardingSize`
+   * - Mode: `AppendOnly`
+   * - Ring size: `LiteRingExponent`
+   **/
+  | { name: 'CreateLitePeopleCollection' };
+
+export type IndivPalletPeopleLiteLiteConsumerRegistrationParams = {
+  signature: SpRuntimeMultiSignature;
+  account: AccountId32;
+  identifierKey: FixedBytes<65>;
+  username: Bytes;
+  reservedUsername?: Bytes | undefined;
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletResourcesCall =
+  /**
+   * Register a lite person as a consumer.
+   **/
+  | {
+      name: 'RegisterLitePerson';
+      params: { identifierKey: FixedBytes<65>; username: Bytes; reservedUsername?: Bytes | undefined };
+    }
+  /**
+   * Register a proven person as a consumer.
+   *
+   * The person must link a previously recognized lite identity, which will be upgraded to a
+   * full person consumer. In order to prove they hold the lite identity they want to link,
+   * users must provide a `lite_identity_proof` signature, created by signing the alias bytes
+   * using their lite consumer account.
+   *
+   * The consumer can choose if they want to have a new username or use an existing
+   * reservation made in the name of the lite consumer who will be linked.
+   **/
+  | {
+      name: 'RegisterPerson';
+      params: {
+        linkedLiteIdentity: AccountId32;
+        liteIdentityProof: SpRuntimeMultiSignature;
+        usernameChoice: IndivPalletResourcesPersonalUsernameChoice;
+      };
+    }
+  /**
+   * Update a person's authorization by ensuring they can still authenticate as people.
+   *
+   * This call must be performed at least `MinPersonAuthUpdateInterval` seconds after the
+   * last update in order to prevent spam.
+   **/
+  | { name: 'TouchPersonAuthorization' }
+  /**
+   * Remove an expired entry from a username reservation queue. The target entry is
+   * identified by `account` and can be at any position in the queue.
+   * Each call removes exactly one entry, so it must be called repeatedly to
+   * clear multiple expired reservations.
+   *
+   * This is a permissionless call; the origin must be authorized. The `account`
+   * parameter is also used for transaction pool deduplication, allowing parallel
+   * submissions that target different expired entries in the same queue.
+   **/
+  | { name: 'RemoveExpiredUsernameReservation'; params: { username: Bytes; account: AccountId32 } }
+  /**
+   * Update the communication identifier key of a consumer.
+   *
+   * The origin must be the account registered for that consumer, regardless of their
+   * credibility.
+   **/
+  | { name: 'UpdateIdentifierKey'; params: { identifierKey: FixedBytes<65> } }
+  /**
+   * Set the duration for which a username reservation is valid, in seconds.
+   *
+   * The origin must be root.
+   **/
+  | { name: 'SetUsernameReservationDuration'; params: { duration: bigint } }
+  /**
+   * Demote a full person to a lite person after their authorization has expired.
+   *
+   * This is a permissionless call; the origin must be authorized.
+   **/
+  | { name: 'DemoteAuthExpired'; params: { account: AccountId32 } }
+  /**
+   * Associate a statement account with a notification context sequence.
+   *
+   * The associated account can submit statements while this notification registration is
+   * active.
+   * The origin must be `Origin::NotificationAlias`, created by the `AsResources`
+   * (`RegisterNotificationWithProof(..)`) transaction extension after proof validation.
+   * On success, increases statement allowance and stores registration state
+   * `{account_id, reference}`.
+   *
+   * Parameters:
+   * * `reference`: notification period/sequence pair.
+   * - `reference.period` must be the current statement-store period.
+   * - `reference.seq` must be in `0..=NotificationSlotsPerPeriod`.
+   * * `account_id`: statement account to authorize. Must not already be used by another
+   * notification registration.
+   **/
+  | {
+      name: 'SetNotificationStatementAccountForSequence';
+      params: { reference: IndivPalletResourcesNotificationReference; accountId: AccountId32 };
+    }
+  /**
+   * Clear a stale notification registration and revoke its statement allowance.
+   *
+   * This is a permissionless call; the origin must be authorized.
+   * Succeeds only when the registration's period-derived expiry has elapsed.
+   * On success, removes notification registration state and decreases statement allowance.
+   *
+   * Parameters:
+   * * `account`: statement account previously associated with a notification registration.
+   * * `seq`: notification sequence to clear. Must match stored registration sequence and be
+   * in `0..=NotificationSlotsPerPeriod`.
+   **/
+  | { name: 'ClearExpiredNotificationSequence'; params: { account: AccountId32; seq: number } }
+  /**
+   * Claim an anonymous statement store allowance for a target account.
+   *
+   * The origin must be `Origin::StmtStoreAlias`, produced by the `AsResources`
+   * (`RegisterStatementStoreAllowance(..)`) transaction extension after proof validation.
+   * On success, increases the statement allowance for `target_account` and stores the
+   * mapping in `StatementStoreAllowances`.
+   *
+   * Parameters:
+   * * `period`: day number since Unix epoch. Must be in the accepted period window.
+   * * `seq`: slot number within the period, bounded by the collection-specific limit.
+   * * `target_account`: statement account to authorize.
+   **/
+  | { name: 'SetStatementStoreAccount'; params: { period: number; seq: number; targetAccount: AccountId32 } }
+  /**
+   * Remove expired statement store allowances for a past period.
+   *
+   * This is a permissionless call; the origin must be authorized.
+   * Removes up to `StmtStoreCleanupLimit` entries from `StatementStoreAllowances` for
+   * the given `period`, decreasing the statement allowance for each removed account.
+   **/
+  | { name: 'ClearExpiredStmtStoreAllowances'; params: { period: number; firstEntry: FixedBytes<32> } }
+  /**
+   * Claim long-term storage on a remote chain using an anonymous membership proof.
+   *
+   * The origin must be `Origin::LongTermStorageClaim(alias, collection)`, created by the
+   * `AsResources` (`ClaimLongTermStorage(..)`) transaction extension after ring-VRF proof
+   * validation.
+   *
+   * Parameters:
+   * * `period`: the claiming period. Must be the current period or the previous one if
+   * within the grace window.
+   * * `counter`: the claim counter within the period. Must be less than
+   * `LongTermStorageClaimsPerPeriod`. Each counter produces a distinct alias.
+   * * `account_id`: the account to authorize for storage on the remote chain.
+   **/
+  | { name: 'ClaimLongTermStorage'; params: { period: number; counter: number; accountId: AccountId32 } }
+  /**
+   * Clear spent long-term storage aliases for an expired period.
+   *
+   * This is a permissionless call authorized via the `authorize` attribute. It can be
+   * called by anyone once a period has fully expired (past the grace window).
+   *
+   * Parameters:
+   * * `period`: the expired period to clear aliases for.
+   * * `limit`: the maximum number of entries to remove in this call.
+   **/
+  | { name: 'ClearExpiredLongTermStorageAliases'; params: { period: number; limit: number } };
+
+export type IndivPalletResourcesCallLike =
+  /**
+   * Register a lite person as a consumer.
+   **/
+  | {
+      name: 'RegisterLitePerson';
+      params: { identifierKey: FixedBytes<65>; username: BytesLike; reservedUsername?: BytesLike | undefined };
+    }
+  /**
+   * Register a proven person as a consumer.
+   *
+   * The person must link a previously recognized lite identity, which will be upgraded to a
+   * full person consumer. In order to prove they hold the lite identity they want to link,
+   * users must provide a `lite_identity_proof` signature, created by signing the alias bytes
+   * using their lite consumer account.
+   *
+   * The consumer can choose if they want to have a new username or use an existing
+   * reservation made in the name of the lite consumer who will be linked.
+   **/
+  | {
+      name: 'RegisterPerson';
+      params: {
+        linkedLiteIdentity: AccountId32Like;
+        liteIdentityProof: SpRuntimeMultiSignature;
+        usernameChoice: IndivPalletResourcesPersonalUsernameChoice;
+      };
+    }
+  /**
+   * Update a person's authorization by ensuring they can still authenticate as people.
+   *
+   * This call must be performed at least `MinPersonAuthUpdateInterval` seconds after the
+   * last update in order to prevent spam.
+   **/
+  | { name: 'TouchPersonAuthorization' }
+  /**
+   * Remove an expired entry from a username reservation queue. The target entry is
+   * identified by `account` and can be at any position in the queue.
+   * Each call removes exactly one entry, so it must be called repeatedly to
+   * clear multiple expired reservations.
+   *
+   * This is a permissionless call; the origin must be authorized. The `account`
+   * parameter is also used for transaction pool deduplication, allowing parallel
+   * submissions that target different expired entries in the same queue.
+   **/
+  | { name: 'RemoveExpiredUsernameReservation'; params: { username: BytesLike; account: AccountId32Like } }
+  /**
+   * Update the communication identifier key of a consumer.
+   *
+   * The origin must be the account registered for that consumer, regardless of their
+   * credibility.
+   **/
+  | { name: 'UpdateIdentifierKey'; params: { identifierKey: FixedBytes<65> } }
+  /**
+   * Set the duration for which a username reservation is valid, in seconds.
+   *
+   * The origin must be root.
+   **/
+  | { name: 'SetUsernameReservationDuration'; params: { duration: bigint } }
+  /**
+   * Demote a full person to a lite person after their authorization has expired.
+   *
+   * This is a permissionless call; the origin must be authorized.
+   **/
+  | { name: 'DemoteAuthExpired'; params: { account: AccountId32Like } }
+  /**
+   * Associate a statement account with a notification context sequence.
+   *
+   * The associated account can submit statements while this notification registration is
+   * active.
+   * The origin must be `Origin::NotificationAlias`, created by the `AsResources`
+   * (`RegisterNotificationWithProof(..)`) transaction extension after proof validation.
+   * On success, increases statement allowance and stores registration state
+   * `{account_id, reference}`.
+   *
+   * Parameters:
+   * * `reference`: notification period/sequence pair.
+   * - `reference.period` must be the current statement-store period.
+   * - `reference.seq` must be in `0..=NotificationSlotsPerPeriod`.
+   * * `account_id`: statement account to authorize. Must not already be used by another
+   * notification registration.
+   **/
+  | {
+      name: 'SetNotificationStatementAccountForSequence';
+      params: { reference: IndivPalletResourcesNotificationReference; accountId: AccountId32Like };
+    }
+  /**
+   * Clear a stale notification registration and revoke its statement allowance.
+   *
+   * This is a permissionless call; the origin must be authorized.
+   * Succeeds only when the registration's period-derived expiry has elapsed.
+   * On success, removes notification registration state and decreases statement allowance.
+   *
+   * Parameters:
+   * * `account`: statement account previously associated with a notification registration.
+   * * `seq`: notification sequence to clear. Must match stored registration sequence and be
+   * in `0..=NotificationSlotsPerPeriod`.
+   **/
+  | { name: 'ClearExpiredNotificationSequence'; params: { account: AccountId32Like; seq: number } }
+  /**
+   * Claim an anonymous statement store allowance for a target account.
+   *
+   * The origin must be `Origin::StmtStoreAlias`, produced by the `AsResources`
+   * (`RegisterStatementStoreAllowance(..)`) transaction extension after proof validation.
+   * On success, increases the statement allowance for `target_account` and stores the
+   * mapping in `StatementStoreAllowances`.
+   *
+   * Parameters:
+   * * `period`: day number since Unix epoch. Must be in the accepted period window.
+   * * `seq`: slot number within the period, bounded by the collection-specific limit.
+   * * `target_account`: statement account to authorize.
+   **/
+  | { name: 'SetStatementStoreAccount'; params: { period: number; seq: number; targetAccount: AccountId32Like } }
+  /**
+   * Remove expired statement store allowances for a past period.
+   *
+   * This is a permissionless call; the origin must be authorized.
+   * Removes up to `StmtStoreCleanupLimit` entries from `StatementStoreAllowances` for
+   * the given `period`, decreasing the statement allowance for each removed account.
+   **/
+  | { name: 'ClearExpiredStmtStoreAllowances'; params: { period: number; firstEntry: FixedBytes<32> } }
+  /**
+   * Claim long-term storage on a remote chain using an anonymous membership proof.
+   *
+   * The origin must be `Origin::LongTermStorageClaim(alias, collection)`, created by the
+   * `AsResources` (`ClaimLongTermStorage(..)`) transaction extension after ring-VRF proof
+   * validation.
+   *
+   * Parameters:
+   * * `period`: the claiming period. Must be the current period or the previous one if
+   * within the grace window.
+   * * `counter`: the claim counter within the period. Must be less than
+   * `LongTermStorageClaimsPerPeriod`. Each counter produces a distinct alias.
+   * * `account_id`: the account to authorize for storage on the remote chain.
+   **/
+  | { name: 'ClaimLongTermStorage'; params: { period: number; counter: number; accountId: AccountId32Like } }
+  /**
+   * Clear spent long-term storage aliases for an expired period.
+   *
+   * This is a permissionless call authorized via the `authorize` attribute. It can be
+   * called by anyone once a period has fully expired (past the grace window).
+   *
+   * Parameters:
+   * * `period`: the expired period to clear aliases for.
+   * * `limit`: the maximum number of entries to remove in this call.
+   **/
+  | { name: 'ClearExpiredLongTermStorageAliases'; params: { period: number; limit: number } };
+
+export type IndivPalletResourcesPersonalUsernameChoice =
+  | { type: 'Standalone'; value: Bytes }
+  | { type: 'Reservation'; value: Bytes };
+
+export type IndivPalletResourcesNotificationReference = { period: number; seq: number };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletChunksManagerCall =
+  /**
+   * Adds a new page of chunks.
+   *
+   * The hash of the chunks must match the hash stored on-chain in `ChunkPageHashes`.
+   * The call will fail if the page already exists on-chain.
+   **/
+  | {
+      name: 'AddChunks';
+      params: { ringExponent: IndivSupportRealityRingExponent; pageIndex: number; encodedChunks: Bytes };
+    }
+  /**
+   * Sets the expected hashes for chunk pages for a given ring exponent.
+   *
+   * Allows setting the expected hashes that chunks must match when added via
+   * `add_chunks`.
+   *
+   * The origin must be `ManagerOrigin` or root.
+   **/
+  | {
+      name: 'SetChunkPageHashes';
+      params: { ringExponent: IndivSupportRealityRingExponent; pageHashes: Array<FixedBytes<32>> };
+    };
+
+export type IndivPalletChunksManagerCallLike =
+  /**
+   * Adds a new page of chunks.
+   *
+   * The hash of the chunks must match the hash stored on-chain in `ChunkPageHashes`.
+   * The call will fail if the page already exists on-chain.
+   **/
+  | {
+      name: 'AddChunks';
+      params: { ringExponent: IndivSupportRealityRingExponent; pageIndex: number; encodedChunks: BytesLike };
+    }
+  /**
+   * Sets the expected hashes for chunk pages for a given ring exponent.
+   *
+   * Allows setting the expected hashes that chunks must match when added via
+   * `add_chunks`.
+   *
+   * The origin must be `ManagerOrigin` or root.
+   **/
+  | {
+      name: 'SetChunkPageHashes';
+      params: { ringExponent: IndivSupportRealityRingExponent; pageHashes: Array<FixedBytes<32>> };
+    };
+
+export type IndivSupportRealityRingExponent = 'R2e9' | 'R2e10' | 'R2e14';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletMembersCall =
+  /**
+   * Merge the members in two rings into a single, new ring. In order for the rings to be
+   * eligible for merging, they must both be non-empty existing rings, be below 1/2 of max
+   * capacity, have no pending suspensions and not be the top ring used for onboarding.
+   *
+   * Only [`RingMode::Flexible`] collections can be merged. Their ring size never exceeds
+   * `MaxFlexibleRingExponent`, so all keys of a ring live on page 0.
+   **/
+  | { name: 'MergeRings'; params: { identifier: FixedBytes<32>; baseRingIndex: number; targetRingIndex: number } }
+  /**
+   * Force set the onboarding size for a collection. This call requires root privileges.
+   **/
+  | { name: 'SetOnboardingSize'; params: { identifier: FixedBytes<32>; onboardingSize: number } }
+  /**
+   * Allow a member waiting in the onboarding queue to include themselves into a ring
+   * after enough time has passed. This bypasses the normal cohort-based onboarding size
+   * requirement.
+   *
+   * This call must be dispatched with a `SelfInclude` origin, authenticated by the
+   * `AsMember` transaction extension. The rings must be in append-only mode.
+   *
+   * The `call_valid_at` parameter dictates the time window in which this transaction is
+   * valid and represents the timestamp (in seconds since the UNIX epoch) when this call
+   * becomes valid.
+   **/
+  | { name: 'SelfInclude'; params: { identifier: FixedBytes<32>; member: FixedBytes<32>; callValidAt: bigint } }
+  /**
+   * Build a ring root for a specific ring in a collection.
+   *
+   * Submitted by the OCW with a `to_include` snapshot from
+   * [`Pallet::should_build_ring`]. Leftovers from later onboarding are picked up
+   * on the next OCW tick, or by the member via [`Self::self_include`] when
+   * cohort gating stalls onboarding.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | {
+      name: 'BuildRingAuthorized';
+      params: {
+        identifier: FixedBytes<32>;
+        ringIndex: number;
+        ringExponent: IndivSupportRealityRingExponent;
+        revision?: number | undefined;
+        toInclude: number;
+        discriminator: number;
+      };
+    }
+  /**
+   * Onboard members from the onboarding queue for a specific collection.
+   *
+   * Submitted by the offchain worker.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | {
+      name: 'OnboardMembersAuthorized';
+      params: {
+        identifier: FixedBytes<32>;
+        ringIndex: number;
+        head: number;
+        firstMember?: FixedBytes<32> | undefined;
+        discriminator: number;
+      };
+    }
+  /**
+   * Merge the top two onboarding queue pages for a specific collection.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'MergeQueuePagesAuthorized'; params: { identifier: FixedBytes<32>; initialHead: number; newHead: number } }
+  /**
+   * Remove suspended keys from a specific ring in a collection.
+   *
+   * Submitted by the offchain worker.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | {
+      name: 'RemoveSuspendedKeysAuthorized';
+      params: { identifier: FixedBytes<32>; ringIndex: number; revision?: number | undefined; discriminator: number };
+    }
+  /**
+   * Delete a page for a specific ring in a collection.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'DeleteRingPageAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number; pageIndex: number } }
+  /**
+   * Enqueue a ring for deletion as part of collection deletion.
+   *
+   * Archives the ring root, notifies subscribers, removes ring metadata, and
+   * enqueues ring pages into `RingDeletionQueue` for processing by
+   * `delete_ring_page_authorized`.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'EnqueueRingDeletionAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number } }
+  /**
+   * Delete an onboarding queue page as part of collection deletion.
+   *
+   * Removes all `Members` entries for the members in the page, then removes
+   * the page itself. Can only proceed when all rings and ring pages have been
+   * fully deleted.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'DeleteOnboardingQueuePageAuthorized'; params: { identifier: FixedBytes<32>; pageIndex: number } }
+  /**
+   * Finalize collection deletion.
+   *
+   * Removes all remaining per-collection storage and the owner's identifier
+   * reference. Can only proceed when all rings, ring pages, and onboarding
+   * queue pages have been fully deleted.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'FinalizeCollectionDeletionAuthorized'; params: { identifier: FixedBytes<32> } }
+  /**
+   * Remove orphaned `Members` entries for a suspended collection.
+   *
+   * Suspended members can leave entries in `Members` that outlive their ring, so before a
+   * collection can be finalized these must be drained. Drains up to
+   * `ORPHANED_MEMBERS_REMOVAL_LIMIT` entries for `identifier`. The offchain worker
+   * resubmits until the prefix is empty, after which the collection deletion can be
+   * finalized.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'RemoveOrphanedMembersAuthorized'; params: { identifier: FixedBytes<32> } }
+  /**
+   * Mark a ring as stale so the offchain worker will rebuild it.
+   *
+   * Anyone can submit this transaction if the ring has members that are not
+   * yet included in the root (`total > included`) and the ring is not already
+   * marked stale. This is a recovery mechanism in case the `StaleRings` entry
+   * was lost or never inserted.
+   **/
+  | { name: 'MarkRingStaleAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number } }
+  /**
+   * Clean up expired old ring roots.
+   *
+   * Removes up to `limit` old ring roots for the given ring in the given
+   * collection.
+   *
+   * The transaction source must be `Local` or `InBlock`.
+   *
+   * This is a maintenance call. Submitted by the offchain worker.
+   **/
+  | { name: 'CleanUpOldRootsAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number; limit: number } };
+
+export type IndivPalletMembersCallLike =
+  /**
+   * Merge the members in two rings into a single, new ring. In order for the rings to be
+   * eligible for merging, they must both be non-empty existing rings, be below 1/2 of max
+   * capacity, have no pending suspensions and not be the top ring used for onboarding.
+   *
+   * Only [`RingMode::Flexible`] collections can be merged. Their ring size never exceeds
+   * `MaxFlexibleRingExponent`, so all keys of a ring live on page 0.
+   **/
+  | { name: 'MergeRings'; params: { identifier: FixedBytes<32>; baseRingIndex: number; targetRingIndex: number } }
+  /**
+   * Force set the onboarding size for a collection. This call requires root privileges.
+   **/
+  | { name: 'SetOnboardingSize'; params: { identifier: FixedBytes<32>; onboardingSize: number } }
+  /**
+   * Allow a member waiting in the onboarding queue to include themselves into a ring
+   * after enough time has passed. This bypasses the normal cohort-based onboarding size
+   * requirement.
+   *
+   * This call must be dispatched with a `SelfInclude` origin, authenticated by the
+   * `AsMember` transaction extension. The rings must be in append-only mode.
+   *
+   * The `call_valid_at` parameter dictates the time window in which this transaction is
+   * valid and represents the timestamp (in seconds since the UNIX epoch) when this call
+   * becomes valid.
+   **/
+  | { name: 'SelfInclude'; params: { identifier: FixedBytes<32>; member: FixedBytes<32>; callValidAt: bigint } }
+  /**
+   * Build a ring root for a specific ring in a collection.
+   *
+   * Submitted by the OCW with a `to_include` snapshot from
+   * [`Pallet::should_build_ring`]. Leftovers from later onboarding are picked up
+   * on the next OCW tick, or by the member via [`Self::self_include`] when
+   * cohort gating stalls onboarding.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | {
+      name: 'BuildRingAuthorized';
+      params: {
+        identifier: FixedBytes<32>;
+        ringIndex: number;
+        ringExponent: IndivSupportRealityRingExponent;
+        revision?: number | undefined;
+        toInclude: number;
+        discriminator: number;
+      };
+    }
+  /**
+   * Onboard members from the onboarding queue for a specific collection.
+   *
+   * Submitted by the offchain worker.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | {
+      name: 'OnboardMembersAuthorized';
+      params: {
+        identifier: FixedBytes<32>;
+        ringIndex: number;
+        head: number;
+        firstMember?: FixedBytes<32> | undefined;
+        discriminator: number;
+      };
+    }
+  /**
+   * Merge the top two onboarding queue pages for a specific collection.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'MergeQueuePagesAuthorized'; params: { identifier: FixedBytes<32>; initialHead: number; newHead: number } }
+  /**
+   * Remove suspended keys from a specific ring in a collection.
+   *
+   * Submitted by the offchain worker.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | {
+      name: 'RemoveSuspendedKeysAuthorized';
+      params: { identifier: FixedBytes<32>; ringIndex: number; revision?: number | undefined; discriminator: number };
+    }
+  /**
+   * Delete a page for a specific ring in a collection.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'DeleteRingPageAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number; pageIndex: number } }
+  /**
+   * Enqueue a ring for deletion as part of collection deletion.
+   *
+   * Archives the ring root, notifies subscribers, removes ring metadata, and
+   * enqueues ring pages into `RingDeletionQueue` for processing by
+   * `delete_ring_page_authorized`.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'EnqueueRingDeletionAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number } }
+  /**
+   * Delete an onboarding queue page as part of collection deletion.
+   *
+   * Removes all `Members` entries for the members in the page, then removes
+   * the page itself. Can only proceed when all rings and ring pages have been
+   * fully deleted.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'DeleteOnboardingQueuePageAuthorized'; params: { identifier: FixedBytes<32>; pageIndex: number } }
+  /**
+   * Finalize collection deletion.
+   *
+   * Removes all remaining per-collection storage and the owner's identifier
+   * reference. Can only proceed when all rings, ring pages, and onboarding
+   * queue pages have been fully deleted.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'FinalizeCollectionDeletionAuthorized'; params: { identifier: FixedBytes<32> } }
+  /**
+   * Remove orphaned `Members` entries for a suspended collection.
+   *
+   * Suspended members can leave entries in `Members` that outlive their ring, so before a
+   * collection can be finalized these must be drained. Drains up to
+   * `ORPHANED_MEMBERS_REMOVAL_LIMIT` entries for `identifier`. The offchain worker
+   * resubmits until the prefix is empty, after which the collection deletion can be
+   * finalized.
+   *
+   * Submitted by the offchain worker.
+   **/
+  | { name: 'RemoveOrphanedMembersAuthorized'; params: { identifier: FixedBytes<32> } }
+  /**
+   * Mark a ring as stale so the offchain worker will rebuild it.
+   *
+   * Anyone can submit this transaction if the ring has members that are not
+   * yet included in the root (`total > included`) and the ring is not already
+   * marked stale. This is a recovery mechanism in case the `StaleRings` entry
+   * was lost or never inserted.
+   **/
+  | { name: 'MarkRingStaleAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number } }
+  /**
+   * Clean up expired old ring roots.
+   *
+   * Removes up to `limit` old ring roots for the given ring in the given
+   * collection.
+   *
+   * The transaction source must be `Local` or `InBlock`.
+   *
+   * This is a maintenance call. Submitted by the offchain worker.
+   **/
+  | { name: 'CleanUpOldRootsAuthorized'; params: { identifier: FixedBytes<32>; ringIndex: number; limit: number } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletCoinageCall =
+  /**
+   * Split a coin into multiple coins.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The call is free and ages the resulting coins by one.
+   *
+   * The `split_into` parameter contains a vector of pairs, each pair containing a coin
+   * value and a list of destination account ids. For each pair, a new coin with the given
+   * value is created for each destination account id.
+   *
+   * Validity requirements:
+   * (an invalid transaction won't be included in a block, the coin is not consumed)
+   * * The coin's age must be less than [Config::MaximumAge].
+   * * The denomination must be within the bounds defined by [Config::MinimumExponent] and
+   * [Config::MaximumExponent].
+   * * The total value of the new coins must equal the value of the origin coin.
+   * * The number of outputs must not exceed [Config::MaxSplitOutputs].
+   * * The age of the new coins is set to the age of the origin coin plus one.
+   * * Each destination account must not already have a coin.
+   **/
+  | { name: 'Split'; params: { splitInto: Array<[number, Array<AccountId32>]> } }
+  /**
+   * Transfer a coin to another account.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The call is free and ages the resulting coin by one.
+   *
+   * Validity requirements:
+   * (an invalid transaction won't be included in a block, the coin is not consumed)
+   * * The destination account must not already have a coin.
+   * * The coin's age must be less than [Config::MaximumAge].
+   **/
+  | { name: 'Transfer'; params: { to: AccountId32 } }
+  /**
+   * Load coin into a recycler.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The call is free.
+   *
+   * The `member_key` parameter is the member key to be included in the recycler, and whose
+   * alias is used to unload from the recycler.
+   *
+   * Validity requirements:
+   * (an invalid transaction won't be included in a block, the coin is not consumed)
+   * * The `member_key` must not already be used in another recycler.
+   * * The `member_key` must be valid (i.e. well formed).
+   * * The `proof_of_ownership` must be a valid signature of the coin's account id by the
+   * `member_key`.
+   * * The recycler collection for the coin's value must already exist
+   * * On a sponsored instance, the pot's free balance must cover the loaded key's deposit.
+   **/
+  | { name: 'LoadRecyclerWithCoin'; params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> } }
+  /**
+   * Load external asset into a recycler.
+   *
+   * The origin must be a signed origin.
+   *
+   * The transaction fee is refunded.
+   *
+   * The `preservation` parameter indicates how the asset transfer should preserve the
+   * signer's account.
+   *
+   * The `instance_id` parameter indicates which coinage instance to load into, and hence
+   * which underlying asset is transferred.
+   *
+   * The `value` parameter indicates the denomination to be loaded into the recycler.
+   * The equivalent amount of the underlying asset is transferred from the signer to
+   * the pallet account.
+   *
+   * The `member_key` parameter is the member key to be included in the recycler, and whose
+   * alias is used to unload from the recycler.
+   *
+   * The `proof_of_ownership` parameter is the signature of the signer's account id by the
+   * `member_key`.
+   *
+   * Requirements:
+   * * The `instance_id` must refer to an existing instance.
+   * * The `member_key` must not already be used in another recycler.
+   * * The `member_key` must be valid (i.e. well formed).
+   * * The `value` must be within the bounds defined by [Config::MinimumExponent] and
+   * [Config::MaximumExponent].
+   * * The signer must have enough balance of the underlying asset to cover the equivalent
+   * amount for the given denomination.
+   * * The `proof_of_ownership` must be a valid signature of the signer's account id by the
+   * `member_key`.
+   * * On a sponsored instance, the pot's free balance must cover the loaded key's deposit.
+   **/
+  | {
+      name: 'LoadRecyclerWithExternalAsset';
+      params: {
+        instanceId: number;
+        preservation: IndivPalletCoinageCodecPreservation;
+        value: number;
+        memberKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+      };
+    }
+  /**
+   * Load external asset into a recycler (infallible, validated unpaid variant).
+   *
+   * The origin must be [Origin::InfallibleUnpaidSigned], which can be obtained from the
+   * transaction extension variant
+   * [`AsCoinageInfo::InfallibleUnpaidSigned`](crate::extension::AsCoinageInfo::InfallibleUnpaidSigned).
+   *
+   * The transaction extension validation phase must ensure:
+   * - The `instance_id` refers to an existing instance.
+   * - The `member_key` is valid and not already used in another recycler.
+   * - The `proof_of_ownership` is a valid signature of the signer's account id by the
+   * `member_key`.
+   * - The `value` is within the bounds defined by [Config::MinimumExponent] and
+   * [Config::MaximumExponent], and can be losslessly converted to an asset amount.
+   * - The signer has enough balance of the underlying asset to cover the equivalent amount
+   * for the given denomination (respecting `preservation`).
+   * - The nonce is valid for replay protection.
+   * - The recycler collection for `instance_id` and `value` already exists.
+   * - On a sponsored instance, the pot's free balance covers the loaded key's deposit.
+   *
+   * The call is free.
+   **/
+  | {
+      name: 'LoadRecyclerWithExternalAssetUnpaid';
+      params: {
+        instanceId: number;
+        preservation: IndivPalletCoinageCodecPreservation;
+        value: number;
+        memberKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+      };
+    }
+  /**
+   * Batched variant of [`Self::load_recycler_with_external_asset_unpaid`].
+   *
+   * The origin must be [Origin::InfallibleUnpaidSigned], which can be obtained from the
+   * transaction extension variant
+   * [`AsCoinageInfo::InfallibleUnpaidSigned`](crate::extension::AsCoinageInfo::InfallibleUnpaidSigned).
+   * The extension validates each inner item and additionally checks within-batch
+   * member-key uniqueness and that the signer's balance covers the sum of all inner asset
+   * amounts.
+   *
+   * This call dispatches each inner load by re-running the same checks the extension
+   * just performed (see [`RecyclerManager::load`]). The redundancy matches the defensive
+   * pattern used by [`Self::load_recycler_with_external_asset_unpaid`]: a dispatch path
+   * that fails any of these checks is a logic bug in the extension, not a user error.
+   *
+   * The instance is fixed for the whole batch rather than per item, because the extension
+   * checks the signer's balance once against the summed cost of every item, which is only
+   * meaningful within one underlying asset.
+   *
+   * On a sponsored instance, the pot's free balance must cover the deposits of every key
+   * loaded here, the batch being charged as one.
+   *
+   * The call is free.
+   **/
+  | {
+      name: 'LoadRecyclerWithExternalAssetUnpaidBatch';
+      params: { instanceId: number; items: Array<IndivPalletCoinageUnpaidLoadInput> };
+    }
+  /**
+   * Unload a recycler to mint a new coin.
+   *
+   * The origin must be a [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`, which can be
+   * obtained from the transaction extension [`AsCoinage`](crate::extension::AsCoinage) using
+   * `AsUnloadTokenPeople`,
+   * `AsUnloadTokenLitePeople`, or `AsUnloadTokenPaid` variants.
+   *
+   * This function allows a user to prove they own one or more coins in a recycler ring
+   * without revealing which specific coins they own. It consolidates one or multiple inputs
+   * into a single output coin.
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `_revision`: the recycler revision used for the alias_proofs.
+   * * `to`: the destination account for the new coin.
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`.
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The `aliases` provided must match the aliases derived from the proofs.
+   * * The aliases must not have been already unloaded from this recycler.
+   * * The number of aliases must be a power of two.
+   * * The resulting consolidated value must not exceed [Config::MaximumExponent].
+   **/
+  | {
+      name: 'UnloadRecyclerIntoCoin';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        to: AccountId32;
+      };
+    }
+  /**
+   * Unload a recycler to withdraw the underlying external asset.
+   *
+   * The origin must be [Origin::UnloadToken], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * When `fee` is [UnloadFee::Prepaid] (via free or paid unload token), no fee is deducted.
+   * When `fee` is [UnloadFee::FromOutput], the fee is deducted from the unloaded assets:
+   * the asset is converted into the native currency, so the amount deducted depends on the
+   * market and is bounded by `max_fee`.
+   *
+   * This function allows a user to withdraw their coins back into the underlying
+   * asset (e.g., an external asset).
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `_revision`: the recycler revision used for the alias_proofs.
+   * * `to`: the destination account for the underlying asset.
+   * * `max_fee`: the maximum amount of the unloaded asset the fee may consume. Whatever the
+   * fee does not consume goes to `to`. It is ignored for [UnloadFee::Prepaid], which takes
+   * no fee out of the output.
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken].
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The aliases must not have been already unloaded (except for the first one when `fee`
+   * is [UnloadFee::FromOutput], which was pre-marked in the extension).
+   **/
+  | {
+      name: 'UnloadRecyclerIntoExternalAsset';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        to: AccountId32;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Pay the fee to register a member key for a paid unload token using a coin.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The coin is consumed. The fee is deducted from the coin's value: the asset is converted
+   * into the native currency, which is transferred to [Config::FeeDestination]. The
+   * remaining value of the coin is destroyed.
+   *
+   * If the call fails, the origin coin is still consumed.
+   *
+   * To protect the user against varying fees, if the coin's value is less than the fee, the
+   * call is invalid (an invalid call never goes into a block).
+   *
+   * This is the one asset-paying call with no caller-settable bound on the fee, and it needs
+   * none: the coin is consumed whole either way, so its value is the bound, and whatever the
+   * conversion does not take is destroyed rather than returned. A caller who wants to bound
+   * what the fee costs pays for the token with
+   * [`Self::pay_for_recycler_unload_fee_token_with_external_asset`] instead.
+   *
+   * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+   * This ensures the caller controls the member key to prevent front-running.
+   *
+   * Requirements:
+   * * The coin's age must be less than [Config::MaximumAge].
+   * * The denomination must be sufficient to cover the fee.
+   * * The `member_key` must be valid and not already used.
+   * * The `proof_of_ownership` must be valid.
+   **/
+  | {
+      name: 'PayForRecyclerUnloadFeeTokenWithCoin';
+      params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> };
+    }
+  /**
+   * Pay the fee to register a member key for a paid unload token using the native currency.
+   *
+   * The origin must be Signed.
+   *
+   * This adds the `member_key` to a "paid unload token ring". Being part of this ring
+   * allows the user to later generate an `UnloadToken` to unload a recycler.
+   *
+   * The fee is transferred from the caller to [Config::FeeDestination].
+   *
+   * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+   * This ensures the caller controls the member key to prevent front-running.
+   *
+   * Requirements:
+   * * The `member_key` must be valid and not already used.
+   * * The `proof_of_ownership` must be valid.
+   **/
+  | {
+      name: 'PayForRecyclerUnloadFeeTokenWithNative';
+      params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> };
+    }
+  /**
+   * Pay the fee to register a member key for a paid unload token using the underlying
+   * asset of the given instance.
+   *
+   * The origin must be Signed.
+   *
+   * This adds the `member_key` to a "paid unload token ring". Being part of this ring
+   * allows the user to later generate an `UnloadToken` to unload a recycler.
+   *
+   * The fee are charged in the underlying asset of the specified instance, and converted
+   * into the native currency to be transferred to the fee destination.
+   * `max_fee` bounds how much of the asset the conversion may take.
+   *
+   * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+   * This ensures the caller controls the member key to prevent front-running.
+   *
+   * The `instance_id` only selects which instance's underlying asset the fee is paid in.
+   * The resulting token is not bound to that instance and can be consumed to unload any
+   * instance's recycler, which is why the fee is the same for all of them.
+   *
+   * Unlike the signed unload calls, this one is not pre-checked against `max_fee` during
+   * transaction validation and does not refund the weight it did not use: a conversion that
+   * moved past `max_fee` between the caller quoting it and the transaction being included
+   * fails the dispatch at the full benchmarked weight. Callers should leave headroom in
+   * `max_fee`.
+   *
+   * Requirements:
+   * * The `instance_id` must refer to an existing instance.
+   * * The `member_key` must be valid and not already used.
+   * * The `proof_of_ownership` must be valid.
+   * * `max_fee` must cover the converted fee.
+   **/
+  | {
+      name: 'PayForRecyclerUnloadFeeTokenWithExternalAsset';
+      params: { instanceId: number; memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64>; maxFee: bigint };
+    }
+  /**
+   * Unload a recycler into a mixed output of external asset and freshly loaded coins.
+   *
+   * The origin must be [Origin::UnloadToken], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * This function allows a user to offboard part of the unloaded value into the underlying
+   * asset while reminting the rest as freshly loaded recycler coins.
+   *
+   * When `fee` is [UnloadFee::Prepaid], `external_asset_amount` is transferred as-is.
+   * When `fee` is [UnloadFee::FromOutput], the fee is deducted from the specified
+   * `external_asset_amount`, so the recipient receives the remainder. The asset is
+   * converted into the native currency to pay the fee, so the amount deducted depends on
+   * the market and is bounded by `max_fee`.
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `revision`: the recycler revision used for the alias proofs.
+   * * `to`: the destination account for the external asset portion.
+   * * `external_asset_amount`: the gross asset portion to offboard from the unloaded value.
+   * * `loaded_coins`: the freshly loaded recycler coins to mint from the remaining unloaded
+   * value.
+   * * `max_fee`: the maximum amount of `external_asset_amount` the fee may consume. Whatever
+   * the fee does not consume goes to `to`. It is ignored for [UnloadFee::Prepaid], which
+   * takes no fee out of the output.
+   *
+   * The total unloaded value must always equal the asset portion plus the loaded-coin
+   * portion. In `FromOutput` mode, the asset portion must be large enough to cover the
+   * unload fee.
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken].
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The aliases must not have been already unloaded (except for the first one when `fee`
+   * is [UnloadFee::FromOutput], which was pre-marked in the extension).
+   * * `loaded_coins` must not be empty, and all loaded-coin member keys must be valid and
+   * unused.
+   * * The total unloaded value must equal `external_asset_amount` plus the total asset value
+   * of `loaded_coins`.
+   * * When using [UnloadFee::FromOutput], `external_asset_amount` must cover the fee.
+   * * On a sponsored instance, the pot's free balance must cover the deposits of the
+   * `loaded_coins` keys, without crediting the deposits this unload releases.
+   **/
+  | {
+      name: 'UnloadRecyclerIntoExternalAssetAndLoadedCoins';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        to: AccountId32;
+        externalAssetAmount: bigint;
+        loadedCoins: Array<[number, FixedBytes<32>]>;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Unload a recycler to withdraw the underlying external asset (non-anonymous).
+   *
+   * Convenience wrapper around [Self::unload_recyclers_into_external_asset_non_anonymous]
+   * for the single-recycler case.
+   *
+   * See [Self::unload_recyclers_into_external_asset_non_anonymous] for full documentation.
+   **/
+  | {
+      name: 'UnloadRecyclerIntoExternalAssetNonAnonymous';
+      params: {
+        instanceId: number;
+        input: IndivPalletCoinageUnloadRecyclerInput;
+        aliasProofs: Array<Bytes>;
+        to: AccountId32;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Unload multiple recyclers to withdraw the underlying external asset (non-anonymous).
+   *
+   * This is a signed-origin version of [`Self::unload_recycler_into_external_asset`]
+   * where the fee is paid explicitly by the signer rather than through the
+   * ring-authenticated unload token, and for multiple recyclers.
+   *
+   * The fee charged is one unload token fee per recycler (i.e., `inputs.len()`).
+   *
+   * Every input unloads from `instance_id`: one call cannot span instances, because the
+   * unloaded value is summed and paid out as a single transfer of one underlying asset.
+   *
+   * Parameters:
+   * * `instance_id`: the instance every input unloads from.
+   * * `inputs`: A list of inputs, specifying the recycler and aliases to unload. At most
+   * [`Config::MaxConsolidation`] inputs, one alias of one input per proof.
+   * * `alias_proofs`: the proofs for all aliases across all inputs, signed over a message
+   * that includes the signer. The proofs must correspond sequentially to the aliases in
+   * `inputs`.
+   * * `to`: the destination account for the asset.
+   * * `fee_currency`: whether to pay the fee in native currency or external asset.
+   * * `max_fee`: the most the fee may cost the signer, in `fee_currency`: the native fee for
+   * [FeeCurrency::Native], and the amount of the signer's asset the conversion into the
+   * native fee may take for [FeeCurrency::ExternalAsset].
+   *
+   * Requirements:
+   * * The origin must be Signed.
+   * * The `instance_id` must refer to an existing instance.
+   * * All specified recyclers must exist.
+   * * The alias proofs must correspond sequentially to the aliases in `inputs`.
+   * * `inputs` must not be empty and each element must contain at least one alias.
+   * * `alias_proofs` must hold exactly one proof per alias across all `inputs`.
+   * * The signer must have sufficient balance to pay the fee (one fee per recycler).
+   * * `max_fee` must cover the fee in `fee_currency`.
+   **/
+  | {
+      name: 'UnloadRecyclersIntoExternalAssetNonAnonymous';
+      params: {
+        instanceId: number;
+        inputs: Array<IndivPalletCoinageUnloadRecyclerInput>;
+        aliasProofs: Array<Bytes>;
+        to: AccountId32;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Recover a coin from an archived recycler into the external asset.
+   *
+   * This is a signed call.
+   *
+   * It allows a user to unload a coin from an archived recycler.
+   * The unload token fee is charged to the signer, and the call is not refunded, as it
+   * accounts for the extra proof verification and archived recycler update.
+   *
+   * Parameters:
+   * * `instance_id`, `value` and `index`: identify the archived recycler ring.
+   * * `recycler_root`: the deleted ring's ring-VRF root; validated together with
+   * `unloaded_root` against the stored archival commitment.
+   * * `unloaded_root`: the current root of the unloaded-aliases trie.
+   * * `alias_proof`: a ring-VRF membership proof, created over the message binding
+   * `blake2_256(UNLOAD_ARCHIVED_MSG_PREFIX ++ signer)` in the recycler unloading context
+   * UNLOADING_RECYCLER_CONTEXT.
+   * * `non_inclusion_proof`: trie nodes proving the caller's alias is absent from
+   * `unloaded_root` (i.e. it was never unloaded); must also cover the insertion path of
+   * the alias so the new root can be recomputed.
+   * * `to`: the account receiving the recovered denomination.
+   * * `fee_currency`: whether the unload fee is paid in native currency or external asset.
+   * * `max_fee`: the most the fee may cost the signer, in `fee_currency`: the native fee for
+   * [FeeCurrency::Native], and the amount of the signer's asset the conversion into the
+   * native fee may take for [FeeCurrency::ExternalAsset].
+   *
+   * On success the full denomination is released to `to`, the alias is added to the unloaded
+   * set (so it cannot be recovered again), and the archive's recoverable count is
+   * decremented (the entry is removed once drained).
+   * (No [`Config::LoadDeposit`] is settled here, it was already settled when the recycler
+   * was archived.)
+   *
+   * The unloaded-aliases trie needed for `unloaded_root` and `non_inclusion_proof` can be
+   * reconstructed offchain by listening to the [`Event::RecyclerAliasUnloaded`],
+   * [`Event::RecyclerArchived`] and [`Event::ArchivedRecyclerUnloadedIntoExternalAsset`]
+   * events.
+   *
+   * This call conflicts with any other call that unloads from the same archived recycler:
+   * each unload updates the commitment, so the proofs in the competing call become outdated.
+   * `recycler_root` and `unloaded_root` are checked against the stored commitment at
+   * transaction validation, therefore resolving such conflicts without charging fees by
+   * marking outdated proofs as invalid.
+   **/
+  | {
+      name: 'UnloadArchivedRecyclerIntoExternalAsset';
+      params: {
+        instanceId: number;
+        value: number;
+        index: number;
+        recyclerRoot: VerifiableRingMembersCommitment;
+        unloadedRoot: H256;
+        aliasProof: Bytes;
+        nonInclusionProof: Array<Bytes>;
+        to: AccountId32;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Unload a recycler to mint multiple new coins (split).
+   *
+   * The origin must be a [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`.
+   *
+   * This function combines the functionality of [Self::unload_recycler_into_coin] and
+   * [Self::split] in a single atomic operation. The resulting coins' age is 1 because
+   * the action of splitting age coins. This is also important because resulting coins
+   * are not entirely fresh, they can be linked to other coins.
+   *
+   * Unlike [Self::unload_recycler_into_coin], this call does **not** require the number of
+   * aliases to be a power of two.
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `revision`: the recycler revision used for the alias_proofs.
+   * * `split_into`: a vector of pairs, each pair containing a denomination and a list of
+   * destination account ids.
+   * * `max_fee`: the maximum fee the caller is willing to pay, expressed in the underlying
+   * asset balance. It must be equal to the difference between the total value of the
+   * unloaded coins and the total value of the new coins defined in `split_into`.
+   *
+   * When using [UnloadFee::Prepaid], it must be zero: nothing is set aside for the fee, so
+   * `split_into` takes the whole unloaded value.
+   * When using [UnloadFee::FromOutput], this amount is deducted from the input: the asset
+   * is converted into the native network fee, which is transferred to
+   * [Config::FeeDestination], and any remainder is burned. The caller can query
+   * `get_paid_unload_token_fee_in_asset` to estimate the fee.
+   *
+   * This parameter serves as a safeguard: the transaction is rejected at validation if the
+   * actual network fee exceeds `max_fee`, protecting the caller from excessive fee
+   * increases that would render the argument `split_into` invalid (unloaded funds must be
+   * higher than the split plus the fee).
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken].
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The `aliases` provided must match the aliases derived from the proofs.
+   * * Each destination account must not already have a coin.
+   * * The total value of the new coins defined in `split_into` plus `max_fee` must equal the
+   * total value of the unloaded coins.
+   * * `max_fee` must be a multiple of the minimum coin. (This is implied by the condition
+   * above).
+   * * When using [UnloadFee::Prepaid], `max_fee` must be 0.
+   * * When using [UnloadFee::FromOutput], `max_fee` must cover the network fee.
+   **/
+  | {
+      name: 'UnloadRecyclerIntoCoins';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        splitInto: Array<[number, Array<AccountId32>]>;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Directly offboard a coin into the underlying external asset.
+   *
+   * The origin must be a [Origin::Coin], obtained through
+   * [`AsCoinage`](crate::extension::AsCoinage) using `AsCoin`.
+   *
+   * This call bypasses the recycler/unload-token offboarding flow and releases the
+   * underlying asset directly, whatever the coin's age.
+   *
+   * # Privacy warning
+   *
+   * Directly offboarding a coin with non-zero age publicly links the coin's transfer
+   * chain to the destination account, which compromises, to some extent, the anonymity of
+   * every previous holder in the chain: if Alice sends a coin to Bob and Bob to Charlie
+   * and Charlie directly offboards it, Alice may deduce what Bob did with the coin. A
+   * fresh coin (`age == 0`) has just been unloaded from a recycler and carries no transfer
+   * history, so it can be offboarded directly without this privacy loss. For maximum
+   * privacy, offboard coins with non-zero age through the recycler instead.
+   *
+   * Parameters:
+   * * `to`: destination account that receives the released underlying asset amount.
+   *
+   * Requirements:
+   * * The origin must be [Origin::Coin].
+   * * The denomination must be representable as underlying-asset amount.
+   **/
+  | { name: 'DirectOffboardCoinIntoExternalAsset'; params: { to: AccountId32 } }
+  /**
+   * Create a sufficient coinage instance for an underlying asset.
+   *
+   * The origin must satisfy [`Config::AdminOrigin`]. The asset must exist in
+   * [`Config::Fungibles`]; it may already be wrapped by other instances, so admin can
+   * always wrap it at the granularity it wants, whatever was created before.
+   *
+   * The instance's recycler collections are created within this call. The pallet account
+   * must already be able to receive the underlying asset: for a non-sufficient asset it
+   * must have been touched beforehand. It must also already hold the asset's minimum
+   * balance as a buffer to avoid dustings.
+   *
+   * Parameters:
+   * * `asset_id`: the underlying asset backing this instance's coins.
+   * * `asset_unit`: the asset amount of a coin of denomination zero. Must be non-zero, and
+   * must represent every denomination in `[MinimumExponent, MaximumExponent]` without
+   * truncation.
+   **/
+  | { name: 'CreateSufficientInstance'; params: { assetId: StagingXcmV5Location; assetUnit: bigint } }
+  /**
+   * Create a sponsored coinage instance wrapping `asset_id`.
+   *
+   * The origin must satisfy [`Config::SponsorOrigin`], which yields the paying account;
+   * with `EnsureSigned` anyone can call this. [`Config::EnablePermissionless`] must be
+   * true, otherwise no sponsored instance can be created at all. The instance's load-side
+   * costs are underwritten by a pot account derived from the instance id (see
+   * [`Pallet::pot_account`]), kept funded by sponsors through [`Pallet::fund_pot`].
+   *
+   * The caller provides:
+   * - the instance creation deposit ([`Config::InstanceCreationDeposit`], taken from the
+   * caller and kept for as long as the instance is sponsored, since instances are never
+   * removed; the caller and its ticket are recorded in [`InstanceRecord::creator`]),
+   * - the pallet account's minimum balance of the underlying asset (transferred rather than
+   * minted, so a permissionless call cannot create unbacked funds),
+   * - optionally `initial_funding`, recorded as the caller's pot contribution exactly as
+   * [`Pallet::fund_pot`] would. Bundled here because the instance id is only assigned
+   * inside the call, so a separate `fund_pot` cannot be batched with the creation
+   * race-free.
+   *
+   * `asset_unit` is fixed at creation and instances are never removed, but an asset is not
+   * first-come: anyone, admin included, can wrap the same asset again in its own
+   * instance at another unit, so one creator cannot fix the coin granularity of an asset
+   * for everybody else. What stops a flood of near-duplicate instances is
+   * [`Config::InstanceCreationDeposit`], held on each creator for as long as its instance
+   * is sponsored.
+   *
+   * Parameters:
+   * * `asset_id`: the underlying asset backing this instance's coins.
+   * * `asset_unit`: the asset amount of a coin of denomination zero. Must be non-zero, and
+   * must represent every denomination in `[MinimumExponent, MaximumExponent]` without
+   * truncation.
+   * * `initial_funding`: an optional `(currency, amount)` pot contribution.
+   **/
+  | {
+      name: 'CreateSponsoredInstance';
+      params: {
+        assetId: StagingXcmV5Location;
+        assetUnit: bigint;
+        initialFunding?: [StagingXcmV5Location, bigint] | undefined;
+      };
+    }
+  /**
+   * Fund the pot of the sponsored instance `instance_id` with `amount` of `currency`.
+   *
+   * The contribution is recorded per funder and per currency: the part of it not
+   * currently held as load-deposit collateral can be taken back with
+   * [`Pallet::withdraw_pot_funds`]. A plain transfer to the pot account backs loads all
+   * the same but is a donation, not withdrawable.
+   *
+   * Any existing `currency` is accepted, not just the current deposit currency, so a
+   * sponsor can prefund ahead of an admin currency switch.
+   *
+   * A pot with no account for `currency` has one created for it first, at the caller's
+   * expense. Whatever that costs is not part of the recorded contribution and is never
+   * refunded. The `amount` must be at least the currency's minimum balance, so a
+   * funding cannot be dusted on arrival; the pot's account then survives any withdrawal
+   * or hold.
+   **/
+  | { name: 'FundPot'; params: { instanceId: number; currency: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Take back up to the caller's recorded contribution to the pot of `instance_id` in
+   * `currency`.
+   *
+   * Only the pot's free balance can be withdrawn: held collateral is out of reach.
+   **/
+  | { name: 'WithdrawPotFunds'; params: { instanceId: number; currency: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Re-price every live load deposit of `instance_id` to the current
+   * [`Config::LoadDeposit`], converting the collateral to the current currency.
+   *
+   * Anybody may call this. It is the only operation that changes how much collateral
+   * backs already-loaded keys, in either direction: the pot is charged the shortfall when
+   * admin has raised the price since those loads, and refunded the excess when it
+   * has lowered it. Nothing is converted between currencies: old collateral is released
+   * to the pot's free balance and the new requirement is taken fresh, so no rate feed is
+   * involved.
+   *
+   * This is the companion to an admin change of [`Config::LoadDeposit`], and the
+   * permissionless remedy for an instance whose loads are refused because its old tier is
+   * still occupied.
+   **/
+  | { name: 'CollapseLoadDeposits'; params: { instanceId: number } }
+  /**
+   * Switch a sponsored instance to `InstanceMode::Sufficient`.
+   *
+   * The origin must satisfy [`Config::AdminOrigin`]: this is admin blessing
+   * an instance into the stranded-value economics. Every load deposit is released to the
+   * pot's free balance, where funders reclaim their contributions through
+   * [`Pallet::withdraw_pot_funds`] (withdrawal does not require the instance to be
+   * sponsored); only donations stay stranded. The ledger is removed, and from here on
+   * loads take no deposit and unloads release none.
+   *
+   * The instance creation deposit is released if some.
+   **/
+  | { name: 'MakeInstanceSufficient'; params: { instanceId: number } }
+  /**
+   * Switch a sufficient instance to `InstanceMode::Sponsored`.
+   *
+   * The origin must satisfy [`Config::AdminOrigin`]. The deposit ledger restarts
+   * from zero: keys loaded while the instance was sufficient carry no deposit, so their
+   * unloads settle against whatever the ledger holds at the time, possibly releasing
+   * deposits taken for keys loaded after the switch, or nothing once the ledger is
+   * drained. The instance therefore runs under-collateralized until its pre-switch keys
+   * stop resolving, which admin accepts by making the switch.
+   *
+   * Loads stay invalid until [`Config::LoadDeposit`] is set and the pot is funded through
+   * [`Pallet::fund_pot`].
+   *
+   * No [`Config::InstanceCreationDeposit`] is taken, and
+   * [`InstanceRecord::creator`] stays as it is, so an instance that went through
+   * [`Pallet::make_instance_sufficient`] comes back with no creator and no deposit, the
+   * same as one admin created.
+   **/
+  | { name: 'MakeInstanceSponsored'; params: { instanceId: number } }
+  /**
+   * Clean up an expired recycler.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   *
+   * This removes an old recycler that has exceeded its expiration time.
+   * Any remaining (not-yet-unloaded) coins are not destroyed: the ring is archived and their
+   * backing asset stays held in the pallet account, recoverable via
+   * [`Pallet::unload_archived_recycler_into_external_asset`].
+   *
+   * On a sponsored instance this settles the [`Config::LoadDeposit`] of every remaining
+   * key.
+   **/
+  | { name: 'CleanRecycler'; params: { instanceId: number; value: number } }
+  /**
+   * Cleanup storage for consumed free unload tokens of old periods.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   **/
+  | { name: 'CleanConsumedFreeToken'; params: { period: number } }
+  /**
+   * Clean up a single ring in an expired paid unload token collection.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   * Rings must be cleaned sequentially (ring 0 first, then 1, etc.) before the
+   * collection can be deleted via
+   * [`delete_expired_paid_unload_token_collection`](Self::delete_expired_paid_unload_token_collection).
+   **/
+  | { name: 'CleanPaidUnloadTokenRing'; params: { period: number; ringIndex: number } }
+  /**
+   * Clean up dust for recyclers.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   * Removes up to DUST_CLEANUP_BATCH_SIZE entries from [RecyclerAliasStates] per call to
+   * bound the operation.
+   **/
+  | { name: 'CleanRecyclerDust' }
+  /**
+   * Clean up dust for paid unload tokens.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   **/
+  | { name: 'CleanPaidUnloadTokenDust' }
+  /**
+   * Delete an expired paid unload token collection after all rings have been cleaned.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   * All rings must have been cleaned via
+   * [`clean_paid_unload_token_ring`](Self::clean_paid_unload_token_ring) before this
+   * can be called.
+   **/
+  | { name: 'DeleteExpiredPaidUnloadTokenCollection'; params: { period: number } };
+
+export type IndivPalletCoinageCallLike =
+  /**
+   * Split a coin into multiple coins.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The call is free and ages the resulting coins by one.
+   *
+   * The `split_into` parameter contains a vector of pairs, each pair containing a coin
+   * value and a list of destination account ids. For each pair, a new coin with the given
+   * value is created for each destination account id.
+   *
+   * Validity requirements:
+   * (an invalid transaction won't be included in a block, the coin is not consumed)
+   * * The coin's age must be less than [Config::MaximumAge].
+   * * The denomination must be within the bounds defined by [Config::MinimumExponent] and
+   * [Config::MaximumExponent].
+   * * The total value of the new coins must equal the value of the origin coin.
+   * * The number of outputs must not exceed [Config::MaxSplitOutputs].
+   * * The age of the new coins is set to the age of the origin coin plus one.
+   * * Each destination account must not already have a coin.
+   **/
+  | { name: 'Split'; params: { splitInto: Array<[number, Array<AccountId32Like>]> } }
+  /**
+   * Transfer a coin to another account.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The call is free and ages the resulting coin by one.
+   *
+   * Validity requirements:
+   * (an invalid transaction won't be included in a block, the coin is not consumed)
+   * * The destination account must not already have a coin.
+   * * The coin's age must be less than [Config::MaximumAge].
+   **/
+  | { name: 'Transfer'; params: { to: AccountId32Like } }
+  /**
+   * Load coin into a recycler.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The call is free.
+   *
+   * The `member_key` parameter is the member key to be included in the recycler, and whose
+   * alias is used to unload from the recycler.
+   *
+   * Validity requirements:
+   * (an invalid transaction won't be included in a block, the coin is not consumed)
+   * * The `member_key` must not already be used in another recycler.
+   * * The `member_key` must be valid (i.e. well formed).
+   * * The `proof_of_ownership` must be a valid signature of the coin's account id by the
+   * `member_key`.
+   * * The recycler collection for the coin's value must already exist
+   * * On a sponsored instance, the pot's free balance must cover the loaded key's deposit.
+   **/
+  | { name: 'LoadRecyclerWithCoin'; params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> } }
+  /**
+   * Load external asset into a recycler.
+   *
+   * The origin must be a signed origin.
+   *
+   * The transaction fee is refunded.
+   *
+   * The `preservation` parameter indicates how the asset transfer should preserve the
+   * signer's account.
+   *
+   * The `instance_id` parameter indicates which coinage instance to load into, and hence
+   * which underlying asset is transferred.
+   *
+   * The `value` parameter indicates the denomination to be loaded into the recycler.
+   * The equivalent amount of the underlying asset is transferred from the signer to
+   * the pallet account.
+   *
+   * The `member_key` parameter is the member key to be included in the recycler, and whose
+   * alias is used to unload from the recycler.
+   *
+   * The `proof_of_ownership` parameter is the signature of the signer's account id by the
+   * `member_key`.
+   *
+   * Requirements:
+   * * The `instance_id` must refer to an existing instance.
+   * * The `member_key` must not already be used in another recycler.
+   * * The `member_key` must be valid (i.e. well formed).
+   * * The `value` must be within the bounds defined by [Config::MinimumExponent] and
+   * [Config::MaximumExponent].
+   * * The signer must have enough balance of the underlying asset to cover the equivalent
+   * amount for the given denomination.
+   * * The `proof_of_ownership` must be a valid signature of the signer's account id by the
+   * `member_key`.
+   * * On a sponsored instance, the pot's free balance must cover the loaded key's deposit.
+   **/
+  | {
+      name: 'LoadRecyclerWithExternalAsset';
+      params: {
+        instanceId: number;
+        preservation: IndivPalletCoinageCodecPreservation;
+        value: number;
+        memberKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+      };
+    }
+  /**
+   * Load external asset into a recycler (infallible, validated unpaid variant).
+   *
+   * The origin must be [Origin::InfallibleUnpaidSigned], which can be obtained from the
+   * transaction extension variant
+   * [`AsCoinageInfo::InfallibleUnpaidSigned`](crate::extension::AsCoinageInfo::InfallibleUnpaidSigned).
+   *
+   * The transaction extension validation phase must ensure:
+   * - The `instance_id` refers to an existing instance.
+   * - The `member_key` is valid and not already used in another recycler.
+   * - The `proof_of_ownership` is a valid signature of the signer's account id by the
+   * `member_key`.
+   * - The `value` is within the bounds defined by [Config::MinimumExponent] and
+   * [Config::MaximumExponent], and can be losslessly converted to an asset amount.
+   * - The signer has enough balance of the underlying asset to cover the equivalent amount
+   * for the given denomination (respecting `preservation`).
+   * - The nonce is valid for replay protection.
+   * - The recycler collection for `instance_id` and `value` already exists.
+   * - On a sponsored instance, the pot's free balance covers the loaded key's deposit.
+   *
+   * The call is free.
+   **/
+  | {
+      name: 'LoadRecyclerWithExternalAssetUnpaid';
+      params: {
+        instanceId: number;
+        preservation: IndivPalletCoinageCodecPreservation;
+        value: number;
+        memberKey: FixedBytes<32>;
+        proofOfOwnership: FixedBytes<64>;
+      };
+    }
+  /**
+   * Batched variant of [`Self::load_recycler_with_external_asset_unpaid`].
+   *
+   * The origin must be [Origin::InfallibleUnpaidSigned], which can be obtained from the
+   * transaction extension variant
+   * [`AsCoinageInfo::InfallibleUnpaidSigned`](crate::extension::AsCoinageInfo::InfallibleUnpaidSigned).
+   * The extension validates each inner item and additionally checks within-batch
+   * member-key uniqueness and that the signer's balance covers the sum of all inner asset
+   * amounts.
+   *
+   * This call dispatches each inner load by re-running the same checks the extension
+   * just performed (see [`RecyclerManager::load`]). The redundancy matches the defensive
+   * pattern used by [`Self::load_recycler_with_external_asset_unpaid`]: a dispatch path
+   * that fails any of these checks is a logic bug in the extension, not a user error.
+   *
+   * The instance is fixed for the whole batch rather than per item, because the extension
+   * checks the signer's balance once against the summed cost of every item, which is only
+   * meaningful within one underlying asset.
+   *
+   * On a sponsored instance, the pot's free balance must cover the deposits of every key
+   * loaded here, the batch being charged as one.
+   *
+   * The call is free.
+   **/
+  | {
+      name: 'LoadRecyclerWithExternalAssetUnpaidBatch';
+      params: { instanceId: number; items: Array<IndivPalletCoinageUnpaidLoadInput> };
+    }
+  /**
+   * Unload a recycler to mint a new coin.
+   *
+   * The origin must be a [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`, which can be
+   * obtained from the transaction extension [`AsCoinage`](crate::extension::AsCoinage) using
+   * `AsUnloadTokenPeople`,
+   * `AsUnloadTokenLitePeople`, or `AsUnloadTokenPaid` variants.
+   *
+   * This function allows a user to prove they own one or more coins in a recycler ring
+   * without revealing which specific coins they own. It consolidates one or multiple inputs
+   * into a single output coin.
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `_revision`: the recycler revision used for the alias_proofs.
+   * * `to`: the destination account for the new coin.
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`.
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The `aliases` provided must match the aliases derived from the proofs.
+   * * The aliases must not have been already unloaded from this recycler.
+   * * The number of aliases must be a power of two.
+   * * The resulting consolidated value must not exceed [Config::MaximumExponent].
+   **/
+  | {
+      name: 'UnloadRecyclerIntoCoin';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        to: AccountId32Like;
+      };
+    }
+  /**
+   * Unload a recycler to withdraw the underlying external asset.
+   *
+   * The origin must be [Origin::UnloadToken], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * When `fee` is [UnloadFee::Prepaid] (via free or paid unload token), no fee is deducted.
+   * When `fee` is [UnloadFee::FromOutput], the fee is deducted from the unloaded assets:
+   * the asset is converted into the native currency, so the amount deducted depends on the
+   * market and is bounded by `max_fee`.
+   *
+   * This function allows a user to withdraw their coins back into the underlying
+   * asset (e.g., an external asset).
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `_revision`: the recycler revision used for the alias_proofs.
+   * * `to`: the destination account for the underlying asset.
+   * * `max_fee`: the maximum amount of the unloaded asset the fee may consume. Whatever the
+   * fee does not consume goes to `to`. It is ignored for [UnloadFee::Prepaid], which takes
+   * no fee out of the output.
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken].
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The aliases must not have been already unloaded (except for the first one when `fee`
+   * is [UnloadFee::FromOutput], which was pre-marked in the extension).
+   **/
+  | {
+      name: 'UnloadRecyclerIntoExternalAsset';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        to: AccountId32Like;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Pay the fee to register a member key for a paid unload token using a coin.
+   *
+   * The origin must be a [Origin::Coin], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * The coin is consumed. The fee is deducted from the coin's value: the asset is converted
+   * into the native currency, which is transferred to [Config::FeeDestination]. The
+   * remaining value of the coin is destroyed.
+   *
+   * If the call fails, the origin coin is still consumed.
+   *
+   * To protect the user against varying fees, if the coin's value is less than the fee, the
+   * call is invalid (an invalid call never goes into a block).
+   *
+   * This is the one asset-paying call with no caller-settable bound on the fee, and it needs
+   * none: the coin is consumed whole either way, so its value is the bound, and whatever the
+   * conversion does not take is destroyed rather than returned. A caller who wants to bound
+   * what the fee costs pays for the token with
+   * [`Self::pay_for_recycler_unload_fee_token_with_external_asset`] instead.
+   *
+   * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+   * This ensures the caller controls the member key to prevent front-running.
+   *
+   * Requirements:
+   * * The coin's age must be less than [Config::MaximumAge].
+   * * The denomination must be sufficient to cover the fee.
+   * * The `member_key` must be valid and not already used.
+   * * The `proof_of_ownership` must be valid.
+   **/
+  | {
+      name: 'PayForRecyclerUnloadFeeTokenWithCoin';
+      params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> };
+    }
+  /**
+   * Pay the fee to register a member key for a paid unload token using the native currency.
+   *
+   * The origin must be Signed.
+   *
+   * This adds the `member_key` to a "paid unload token ring". Being part of this ring
+   * allows the user to later generate an `UnloadToken` to unload a recycler.
+   *
+   * The fee is transferred from the caller to [Config::FeeDestination].
+   *
+   * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+   * This ensures the caller controls the member key to prevent front-running.
+   *
+   * Requirements:
+   * * The `member_key` must be valid and not already used.
+   * * The `proof_of_ownership` must be valid.
+   **/
+  | {
+      name: 'PayForRecyclerUnloadFeeTokenWithNative';
+      params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> };
+    }
+  /**
+   * Pay the fee to register a member key for a paid unload token using the underlying
+   * asset of the given instance.
+   *
+   * The origin must be Signed.
+   *
+   * This adds the `member_key` to a "paid unload token ring". Being part of this ring
+   * allows the user to later generate an `UnloadToken` to unload a recycler.
+   *
+   * The fee are charged in the underlying asset of the specified instance, and converted
+   * into the native currency to be transferred to the fee destination.
+   * `max_fee` bounds how much of the asset the conversion may take.
+   *
+   * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+   * This ensures the caller controls the member key to prevent front-running.
+   *
+   * The `instance_id` only selects which instance's underlying asset the fee is paid in.
+   * The resulting token is not bound to that instance and can be consumed to unload any
+   * instance's recycler, which is why the fee is the same for all of them.
+   *
+   * Unlike the signed unload calls, this one is not pre-checked against `max_fee` during
+   * transaction validation and does not refund the weight it did not use: a conversion that
+   * moved past `max_fee` between the caller quoting it and the transaction being included
+   * fails the dispatch at the full benchmarked weight. Callers should leave headroom in
+   * `max_fee`.
+   *
+   * Requirements:
+   * * The `instance_id` must refer to an existing instance.
+   * * The `member_key` must be valid and not already used.
+   * * The `proof_of_ownership` must be valid.
+   * * `max_fee` must cover the converted fee.
+   **/
+  | {
+      name: 'PayForRecyclerUnloadFeeTokenWithExternalAsset';
+      params: { instanceId: number; memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64>; maxFee: bigint };
+    }
+  /**
+   * Unload a recycler into a mixed output of external asset and freshly loaded coins.
+   *
+   * The origin must be [Origin::UnloadToken], which can be obtained from the transaction
+   * extension [`AsCoinage`](crate::extension::AsCoinage).
+   *
+   * This function allows a user to offboard part of the unloaded value into the underlying
+   * asset while reminting the rest as freshly loaded recycler coins.
+   *
+   * When `fee` is [UnloadFee::Prepaid], `external_asset_amount` is transferred as-is.
+   * When `fee` is [UnloadFee::FromOutput], the fee is deducted from the specified
+   * `external_asset_amount`, so the recipient receives the remainder. The asset is
+   * converted into the native currency to pay the fee, so the amount deducted depends on
+   * the market and is bounded by `max_fee`.
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `revision`: the recycler revision used for the alias proofs.
+   * * `to`: the destination account for the external asset portion.
+   * * `external_asset_amount`: the gross asset portion to offboard from the unloaded value.
+   * * `loaded_coins`: the freshly loaded recycler coins to mint from the remaining unloaded
+   * value.
+   * * `max_fee`: the maximum amount of `external_asset_amount` the fee may consume. Whatever
+   * the fee does not consume goes to `to`. It is ignored for [UnloadFee::Prepaid], which
+   * takes no fee out of the output.
+   *
+   * The total unloaded value must always equal the asset portion plus the loaded-coin
+   * portion. In `FromOutput` mode, the asset portion must be large enough to cover the
+   * unload fee.
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken].
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The aliases must not have been already unloaded (except for the first one when `fee`
+   * is [UnloadFee::FromOutput], which was pre-marked in the extension).
+   * * `loaded_coins` must not be empty, and all loaded-coin member keys must be valid and
+   * unused.
+   * * The total unloaded value must equal `external_asset_amount` plus the total asset value
+   * of `loaded_coins`.
+   * * When using [UnloadFee::FromOutput], `external_asset_amount` must cover the fee.
+   * * On a sponsored instance, the pot's free balance must cover the deposits of the
+   * `loaded_coins` keys, without crediting the deposits this unload releases.
+   **/
+  | {
+      name: 'UnloadRecyclerIntoExternalAssetAndLoadedCoins';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        to: AccountId32Like;
+        externalAssetAmount: bigint;
+        loadedCoins: Array<[number, FixedBytes<32>]>;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Unload a recycler to withdraw the underlying external asset (non-anonymous).
+   *
+   * Convenience wrapper around [Self::unload_recyclers_into_external_asset_non_anonymous]
+   * for the single-recycler case.
+   *
+   * See [Self::unload_recyclers_into_external_asset_non_anonymous] for full documentation.
+   **/
+  | {
+      name: 'UnloadRecyclerIntoExternalAssetNonAnonymous';
+      params: {
+        instanceId: number;
+        input: IndivPalletCoinageUnloadRecyclerInput;
+        aliasProofs: Array<BytesLike>;
+        to: AccountId32Like;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Unload multiple recyclers to withdraw the underlying external asset (non-anonymous).
+   *
+   * This is a signed-origin version of [`Self::unload_recycler_into_external_asset`]
+   * where the fee is paid explicitly by the signer rather than through the
+   * ring-authenticated unload token, and for multiple recyclers.
+   *
+   * The fee charged is one unload token fee per recycler (i.e., `inputs.len()`).
+   *
+   * Every input unloads from `instance_id`: one call cannot span instances, because the
+   * unloaded value is summed and paid out as a single transfer of one underlying asset.
+   *
+   * Parameters:
+   * * `instance_id`: the instance every input unloads from.
+   * * `inputs`: A list of inputs, specifying the recycler and aliases to unload. At most
+   * [`Config::MaxConsolidation`] inputs, one alias of one input per proof.
+   * * `alias_proofs`: the proofs for all aliases across all inputs, signed over a message
+   * that includes the signer. The proofs must correspond sequentially to the aliases in
+   * `inputs`.
+   * * `to`: the destination account for the asset.
+   * * `fee_currency`: whether to pay the fee in native currency or external asset.
+   * * `max_fee`: the most the fee may cost the signer, in `fee_currency`: the native fee for
+   * [FeeCurrency::Native], and the amount of the signer's asset the conversion into the
+   * native fee may take for [FeeCurrency::ExternalAsset].
+   *
+   * Requirements:
+   * * The origin must be Signed.
+   * * The `instance_id` must refer to an existing instance.
+   * * All specified recyclers must exist.
+   * * The alias proofs must correspond sequentially to the aliases in `inputs`.
+   * * `inputs` must not be empty and each element must contain at least one alias.
+   * * `alias_proofs` must hold exactly one proof per alias across all `inputs`.
+   * * The signer must have sufficient balance to pay the fee (one fee per recycler).
+   * * `max_fee` must cover the fee in `fee_currency`.
+   **/
+  | {
+      name: 'UnloadRecyclersIntoExternalAssetNonAnonymous';
+      params: {
+        instanceId: number;
+        inputs: Array<IndivPalletCoinageUnloadRecyclerInput>;
+        aliasProofs: Array<BytesLike>;
+        to: AccountId32Like;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Recover a coin from an archived recycler into the external asset.
+   *
+   * This is a signed call.
+   *
+   * It allows a user to unload a coin from an archived recycler.
+   * The unload token fee is charged to the signer, and the call is not refunded, as it
+   * accounts for the extra proof verification and archived recycler update.
+   *
+   * Parameters:
+   * * `instance_id`, `value` and `index`: identify the archived recycler ring.
+   * * `recycler_root`: the deleted ring's ring-VRF root; validated together with
+   * `unloaded_root` against the stored archival commitment.
+   * * `unloaded_root`: the current root of the unloaded-aliases trie.
+   * * `alias_proof`: a ring-VRF membership proof, created over the message binding
+   * `blake2_256(UNLOAD_ARCHIVED_MSG_PREFIX ++ signer)` in the recycler unloading context
+   * UNLOADING_RECYCLER_CONTEXT.
+   * * `non_inclusion_proof`: trie nodes proving the caller's alias is absent from
+   * `unloaded_root` (i.e. it was never unloaded); must also cover the insertion path of
+   * the alias so the new root can be recomputed.
+   * * `to`: the account receiving the recovered denomination.
+   * * `fee_currency`: whether the unload fee is paid in native currency or external asset.
+   * * `max_fee`: the most the fee may cost the signer, in `fee_currency`: the native fee for
+   * [FeeCurrency::Native], and the amount of the signer's asset the conversion into the
+   * native fee may take for [FeeCurrency::ExternalAsset].
+   *
+   * On success the full denomination is released to `to`, the alias is added to the unloaded
+   * set (so it cannot be recovered again), and the archive's recoverable count is
+   * decremented (the entry is removed once drained).
+   * (No [`Config::LoadDeposit`] is settled here, it was already settled when the recycler
+   * was archived.)
+   *
+   * The unloaded-aliases trie needed for `unloaded_root` and `non_inclusion_proof` can be
+   * reconstructed offchain by listening to the [`Event::RecyclerAliasUnloaded`],
+   * [`Event::RecyclerArchived`] and [`Event::ArchivedRecyclerUnloadedIntoExternalAsset`]
+   * events.
+   *
+   * This call conflicts with any other call that unloads from the same archived recycler:
+   * each unload updates the commitment, so the proofs in the competing call become outdated.
+   * `recycler_root` and `unloaded_root` are checked against the stored commitment at
+   * transaction validation, therefore resolving such conflicts without charging fees by
+   * marking outdated proofs as invalid.
+   **/
+  | {
+      name: 'UnloadArchivedRecyclerIntoExternalAsset';
+      params: {
+        instanceId: number;
+        value: number;
+        index: number;
+        recyclerRoot: VerifiableRingMembersCommitment;
+        unloadedRoot: H256;
+        aliasProof: BytesLike;
+        nonInclusionProof: Array<BytesLike>;
+        to: AccountId32Like;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Unload a recycler to mint multiple new coins (split).
+   *
+   * The origin must be a [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`.
+   *
+   * This function combines the functionality of [Self::unload_recycler_into_coin] and
+   * [Self::split] in a single atomic operation. The resulting coins' age is 1 because
+   * the action of splitting age coins. This is also important because resulting coins
+   * are not entirely fresh, they can be linked to other coins.
+   *
+   * Unlike [Self::unload_recycler_into_coin], this call does **not** require the number of
+   * aliases to be a power of two.
+   *
+   * Parameters:
+   * * `aliases`: the list of aliases corresponding to the member keys included in the
+   * recycler. The proofs for these aliases are contained in the origin.
+   * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+   * * `revision`: the recycler revision used for the alias_proofs.
+   * * `split_into`: a vector of pairs, each pair containing a denomination and a list of
+   * destination account ids.
+   * * `max_fee`: the maximum fee the caller is willing to pay, expressed in the underlying
+   * asset balance. It must be equal to the difference between the total value of the
+   * unloaded coins and the total value of the new coins defined in `split_into`.
+   *
+   * When using [UnloadFee::Prepaid], it must be zero: nothing is set aside for the fee, so
+   * `split_into` takes the whole unloaded value.
+   * When using [UnloadFee::FromOutput], this amount is deducted from the input: the asset
+   * is converted into the native network fee, which is transferred to
+   * [Config::FeeDestination], and any remainder is burned. The caller can query
+   * `get_paid_unload_token_fee_in_asset` to estimate the fee.
+   *
+   * This parameter serves as a safeguard: the transaction is rejected at validation if the
+   * actual network fee exceeds `max_fee`, protecting the caller from excessive fee
+   * increases that would render the argument `split_into` invalid (unloaded funds must be
+   * higher than the split plus the fee).
+   *
+   * Requirements:
+   * * The origin must be [Origin::UnloadToken].
+   * * The recycler identified by `instance_id`, `value` and `index` must exist.
+   * * The alias proofs provided in the origin must be valid for the recycler's revision.
+   * * The `aliases` provided must match the aliases derived from the proofs.
+   * * Each destination account must not already have a coin.
+   * * The total value of the new coins defined in `split_into` plus `max_fee` must equal the
+   * total value of the unloaded coins.
+   * * `max_fee` must be a multiple of the minimum coin. (This is implied by the condition
+   * above).
+   * * When using [UnloadFee::Prepaid], `max_fee` must be 0.
+   * * When using [UnloadFee::FromOutput], `max_fee` must cover the network fee.
+   **/
+  | {
+      name: 'UnloadRecyclerIntoCoins';
+      params: {
+        instanceId: number;
+        aliases: Array<FixedBytes<32>>;
+        value: number;
+        index: number;
+        revision: number;
+        splitInto: Array<[number, Array<AccountId32Like>]>;
+        maxFee: bigint;
+      };
+    }
+  /**
+   * Directly offboard a coin into the underlying external asset.
+   *
+   * The origin must be a [Origin::Coin], obtained through
+   * [`AsCoinage`](crate::extension::AsCoinage) using `AsCoin`.
+   *
+   * This call bypasses the recycler/unload-token offboarding flow and releases the
+   * underlying asset directly, whatever the coin's age.
+   *
+   * # Privacy warning
+   *
+   * Directly offboarding a coin with non-zero age publicly links the coin's transfer
+   * chain to the destination account, which compromises, to some extent, the anonymity of
+   * every previous holder in the chain: if Alice sends a coin to Bob and Bob to Charlie
+   * and Charlie directly offboards it, Alice may deduce what Bob did with the coin. A
+   * fresh coin (`age == 0`) has just been unloaded from a recycler and carries no transfer
+   * history, so it can be offboarded directly without this privacy loss. For maximum
+   * privacy, offboard coins with non-zero age through the recycler instead.
+   *
+   * Parameters:
+   * * `to`: destination account that receives the released underlying asset amount.
+   *
+   * Requirements:
+   * * The origin must be [Origin::Coin].
+   * * The denomination must be representable as underlying-asset amount.
+   **/
+  | { name: 'DirectOffboardCoinIntoExternalAsset'; params: { to: AccountId32Like } }
+  /**
+   * Create a sufficient coinage instance for an underlying asset.
+   *
+   * The origin must satisfy [`Config::AdminOrigin`]. The asset must exist in
+   * [`Config::Fungibles`]; it may already be wrapped by other instances, so admin can
+   * always wrap it at the granularity it wants, whatever was created before.
+   *
+   * The instance's recycler collections are created within this call. The pallet account
+   * must already be able to receive the underlying asset: for a non-sufficient asset it
+   * must have been touched beforehand. It must also already hold the asset's minimum
+   * balance as a buffer to avoid dustings.
+   *
+   * Parameters:
+   * * `asset_id`: the underlying asset backing this instance's coins.
+   * * `asset_unit`: the asset amount of a coin of denomination zero. Must be non-zero, and
+   * must represent every denomination in `[MinimumExponent, MaximumExponent]` without
+   * truncation.
+   **/
+  | { name: 'CreateSufficientInstance'; params: { assetId: StagingXcmV5Location; assetUnit: bigint } }
+  /**
+   * Create a sponsored coinage instance wrapping `asset_id`.
+   *
+   * The origin must satisfy [`Config::SponsorOrigin`], which yields the paying account;
+   * with `EnsureSigned` anyone can call this. [`Config::EnablePermissionless`] must be
+   * true, otherwise no sponsored instance can be created at all. The instance's load-side
+   * costs are underwritten by a pot account derived from the instance id (see
+   * [`Pallet::pot_account`]), kept funded by sponsors through [`Pallet::fund_pot`].
+   *
+   * The caller provides:
+   * - the instance creation deposit ([`Config::InstanceCreationDeposit`], taken from the
+   * caller and kept for as long as the instance is sponsored, since instances are never
+   * removed; the caller and its ticket are recorded in [`InstanceRecord::creator`]),
+   * - the pallet account's minimum balance of the underlying asset (transferred rather than
+   * minted, so a permissionless call cannot create unbacked funds),
+   * - optionally `initial_funding`, recorded as the caller's pot contribution exactly as
+   * [`Pallet::fund_pot`] would. Bundled here because the instance id is only assigned
+   * inside the call, so a separate `fund_pot` cannot be batched with the creation
+   * race-free.
+   *
+   * `asset_unit` is fixed at creation and instances are never removed, but an asset is not
+   * first-come: anyone, admin included, can wrap the same asset again in its own
+   * instance at another unit, so one creator cannot fix the coin granularity of an asset
+   * for everybody else. What stops a flood of near-duplicate instances is
+   * [`Config::InstanceCreationDeposit`], held on each creator for as long as its instance
+   * is sponsored.
+   *
+   * Parameters:
+   * * `asset_id`: the underlying asset backing this instance's coins.
+   * * `asset_unit`: the asset amount of a coin of denomination zero. Must be non-zero, and
+   * must represent every denomination in `[MinimumExponent, MaximumExponent]` without
+   * truncation.
+   * * `initial_funding`: an optional `(currency, amount)` pot contribution.
+   **/
+  | {
+      name: 'CreateSponsoredInstance';
+      params: {
+        assetId: StagingXcmV5Location;
+        assetUnit: bigint;
+        initialFunding?: [StagingXcmV5Location, bigint] | undefined;
+      };
+    }
+  /**
+   * Fund the pot of the sponsored instance `instance_id` with `amount` of `currency`.
+   *
+   * The contribution is recorded per funder and per currency: the part of it not
+   * currently held as load-deposit collateral can be taken back with
+   * [`Pallet::withdraw_pot_funds`]. A plain transfer to the pot account backs loads all
+   * the same but is a donation, not withdrawable.
+   *
+   * Any existing `currency` is accepted, not just the current deposit currency, so a
+   * sponsor can prefund ahead of an admin currency switch.
+   *
+   * A pot with no account for `currency` has one created for it first, at the caller's
+   * expense. Whatever that costs is not part of the recorded contribution and is never
+   * refunded. The `amount` must be at least the currency's minimum balance, so a
+   * funding cannot be dusted on arrival; the pot's account then survives any withdrawal
+   * or hold.
+   **/
+  | { name: 'FundPot'; params: { instanceId: number; currency: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Take back up to the caller's recorded contribution to the pot of `instance_id` in
+   * `currency`.
+   *
+   * Only the pot's free balance can be withdrawn: held collateral is out of reach.
+   **/
+  | { name: 'WithdrawPotFunds'; params: { instanceId: number; currency: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Re-price every live load deposit of `instance_id` to the current
+   * [`Config::LoadDeposit`], converting the collateral to the current currency.
+   *
+   * Anybody may call this. It is the only operation that changes how much collateral
+   * backs already-loaded keys, in either direction: the pot is charged the shortfall when
+   * admin has raised the price since those loads, and refunded the excess when it
+   * has lowered it. Nothing is converted between currencies: old collateral is released
+   * to the pot's free balance and the new requirement is taken fresh, so no rate feed is
+   * involved.
+   *
+   * This is the companion to an admin change of [`Config::LoadDeposit`], and the
+   * permissionless remedy for an instance whose loads are refused because its old tier is
+   * still occupied.
+   **/
+  | { name: 'CollapseLoadDeposits'; params: { instanceId: number } }
+  /**
+   * Switch a sponsored instance to `InstanceMode::Sufficient`.
+   *
+   * The origin must satisfy [`Config::AdminOrigin`]: this is admin blessing
+   * an instance into the stranded-value economics. Every load deposit is released to the
+   * pot's free balance, where funders reclaim their contributions through
+   * [`Pallet::withdraw_pot_funds`] (withdrawal does not require the instance to be
+   * sponsored); only donations stay stranded. The ledger is removed, and from here on
+   * loads take no deposit and unloads release none.
+   *
+   * The instance creation deposit is released if some.
+   **/
+  | { name: 'MakeInstanceSufficient'; params: { instanceId: number } }
+  /**
+   * Switch a sufficient instance to `InstanceMode::Sponsored`.
+   *
+   * The origin must satisfy [`Config::AdminOrigin`]. The deposit ledger restarts
+   * from zero: keys loaded while the instance was sufficient carry no deposit, so their
+   * unloads settle against whatever the ledger holds at the time, possibly releasing
+   * deposits taken for keys loaded after the switch, or nothing once the ledger is
+   * drained. The instance therefore runs under-collateralized until its pre-switch keys
+   * stop resolving, which admin accepts by making the switch.
+   *
+   * Loads stay invalid until [`Config::LoadDeposit`] is set and the pot is funded through
+   * [`Pallet::fund_pot`].
+   *
+   * No [`Config::InstanceCreationDeposit`] is taken, and
+   * [`InstanceRecord::creator`] stays as it is, so an instance that went through
+   * [`Pallet::make_instance_sufficient`] comes back with no creator and no deposit, the
+   * same as one admin created.
+   **/
+  | { name: 'MakeInstanceSponsored'; params: { instanceId: number } }
+  /**
+   * Clean up an expired recycler.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   *
+   * This removes an old recycler that has exceeded its expiration time.
+   * Any remaining (not-yet-unloaded) coins are not destroyed: the ring is archived and their
+   * backing asset stays held in the pallet account, recoverable via
+   * [`Pallet::unload_archived_recycler_into_external_asset`].
+   *
+   * On a sponsored instance this settles the [`Config::LoadDeposit`] of every remaining
+   * key.
+   **/
+  | { name: 'CleanRecycler'; params: { instanceId: number; value: number } }
+  /**
+   * Cleanup storage for consumed free unload tokens of old periods.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   **/
+  | { name: 'CleanConsumedFreeToken'; params: { period: number } }
+  /**
+   * Clean up a single ring in an expired paid unload token collection.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   * Rings must be cleaned sequentially (ring 0 first, then 1, etc.) before the
+   * collection can be deleted via
+   * [`delete_expired_paid_unload_token_collection`](Self::delete_expired_paid_unload_token_collection).
+   **/
+  | { name: 'CleanPaidUnloadTokenRing'; params: { period: number; ringIndex: number } }
+  /**
+   * Clean up dust for recyclers.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   * Removes up to DUST_CLEANUP_BATCH_SIZE entries from [RecyclerAliasStates] per call to
+   * bound the operation.
+   **/
+  | { name: 'CleanRecyclerDust' }
+  /**
+   * Clean up dust for paid unload tokens.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   **/
+  | { name: 'CleanPaidUnloadTokenDust' }
+  /**
+   * Delete an expired paid unload token collection after all rings have been cleaned.
+   *
+   * This is a maintenance call. The origin must be authorized and from local source.
+   * All rings must have been cleaned via
+   * [`clean_paid_unload_token_ring`](Self::clean_paid_unload_token_ring) before this
+   * can be called.
+   **/
+  | { name: 'DeleteExpiredPaidUnloadTokenCollection'; params: { period: number } };
+
+export type IndivPalletCoinageCodecPreservation = 'Expendable' | 'Protect' | 'Preserve';
+
+export type IndivPalletCoinageUnpaidLoadInput = {
+  preservation: IndivPalletCoinageCodecPreservation;
+  value: number;
+  memberKey: FixedBytes<32>;
+  proofOfOwnership: FixedBytes<64>;
+};
+
+export type IndivPalletCoinageUnloadRecyclerInput = {
+  value: number;
+  index: number;
+  revision: number;
+  aliases: Array<FixedBytes<32>>;
+};
+
+export type IndivPalletCoinageFeeCurrency = 'Native' | 'ExternalAsset';
+
+export type VerifiableRingMembersCommitment = FixedBytes<288>;
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletMembersNotifierCall =
+  /**
+   * Registers the parachain as a subscriber.
+   * The initial state will be sent over shortly via XCM.
+   *
+   * ## Origin
+   * Requires `ManageOrigin` (governance/root).
+   *
+   * ## Parameters
+   * - `subscriber_parachain_id`: The ParaId of the subscribing parachain.
+   * - `members_collections`: List of collection identifiers to subscribe to and their
+   * respective ring exponents.
+   * - `pallet_index`: Pallet index of members-subscriber on the subscriber chain.
+   **/
+  | {
+      name: 'Subscribe';
+      params: {
+        subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId;
+        membersCollections: Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>;
+        palletIndex: number;
+      };
+    }
+  /**
+   * Unsubscribes a parachain.
+   *
+   * ## Origin
+   * - **Self-unsubscribe**: Subscriber parachain via XCM (`EnsureSubscriberOrigin`)
+   * - **Governance unsubscribe**: Requires `ManageOrigin`
+   *
+   * ## Parameters
+   * - `subscriber_parachain_id`: The ParaId to unsubscribe. Required for governance, ignored
+   * for self-unsubscribe (derived from XCM origin).
+   **/
+  | { name: 'Unsubscribe'; params: { subscriberParachainId?: PolkadotParachainPrimitivesPrimitivesId | undefined } }
+  /**
+   * Requests replay of specific ring roots.
+   *
+   * Permissionless — any signed origin can request a replay for any subscriber.
+   * The subscriber parachain is identified by the `subscriber_parachain_id` parameter.
+   *
+   * Parameters:
+   * - `subscriber_parachain_id`: The ParaId of the subscriber.
+   * - `identifier`: Collection identifier.
+   * - `ring_root_indices`: List of ring root indices, must be in strictly ascending order.
+   **/
+  | {
+      name: 'RequestReplay';
+      params: {
+        subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId;
+        identifier: FixedBytes<32>;
+        ringRootIndices: Array<number>;
+      };
+    }
+  /**
+   * Enqueues pending updates into a sealed batch for distribution.
+   *
+   * Authorized call submitted by the offchain worker.
+   **/
+  | { name: 'EnqueueUpdates'; params: { sendPage: number; discriminator: number } }
+  /**
+   * Sends the current batch to a specific subscriber.
+   *
+   * Authorized maintenance call submitted by the offchain worker.
+   **/
+  | {
+      name: 'SendBatch';
+      params: { paraId: PolkadotParachainPrimitivesPrimitivesId; sequence: bigint; discriminator: number };
+    }
+  /**
+   * Sends one page of initialization data to a subscriber.
+   *
+   * Authorized maintenance call submitted by the offchain worker.
+   **/
+  | {
+      name: 'SendInitPage';
+      params: {
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+        currentCollectionIndex: number;
+        afterRingIndex?: number | undefined;
+        discriminator: number;
+      };
+    }
+  /**
+   * Abandons a stuck batch that exceeded `StuckBatchTimeout`.
+   * Subscribers that did not receive the batch can recover via `request_replay`.
+   *
+   * Authorized maintenance call submitted by the offchain worker when a batch has
+   * been active longer than `StuckBatchTimeout`.
+   **/
+  | { name: 'AbandonStuckBatch'; params: { discriminator: number } }
+  /**
+   * Registers a whitelisted parachain as a subscriber, using the collections and pallet
+   * index recorded in the whitelist.
+   *
+   * The whitelist entry is consumed, so a parachain can be subscribed this way only
+   * once. After an `unsubscribe`, only `ManageOrigin` can subscribe it again.
+   **/
+  | { name: 'SubscribeWhitelisted'; params: { subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId } };
+
+export type IndivPalletMembersNotifierCallLike =
+  /**
+   * Registers the parachain as a subscriber.
+   * The initial state will be sent over shortly via XCM.
+   *
+   * ## Origin
+   * Requires `ManageOrigin` (governance/root).
+   *
+   * ## Parameters
+   * - `subscriber_parachain_id`: The ParaId of the subscribing parachain.
+   * - `members_collections`: List of collection identifiers to subscribe to and their
+   * respective ring exponents.
+   * - `pallet_index`: Pallet index of members-subscriber on the subscriber chain.
+   **/
+  | {
+      name: 'Subscribe';
+      params: {
+        subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId;
+        membersCollections: Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>;
+        palletIndex: number;
+      };
+    }
+  /**
+   * Unsubscribes a parachain.
+   *
+   * ## Origin
+   * - **Self-unsubscribe**: Subscriber parachain via XCM (`EnsureSubscriberOrigin`)
+   * - **Governance unsubscribe**: Requires `ManageOrigin`
+   *
+   * ## Parameters
+   * - `subscriber_parachain_id`: The ParaId to unsubscribe. Required for governance, ignored
+   * for self-unsubscribe (derived from XCM origin).
+   **/
+  | { name: 'Unsubscribe'; params: { subscriberParachainId?: PolkadotParachainPrimitivesPrimitivesId | undefined } }
+  /**
+   * Requests replay of specific ring roots.
+   *
+   * Permissionless — any signed origin can request a replay for any subscriber.
+   * The subscriber parachain is identified by the `subscriber_parachain_id` parameter.
+   *
+   * Parameters:
+   * - `subscriber_parachain_id`: The ParaId of the subscriber.
+   * - `identifier`: Collection identifier.
+   * - `ring_root_indices`: List of ring root indices, must be in strictly ascending order.
+   **/
+  | {
+      name: 'RequestReplay';
+      params: {
+        subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId;
+        identifier: FixedBytes<32>;
+        ringRootIndices: Array<number>;
+      };
+    }
+  /**
+   * Enqueues pending updates into a sealed batch for distribution.
+   *
+   * Authorized call submitted by the offchain worker.
+   **/
+  | { name: 'EnqueueUpdates'; params: { sendPage: number; discriminator: number } }
+  /**
+   * Sends the current batch to a specific subscriber.
+   *
+   * Authorized maintenance call submitted by the offchain worker.
+   **/
+  | {
+      name: 'SendBatch';
+      params: { paraId: PolkadotParachainPrimitivesPrimitivesId; sequence: bigint; discriminator: number };
+    }
+  /**
+   * Sends one page of initialization data to a subscriber.
+   *
+   * Authorized maintenance call submitted by the offchain worker.
+   **/
+  | {
+      name: 'SendInitPage';
+      params: {
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+        currentCollectionIndex: number;
+        afterRingIndex?: number | undefined;
+        discriminator: number;
+      };
+    }
+  /**
+   * Abandons a stuck batch that exceeded `StuckBatchTimeout`.
+   * Subscribers that did not receive the batch can recover via `request_replay`.
+   *
+   * Authorized maintenance call submitted by the offchain worker when a batch has
+   * been active longer than `StuckBatchTimeout`.
+   **/
+  | { name: 'AbandonStuckBatch'; params: { discriminator: number } }
+  /**
+   * Registers a whitelisted parachain as a subscriber, using the collections and pallet
+   * index recorded in the whitelist.
+   *
+   * The whitelist entry is consumed, so a parachain can be subscribed this way only
+   * once. After an `unsubscribe`, only `ManageOrigin` can subscribe it again.
+   **/
+  | { name: 'SubscribeWhitelisted'; params: { subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletAirdropCall =
+  /**
+   * Schedule a new airdrop event. Origin must be `ManagerOrigin`. The prize allocation is
+   * held in the pallet's pot account. The pot is assumed to be pre-funded.
+   *
+   * Cross-pallet callers should use the [`crate::types::Airdrop::schedule`] trait method
+   * instead, which debits a caller-supplied `source` account.
+   **/
+  | { name: 'ScheduleEvent'; params: { eventId: FixedBytes<32>; info: IndivPalletAirdropEventInfo } }
+  /**
+   * Remove a previously scheduled event. The event must not have already
+   * started, otherwise this call will fail.
+   **/
+  | { name: 'RemoveScheduledEvent'; params: { eventId: FixedBytes<32> } }
+  /**
+   * Enable an asset for use in airdrop events. The origin must be `ManagerOrigin` only.
+   *
+   * Transfers the asset's current minimum balance from `source` to the pallet's pot so the
+   * pot's asset account stays alive while events hold prize funds against it.
+   **/
+  | { name: 'EnableAsset'; params: { assetId: StagingXcmV5Location; source: AccountId32 } }
+  /**
+   * Disable an asset previously enabled with `enable_asset`. Refunds the originally-funded
+   * amount from the pot to `beneficiary`. The origin must be `ManagerOrigin` only.
+   *
+   * The manager is responsible for ensuring no events still reference this asset before
+   * disabling, but this is safe since scheduling an event is permissioned.
+   **/
+  | { name: 'DisableAsset'; params: { assetId: StagingXcmV5Location; beneficiary: AccountId32 } }
+  /**
+   * OCW-driven: transition `Scheduled → Registering` when
+   * `registration_starts` is reached.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'StartRegistrationAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: at `draw_time`:
+   * - close registration
+   * - compute the target winner count
+   * - release the unused-slot prize allocation up-front
+   * - record the randomness source's current moment as a watermark
+   * - transition `Registering → AwaitingEntropy`
+   *
+   * The entropy capture and the winner draws are performed in later stages.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CloseRegistrationAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: seed the draw with fresh randomness produced after registration closed and
+   * transition `AwaitingEntropy → DrawWinners`.
+   *
+   * The `authorize` gate only lets this call through once the randomness source
+   * reports a value with a moment strictly greater than the watermark recorded
+   * when registration closed; until then the transaction is invalid.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org, or invalidated because the randomness is not fresh yet. As the accepted
+   * transaction source is only local, it cannot be used to spam the pool.
+   **/
+  | { name: 'CaptureEntropyAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: draw up to `DrawLimit` winners per call.
+   *
+   * After all the winners are drawn, the transition to `Claiming` is performed by the
+   * separate `close_drawing_authorized`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'DrawWinnersAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: once `draw_winners_authorized` has filled the winner set, transition the
+   * event from `DrawWinners` to `Claiming`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CloseDrawingAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: at `end_time` close claiming and enter the first clean-up phase.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CloseClaimingAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: First step of clean-up is to clear up to `ClearLimit` entries from
+   * `Registrations`. When the storage is fully drained, transitions to `ClearingWinners`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CleanUpRegistrationsAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: Second step of clean-up is to clear up to `ClearLimit` entries from
+   * `Winners`. When the storage is fully drained, transitions to `Finalizing`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CleanUpWinnersAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: Third step of clean-up is to release the unclaimed prize allocation and
+   * remove the event.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'FinalizeAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } };
+
+export type IndivPalletAirdropCallLike =
+  /**
+   * Schedule a new airdrop event. Origin must be `ManagerOrigin`. The prize allocation is
+   * held in the pallet's pot account. The pot is assumed to be pre-funded.
+   *
+   * Cross-pallet callers should use the [`crate::types::Airdrop::schedule`] trait method
+   * instead, which debits a caller-supplied `source` account.
+   **/
+  | { name: 'ScheduleEvent'; params: { eventId: FixedBytes<32>; info: IndivPalletAirdropEventInfo } }
+  /**
+   * Remove a previously scheduled event. The event must not have already
+   * started, otherwise this call will fail.
+   **/
+  | { name: 'RemoveScheduledEvent'; params: { eventId: FixedBytes<32> } }
+  /**
+   * Enable an asset for use in airdrop events. The origin must be `ManagerOrigin` only.
+   *
+   * Transfers the asset's current minimum balance from `source` to the pallet's pot so the
+   * pot's asset account stays alive while events hold prize funds against it.
+   **/
+  | { name: 'EnableAsset'; params: { assetId: StagingXcmV5Location; source: AccountId32Like } }
+  /**
+   * Disable an asset previously enabled with `enable_asset`. Refunds the originally-funded
+   * amount from the pot to `beneficiary`. The origin must be `ManagerOrigin` only.
+   *
+   * The manager is responsible for ensuring no events still reference this asset before
+   * disabling, but this is safe since scheduling an event is permissioned.
+   **/
+  | { name: 'DisableAsset'; params: { assetId: StagingXcmV5Location; beneficiary: AccountId32Like } }
+  /**
+   * OCW-driven: transition `Scheduled → Registering` when
+   * `registration_starts` is reached.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'StartRegistrationAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: at `draw_time`:
+   * - close registration
+   * - compute the target winner count
+   * - release the unused-slot prize allocation up-front
+   * - record the randomness source's current moment as a watermark
+   * - transition `Registering → AwaitingEntropy`
+   *
+   * The entropy capture and the winner draws are performed in later stages.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CloseRegistrationAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: seed the draw with fresh randomness produced after registration closed and
+   * transition `AwaitingEntropy → DrawWinners`.
+   *
+   * The `authorize` gate only lets this call through once the randomness source
+   * reports a value with a moment strictly greater than the watermark recorded
+   * when registration closed; until then the transaction is invalid.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org, or invalidated because the randomness is not fresh yet. As the accepted
+   * transaction source is only local, it cannot be used to spam the pool.
+   **/
+  | { name: 'CaptureEntropyAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: draw up to `DrawLimit` winners per call.
+   *
+   * After all the winners are drawn, the transition to `Claiming` is performed by the
+   * separate `close_drawing_authorized`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'DrawWinnersAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: once `draw_winners_authorized` has filled the winner set, transition the
+   * event from `DrawWinners` to `Claiming`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CloseDrawingAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: at `end_time` close claiming and enter the first clean-up phase.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CloseClaimingAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: First step of clean-up is to clear up to `ClearLimit` entries from
+   * `Registrations`. When the storage is fully drained, transitions to `ClearingWinners`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CleanUpRegistrationsAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: Second step of clean-up is to clear up to `ClearLimit` entries from
+   * `Winners`. When the storage is fully drained, transitions to `Finalizing`.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'CleanUpWinnersAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } }
+  /**
+   * OCW-driven: Third step of clean-up is to release the unclaimed prize allocation and
+   * remove the event.
+   *
+   * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+   * previous one is banned by the pool because it was validated against a different state
+   * after a re-org. As the accepted transaction source is only local, it cannot be used to
+   * spam the pool.
+   **/
+  | { name: 'FinalizeAuthorized'; params: { eventId: FixedBytes<32>; discriminator: number } };
+
+export type IndivPalletAirdropEventInfo = {
+  productName: Bytes;
+  prize: IndivPalletAirdropAirdropPrize;
+  registrationStarts: bigint;
+  drawTime: bigint;
+  endTime: bigint;
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletHonourCall =
+  /**
+   * Bestow a vote.
+   *
+   * Accepts only the [`Origin::Voter`] origin, which is created by verifying a ring proof
+   * in the [`VoterAuth`](extension::VoterAuth) transaction extension.
+   **/
+  { name: 'Bestow'; params: { vote: IndivPalletHonourVoteData; callValidFrom: bigint } };
+
+export type IndivPalletHonourCallLike =
+  /**
+   * Bestow a vote.
+   *
+   * Accepts only the [`Origin::Voter`] origin, which is created by verifying a ring proof
+   * in the [`VoterAuth`](extension::VoterAuth) transaction extension.
+   **/
+  { name: 'Bestow'; params: { vote: IndivPalletHonourVoteData; callValidFrom: bigint } };
+
+export type IndivPalletHonourVoteData = {
+  subject: FixedBytes<32>;
+  point: number;
+  direction: IndivPalletHonourDirection;
+};
+
+export type IndivPalletHonourDirection = 'Honourable' | 'Dishonourable';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletPeopleAirdropsCall =
+  /**
+   * Schedule a batch of draws, in order, assigning each the next draw index. The prize
+   * allocation of every draw is transferred from [`Config::PrizeSource`] into the airdrop
+   * pot.
+   *
+   * The `product_name` of every entry is replaced with [`Pallet::product_name`].
+   *
+   * If any event fails to be scheduled, the whole call fails and no events are scheduled.
+   **/
+  | { name: 'ScheduleDraws'; params: { draws: Array<IndivPalletAirdropEventInfo> } }
+  /**
+   * Remove a scheduled draw that has not opened yet, refunding its prize allocation to
+   * [`Config::PrizeSource`]. Best-effort: a no-op for an unknown or already-opened draw.
+   * The draw's salt is kept, since the draw may still be live (see [`DrawSalts`]).
+   **/
+  | { name: 'RemoveScheduledDraw'; params: { eventId: FixedBytes<32> } }
+  /**
+   * Cancel a draw in any state: participation and claims close immediately and the
+   * still-held prize allocation is refunded to [`Config::PrizeSource`] by the airdrop
+   * clean-up. Best-effort: a no-op for an unknown or already-terminating draw.
+   **/
+  | { name: 'CancelDraw'; params: { eventId: FixedBytes<32> } }
+  /**
+   * Register the calling person for every draw in `event_ids`. All or nothing: any failure
+   * (unknown draw, draw not open, already registered) reverts the whole batch.
+   *
+   * Free on success. Success is bounded to one registration per person and draw, so
+   * repeated calls fail and pay.
+   **/
+  | { name: 'Register'; params: { eventIds: Array<FixedBytes<32>> } }
+  /**
+   * Claim the calling person's prize in the draw `event_id`, paying it out to
+   * `destination`. Only drawn winners hold a claimable prize, and only until the draw's
+   * claim window closes.
+   *
+   * Success is bounded to one claim per person and draw, so repeated
+   * calls fail and pay.
+   **/
+  | { name: 'Claim'; params: { eventId: FixedBytes<32>; destination: AccountId32 } }
+  /**
+   * OCW-driven: remove a draw's [`DrawSalts`] entry once the draw's end time has passed. The
+   * salt is only read during registration, which closes strictly before the end time, so
+   * the entry is dead by then.
+   *
+   * The transaction is only accepted from a local or in-block source, so it cannot be
+   * submitted externally.
+   **/
+  | { name: 'CleanUpDrawSalt'; params: { eventId: FixedBytes<32> } };
+
+export type IndivPalletPeopleAirdropsCallLike =
+  /**
+   * Schedule a batch of draws, in order, assigning each the next draw index. The prize
+   * allocation of every draw is transferred from [`Config::PrizeSource`] into the airdrop
+   * pot.
+   *
+   * The `product_name` of every entry is replaced with [`Pallet::product_name`].
+   *
+   * If any event fails to be scheduled, the whole call fails and no events are scheduled.
+   **/
+  | { name: 'ScheduleDraws'; params: { draws: Array<IndivPalletAirdropEventInfo> } }
+  /**
+   * Remove a scheduled draw that has not opened yet, refunding its prize allocation to
+   * [`Config::PrizeSource`]. Best-effort: a no-op for an unknown or already-opened draw.
+   * The draw's salt is kept, since the draw may still be live (see [`DrawSalts`]).
+   **/
+  | { name: 'RemoveScheduledDraw'; params: { eventId: FixedBytes<32> } }
+  /**
+   * Cancel a draw in any state: participation and claims close immediately and the
+   * still-held prize allocation is refunded to [`Config::PrizeSource`] by the airdrop
+   * clean-up. Best-effort: a no-op for an unknown or already-terminating draw.
+   **/
+  | { name: 'CancelDraw'; params: { eventId: FixedBytes<32> } }
+  /**
+   * Register the calling person for every draw in `event_ids`. All or nothing: any failure
+   * (unknown draw, draw not open, already registered) reverts the whole batch.
+   *
+   * Free on success. Success is bounded to one registration per person and draw, so
+   * repeated calls fail and pay.
+   **/
+  | { name: 'Register'; params: { eventIds: Array<FixedBytes<32>> } }
+  /**
+   * Claim the calling person's prize in the draw `event_id`, paying it out to
+   * `destination`. Only drawn winners hold a claimable prize, and only until the draw's
+   * claim window closes.
+   *
+   * Success is bounded to one claim per person and draw, so repeated
+   * calls fail and pay.
+   **/
+  | { name: 'Claim'; params: { eventId: FixedBytes<32>; destination: AccountId32Like } }
+  /**
+   * OCW-driven: remove a draw's [`DrawSalts`] entry once the draw's end time has passed. The
+   * salt is only read during registration, which closes strictly before the end time, so
+   * the entry is dead by then.
+   *
+   * The transaction is only accepted from a local or in-block source, so it cannot be
+   * submitted externally.
+   **/
+  | { name: 'CleanUpDrawSalt'; params: { eventId: FixedBytes<32> } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PeoplePaseoRuntimeParametersRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PeoplePaseoRuntimeParametersRuntimeParameters } };
+
+export type PeoplePaseoRuntimeParametersRuntimeParameters =
+  | { type: 'StatementStorage'; value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageParameters }
+  | { type: 'BulletinStorage'; value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageParameters }
+  | { type: 'PeopleAirdrops'; value: PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsParameters }
+  | { type: 'LitePersonhood'; value: PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodParameters };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageParameters =
+  | {
+      type: 'AccountsApiAllowance';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsStatementStorageAccountsApiAllowance,
+        IndivSupportParametersStatementAllowanceParameter | undefined,
+      ];
+    }
+  | {
+      type: 'NotificationAllowance';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationAllowance,
+        IndivSupportParametersStatementAllowanceParameter | undefined,
+      ];
+    }
+  | {
+      type: 'LitePersonStatementLimit';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLitePersonStatementLimit,
+        IndivSupportParametersStatementAllowanceParameter | undefined,
+      ];
+    }
+  | {
+      type: 'PersonStatementLimit';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsStatementStoragePersonStatementLimit,
+        IndivSupportParametersStatementAllowanceParameter | undefined,
+      ];
+    }
+  | {
+      type: 'StmtStoreSlotsPerPeriod';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreSlotsPerPeriod, number | undefined];
+    }
+  | {
+      type: 'LiteStmtStoreSlotsPerPeriod';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLiteStmtStoreSlotsPerPeriod, number | undefined];
+    }
+  | {
+      type: 'StmtStoreCleanupLimit';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreCleanupLimit, number | undefined];
+    }
+  | {
+      type: 'StmtStoreReplacementCooldown';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreReplacementCooldown,
+        number | undefined,
+      ];
+    }
+  | {
+      type: 'StmtStoreGraceWindow';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreGraceWindow, number | undefined];
+    }
+  | {
+      type: 'NotificationSlotsPerPeriod';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationSlotsPerPeriod, number | undefined];
+    }
+  | {
+      type: 'LiteNotificationSlotsPerPeriod';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLiteNotificationSlotsPerPeriod,
+        number | undefined,
+      ];
+    }
+  | {
+      type: 'NotificationPeriodDuration';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationPeriodDuration, number | undefined];
+    };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageAccountsApiAllowance = {};
+
+export type IndivSupportParametersStatementAllowanceParameter = { maxSize: number; maxCount: number };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationAllowance = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLitePersonStatementLimit = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStoragePersonStatementLimit = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreSlotsPerPeriod = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLiteStmtStoreSlotsPerPeriod = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreCleanupLimit = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreReplacementCooldown = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreGraceWindow = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationSlotsPerPeriod = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLiteNotificationSlotsPerPeriod = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationPeriodDuration = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageParameters =
+  | {
+      type: 'LongTermStoragePeriodDuration';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStoragePeriodDuration,
+        number | undefined,
+      ];
+    }
+  | {
+      type: 'LongTermStorageGraceWindow';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageGraceWindow, number | undefined];
+    }
+  | {
+      type: 'LongTermStorageClaimsPerPeriod';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageClaimsPerPeriod,
+        number | undefined,
+      ];
+    }
+  | {
+      type: 'LongTermStorageCleanupLimit';
+      value: [PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageCleanupLimit, number | undefined];
+    }
+  | {
+      type: 'LongTermStorageAllowanceForPeople';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageAllowanceForPeople,
+        IndivPalletResourcesLongTermStorageAllocation | undefined,
+      ];
+    }
+  | {
+      type: 'LongTermStorageAllowanceForLitePeople';
+      value: [
+        PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageAllowanceForLitePeople,
+        IndivPalletResourcesLongTermStorageAllocation | undefined,
+      ];
+    };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStoragePeriodDuration = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageGraceWindow = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageClaimsPerPeriod = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageCleanupLimit = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageAllowanceForPeople = {};
+
+export type IndivPalletResourcesLongTermStorageAllocation = { transactions: number; bytes: bigint };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageAllowanceForLitePeople = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsParameters = {
+  type: 'PrizeSource';
+  value: [PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsPrizeSource, AccountId32 | undefined];
+};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsPrizeSource = {};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodParameters = {
+  type: 'RegistrationFee';
+  value: [PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee, bigint | undefined];
+};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee = {};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletNetworkSuffixCall =
+  /**
+   * Set the network suffix used by all product-context derivations.
+   **/
+  { name: 'SetNetworkSuffix'; params: { networkSuffix: Bytes } };
+
+export type IndivPalletNetworkSuffixCallLike =
+  /**
+   * Set the network suffix used by all product-context derivations.
+   **/
+  { name: 'SetNetworkSuffix'; params: { networkSuffix: BytesLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletSudoCall =
   /**
    * Authenticates the sudo key and dispatches a function call with `Root` origin.
@@ -5294,6 +12099,109 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
+export type PalletVerifySignatureExtensionVerifySignature =
+  | { type: 'Disabled' }
+  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } };
+
+export type IndivPalletPeopleExtensionAsPerson = IndivPalletPeopleExtensionAsPersonInfo | undefined;
+
+export type IndivPalletPeopleExtensionAsPersonInfo =
+  | { type: 'AsPersonalAliasWithAccount'; value: number }
+  | { type: 'AsPersonalAliasWithProof'; value: [Bytes, number, number, FixedBytes<32>] }
+  | { type: 'AsPersonalIdentityWithProof'; value: [FixedBytes<64>, bigint] }
+  | { type: 'AsPersonalIdentityWithAccount'; value: number }
+  | { type: 'AsPersonalAliasWithAccountRevised'; value: [number, Bytes, number, number, FixedBytes<32>] };
+
+export type IndivPalletProofOfInkExtensionAsProofOfInkParticipant =
+  | IndivPalletProofOfInkExtensionAsProofOfInkParticipantInfo
+  | undefined;
+
+export type IndivPalletProofOfInkExtensionAsProofOfInkParticipantInfo =
+  | { type: 'AsApplyWithSig'; value: number }
+  | { type: 'AsReferred'; value: number }
+  | { type: 'AsInvited'; value: number };
+
+export type IndivPalletScoreExtensionScoreAsParticipant = IndivPalletScoreExtensionScoreAsParticipantData | undefined;
+
+export type IndivPalletScoreExtensionScoreAsParticipantData = { nonce: number };
+
+export type IndivPalletGameExtensionGameAsInvited = IndivPalletGameExtensionGameAsInvitedData | undefined;
+
+export type IndivPalletGameExtensionGameAsInvitedData = {
+  nonce: number;
+  inviter: AccountId32;
+  ticket: AccountId32;
+  signature: SpRuntimeMultiSignature;
+};
+
+export type IndivPalletPeopleLiteExtensionPeopleLiteAuth = IndivPalletPeopleLiteExtensionPeopleLiteAuthData | undefined;
+
+export type IndivPalletPeopleLiteExtensionPeopleLiteAuthData =
+  | { type: 'AsLitePerson'; value: number }
+  | { type: 'AsLiteAliasWithAccount'; value: number }
+  | { type: 'AsLiteAliasWithProof'; value: [Bytes, number, number, FixedBytes<32>] }
+  | { type: 'AsLiteAliasWithAccountRevised'; value: [number, Bytes, number, number, FixedBytes<32>] };
+
+export type IndivPalletMembersExtensionAsMember = IndivPalletMembersExtensionAsMemberInfo | undefined;
+
+export type IndivPalletMembersExtensionAsMemberInfo = { type: 'SelfInclude'; value: FixedBytes<64> };
+
+export type IndivPalletCoinageExtensionAsCoinage = IndivPalletCoinageExtensionAsCoinageInfo | undefined;
+
+export type IndivPalletCoinageExtensionAsCoinageInfo =
+  | { type: 'AsCoin' }
+  | {
+      type: 'AsUnloadTokenPeople';
+      value: { proof: IndivPalletPeopleMembershipProof; period: number; counter: number; aliasProofs: Array<Bytes> };
+    }
+  | {
+      type: 'AsUnloadTokenLitePeople';
+      value: { proof: IndivPalletPeopleMembershipProof; period: number; counter: number; aliasProofs: Array<Bytes> };
+    }
+  | {
+      type: 'AsUnloadTokenPaid';
+      value: {
+        proof: Bytes;
+        period: number;
+        paidTokenRingIndex: number;
+        paidTokenRingRevision: number;
+        aliasProofs: Array<Bytes>;
+      };
+    }
+  | {
+      type: 'AsUnloadTokenFromOutput';
+      value: {
+        feeRecyclerValue: number;
+        feeRecyclerIndex: number;
+        feeRecyclerRevision: number;
+        retryCounter: number;
+        aliasProofs: Array<Bytes>;
+      };
+    }
+  | { type: 'InfallibleUnpaidSigned'; value: { nonce: number } };
+
+export type IndivPalletPeopleMembershipProof = { proof: Bytes; ring: number; revision: number };
+
+export type IndivPalletResourcesExtensionAsResources = IndivPalletResourcesExtensionAsResourcesInfo | undefined;
+
+export type IndivPalletResourcesExtensionAsResourcesInfo =
+  | { type: 'RegisterNotificationWithProof'; value: [Bytes, number, number] }
+  | {
+      type: 'RegisterNotificationForCollection';
+      value: [Bytes, number, number, IndivPalletResourcesMembershipCollection];
+    }
+  | {
+      type: 'RegisterStatementStoreAllowance';
+      value: [Bytes, number, number, IndivPalletResourcesMembershipCollection];
+    }
+  | { type: 'ClaimLongTermStorage'; value: [Bytes, number, number, IndivPalletResourcesMembershipCollection] };
+
+export type IndivPalletHonourExtensionVoterAuth = IndivPalletHonourExtensionVoterAuthData | undefined;
+
+export type IndivPalletHonourExtensionVoterAuthData = { proof: Bytes; ringIndex: number; revision: number };
+
+export type IndivPalletOriginRestrictionRestrictOrigin = boolean;
+
 export type FrameSystemAccountInfo = {
   nonce: number;
   consumers: number;
@@ -5329,6 +12237,9 @@ export type PeoplePaseoRuntimeRuntimeEvent =
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetTxPaymentEvent }
   | { pallet: 'AssetsHolder'; palletEvent: PalletAssetsHolderEvent }
+  | { pallet: 'OriginRestriction'; palletEvent: IndivPalletOriginRestrictionEvent }
+  | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent002 }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -5339,6 +12250,25 @@ export type PeoplePaseoRuntimeRuntimeEvent =
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
+  | { pallet: 'People'; palletEvent: IndivPalletPeopleEvent }
+  | { pallet: 'MobRule'; palletEvent: IndivPalletMobRuleEvent }
+  | { pallet: 'ProofOfInk'; palletEvent: IndivPalletProofOfInkEvent }
+  | { pallet: 'Game'; palletEvent: IndivPalletGameEvent }
+  | { pallet: 'Score'; palletEvent: IndivPalletScoreEvent }
+  | { pallet: 'NftCredits'; palletEvent: IndivPalletNftCreditsEvent }
+  | { pallet: 'DummyDim'; palletEvent: IndivPalletDummyDimEvent }
+  | { pallet: 'StorageInitialization'; palletEvent: IndivPalletStorageInitializationEvent }
+  | { pallet: 'PeopleLite'; palletEvent: IndivPalletPeopleLiteEvent }
+  | { pallet: 'Resources'; palletEvent: IndivPalletResourcesEvent }
+  | { pallet: 'ChunksManager'; palletEvent: IndivPalletChunksManagerEvent }
+  | { pallet: 'Members'; palletEvent: IndivPalletMembersEvent }
+  | { pallet: 'Coinage'; palletEvent: IndivPalletCoinageEvent }
+  | { pallet: 'MembersNotifier'; palletEvent: IndivPalletMembersNotifierEvent }
+  | { pallet: 'Airdrop'; palletEvent: IndivPalletAirdropEvent }
+  | { pallet: 'Honour'; palletEvent: IndivPalletHonourEvent }
+  | { pallet: 'PeopleAirdrops'; palletEvent: IndivPalletPeopleAirdropsEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
+  | { pallet: 'NetworkSuffix'; palletEvent: IndivPalletNetworkSuffixEvent }
   | { pallet: 'Sudo'; palletEvent: PalletSudoEvent };
 
 /**
@@ -5354,9 +12284,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -5694,11 +12624,29 @@ export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
 
 export type PeoplePaseoRuntimeRuntimeHoldReason =
   | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'MobRule'; value: IndivPalletMobRuleHoldReason }
+  | { type: 'ProofOfInk'; value: IndivPalletProofOfInkHoldReason }
+  | { type: 'Game'; value: IndivPalletGameHoldReason }
+  | { type: 'Score'; value: IndivPalletScoreHoldReason }
+  | { type: 'Coinage'; value: IndivPalletCoinageHoldReason }
+  | { type: 'Airdrop'; value: IndivPalletAirdropHoldReason };
 
 export type PalletSessionHoldReason = 'Keys';
 
 export type PalletXcmHoldReason = 'AuthorizeAlias';
+
+export type IndivPalletMobRuleHoldReason = 'Payout' | 'Credit';
+
+export type IndivPalletProofOfInkHoldReason = 'ProofOfInk';
+
+export type IndivPalletGameHoldReason = 'PlayDeposit';
+
+export type IndivPalletScoreHoldReason = 'Payout' | 'Credit';
+
+export type IndivPalletCoinageHoldReason = 'Wrapped' | 'LoadDeposit' | 'InstanceCreationDeposit';
+
+export type IndivPalletAirdropHoldReason = 'Airdrop';
 
 export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
@@ -5848,7 +12796,13 @@ export type PalletAssetsEvent =
   /**
    * Reserve information was set or updated for `asset_id`.
    **/
-  | { name: 'ReservesUpdated'; data: { assetId: StagingXcmV5Location; reserves: Array<[]> } }
+  | {
+      name: 'ReservesUpdated';
+      data: {
+        assetId: StagingXcmV5Location;
+        reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>;
+      };
+    }
   /**
    * Reserve information was removed for `asset_id`.
    **/
@@ -5931,6 +12885,349 @@ export type PalletAssetsHolderEvent =
         amount: bigint;
       };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletOriginRestrictionEvent =
+  /**
+   * Usage for an entity is cleaned.
+   **/
+  { name: 'UsageCleaned'; data: { entity: PeoplePaseoRuntimePeopleRestrictedEntity } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetConversionEvent =
+  /**
+   * A successful call of the `CreatePool` extrinsic will create this event.
+   **/
+  | {
+      name: 'PoolCreated';
+      data: {
+        /**
+         * The account that created the pool.
+         **/
+        creator: AccountId32;
+
+        /**
+         * The pool id associated with the pool. Note that the order of the assets may not be
+         * the same as the order specified in the create pool extrinsic.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The account ID of the pool.
+         **/
+        poolAccount: AccountId32;
+
+        /**
+         * The id of the liquidity tokens that will be minted when assets are added to this
+         * pool.
+         **/
+        lpToken: number;
+      };
+    }
+  /**
+   * A successful call of the `AddLiquidity` extrinsic will create this event.
+   **/
+  | {
+      name: 'LiquidityAdded';
+      data: {
+        /**
+         * The account that the liquidity was taken from.
+         **/
+        who: AccountId32;
+
+        /**
+         * The account that the liquidity tokens were minted to.
+         **/
+        mintTo: AccountId32;
+
+        /**
+         * The pool id of the pool that the liquidity was added to.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The amount of the first asset that was added to the pool.
+         **/
+        amount1Provided: bigint;
+
+        /**
+         * The amount of the second asset that was added to the pool.
+         **/
+        amount2Provided: bigint;
+
+        /**
+         * The id of the lp token that was minted.
+         **/
+        lpToken: number;
+
+        /**
+         * The amount of lp tokens that were minted of that id.
+         **/
+        lpTokenMinted: bigint;
+      };
+    }
+  /**
+   * A successful call of the `RemoveLiquidity` extrinsic will create this event.
+   **/
+  | {
+      name: 'LiquidityRemoved';
+      data: {
+        /**
+         * The account that the liquidity tokens were burned from.
+         **/
+        who: AccountId32;
+
+        /**
+         * The account that the assets were transferred to.
+         **/
+        withdrawTo: AccountId32;
+
+        /**
+         * The pool id that the liquidity was removed from.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The amount of the first asset that was removed from the pool.
+         **/
+        amount1: bigint;
+
+        /**
+         * The amount of the second asset that was removed from the pool.
+         **/
+        amount2: bigint;
+
+        /**
+         * The id of the lp token that was burned.
+         **/
+        lpToken: number;
+
+        /**
+         * The amount of lp tokens that were burned of that id.
+         **/
+        lpTokenBurned: bigint;
+
+        /**
+         * Liquidity withdrawal fee (%).
+         **/
+        withdrawalFee: Permill;
+      };
+    }
+  /**
+   * Assets have been converted from one to another. Both `SwapExactTokenForToken`
+   * and `SwapTokenForExactToken` will generate this event.
+   **/
+  | {
+      name: 'SwapExecuted';
+      data: {
+        /**
+         * Which account was the instigator of the swap.
+         **/
+        who: AccountId32;
+
+        /**
+         * The account that the assets were transferred to.
+         **/
+        sendTo: AccountId32;
+
+        /**
+         * The amount of the first asset that was swapped.
+         **/
+        amountIn: bigint;
+
+        /**
+         * The amount of the second asset that was received.
+         **/
+        amountOut: bigint;
+
+        /**
+         * The route of asset IDs with amounts that the swap went through.
+         * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
+         **/
+        path: Array<[StagingXcmV5Location, bigint]>;
+      };
+    }
+  /**
+   * Assets have been converted from one to another.
+   **/
+  | {
+      name: 'SwapCreditExecuted';
+      data: {
+        /**
+         * The amount of the first asset that was swapped.
+         **/
+        amountIn: bigint;
+
+        /**
+         * The amount of the second asset that was received.
+         **/
+        amountOut: bigint;
+
+        /**
+         * The route of asset IDs with amounts that the swap went through.
+         * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
+         **/
+        path: Array<[StagingXcmV5Location, bigint]>;
+      };
+    }
+  /**
+   * Pool has been touched in order to fulfill operational requirements.
+   **/
+  | {
+      name: 'Touched';
+      data: {
+        /**
+         * The ID of the pool.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The account initiating the touch.
+         **/
+        who: AccountId32;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetsEvent002 =
+  /**
+   * Some asset class was created.
+   **/
+  | { name: 'Created'; data: { assetId: number; creator: AccountId32; owner: AccountId32 } }
+  /**
+   * Some assets were issued.
+   **/
+  | { name: 'Issued'; data: { assetId: number; owner: AccountId32; amount: bigint } }
+  /**
+   * Some assets were transferred.
+   **/
+  | { name: 'Transferred'; data: { assetId: number; from: AccountId32; to: AccountId32; amount: bigint } }
+  /**
+   * Some assets were destroyed.
+   **/
+  | { name: 'Burned'; data: { assetId: number; owner: AccountId32; balance: bigint } }
+  /**
+   * The management team changed.
+   **/
+  | { name: 'TeamChanged'; data: { assetId: number; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 } }
+  /**
+   * The owner changed.
+   **/
+  | { name: 'OwnerChanged'; data: { assetId: number; owner: AccountId32 } }
+  /**
+   * Some account `who` was frozen.
+   **/
+  | { name: 'Frozen'; data: { assetId: number; who: AccountId32 } }
+  /**
+   * Some account `who` was thawed.
+   **/
+  | { name: 'Thawed'; data: { assetId: number; who: AccountId32 } }
+  /**
+   * Some asset `asset_id` was frozen.
+   **/
+  | { name: 'AssetFrozen'; data: { assetId: number } }
+  /**
+   * Some asset `asset_id` was thawed.
+   **/
+  | { name: 'AssetThawed'; data: { assetId: number } }
+  /**
+   * Accounts were destroyed for given asset.
+   **/
+  | { name: 'AccountsDestroyed'; data: { assetId: number; accountsDestroyed: number; accountsRemaining: number } }
+  /**
+   * Approvals were destroyed for given asset.
+   **/
+  | { name: 'ApprovalsDestroyed'; data: { assetId: number; approvalsDestroyed: number; approvalsRemaining: number } }
+  /**
+   * An asset class is in the process of being destroyed.
+   **/
+  | { name: 'DestructionStarted'; data: { assetId: number } }
+  /**
+   * An asset class was destroyed.
+   **/
+  | { name: 'Destroyed'; data: { assetId: number } }
+  /**
+   * Some asset class was force-created.
+   **/
+  | { name: 'ForceCreated'; data: { assetId: number; owner: AccountId32 } }
+  /**
+   * New metadata has been set for an asset.
+   **/
+  | { name: 'MetadataSet'; data: { assetId: number; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean } }
+  /**
+   * Metadata has been cleared for an asset.
+   **/
+  | { name: 'MetadataCleared'; data: { assetId: number } }
+  /**
+   * (Additional) funds have been approved for transfer to a destination account.
+   **/
+  | { name: 'ApprovedTransfer'; data: { assetId: number; source: AccountId32; delegate: AccountId32; amount: bigint } }
+  /**
+   * An approval for account `delegate` was cancelled by `owner`.
+   **/
+  | { name: 'ApprovalCancelled'; data: { assetId: number; owner: AccountId32; delegate: AccountId32 } }
+  /**
+   * An `amount` was transferred in its entirety from `owner` to `destination` by
+   * the approved `delegate`.
+   **/
+  | {
+      name: 'TransferredApproved';
+      data: { assetId: number; owner: AccountId32; delegate: AccountId32; destination: AccountId32; amount: bigint };
+    }
+  /**
+   * An asset has had its attributes changed by the `Force` origin.
+   **/
+  | { name: 'AssetStatusChanged'; data: { assetId: number } }
+  /**
+   * The min_balance of an asset has been updated by the asset owner.
+   **/
+  | { name: 'AssetMinBalanceChanged'; data: { assetId: number; newMinBalance: bigint } }
+  /**
+   * Some account `who` was created with a deposit from `depositor`.
+   **/
+  | { name: 'Touched'; data: { assetId: number; who: AccountId32; depositor: AccountId32 } }
+  /**
+   * Some account `who` was blocked.
+   **/
+  | { name: 'Blocked'; data: { assetId: number; who: AccountId32 } }
+  /**
+   * Some assets were deposited (e.g. for transaction fees).
+   **/
+  | { name: 'Deposited'; data: { assetId: number; who: AccountId32; amount: bigint } }
+  /**
+   * Some assets were withdrawn from the account (e.g. for transaction fees).
+   **/
+  | { name: 'Withdrawn'; data: { assetId: number; who: AccountId32; amount: bigint } }
+  /**
+   * Reserve information was set or updated for `asset_id`.
+   **/
+  | { name: 'ReservesUpdated'; data: { assetId: number; reserves: Array<[]> } }
+  /**
+   * Reserve information was removed for `asset_id`.
+   **/
+  | { name: 'ReservesRemoved'; data: { assetId: number } }
+  /**
+   * Some assets were issued as Credit (no owner yet).
+   **/
+  | { name: 'IssuedCredit'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets Credit was destroyed.
+   **/
+  | { name: 'BurnedCredit'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets were burned and a Debt was created.
+   **/
+  | { name: 'IssuedDebt'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets Debt was destroyed (and assets issued).
+   **/
+  | { name: 'BurnedDebt'; data: { assetId: number; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -6625,6 +13922,1592 @@ export type PalletIdentityEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type IndivPalletPeopleEvent =
+  /**
+   * An individual has had their personhood recognised and indexed.
+   **/
+  | { name: 'PersonhoodRecognized'; data: { who: bigint; key: FixedBytes<32> } }
+  /**
+   * An individual has had their personhood recognised again and indexed.
+   **/
+  | { name: 'PersonOnboarding'; data: { who: bigint; key: FixedBytes<32> } }
+  /**
+   * A call was dispatched under an alias.
+   **/
+  | { name: 'AliasDispatched'; data: { alias: IndivSupportRealityContextualAlias; account: AccountId32 } }
+  /**
+   * An alias-to-account mapping was set or updated.
+   **/
+  | { name: 'AliasAccountSet'; data: { alias: IndivSupportRealityContextualAlias; account: AccountId32 } }
+  /**
+   * An alias-to-account mapping was removed.
+   **/
+  | { name: 'AliasAccountUnset'; data: { alias: IndivSupportRealityContextualAlias; account: AccountId32 } }
+  /**
+   * A personal ID-to-account mapping was set or updated.
+   **/
+  | { name: 'PersonalIdAccountSet'; data: { who: bigint; account: AccountId32 } }
+  /**
+   * A personal ID-to-account mapping was removed.
+   **/
+  | { name: 'PersonalIdAccountUnset'; data: { who: bigint; account: AccountId32 } }
+  /**
+   * The people collection was created.
+   **/
+  | { name: 'CollectionCreated' }
+  /**
+   * Personhood was forcefully recognized by root.
+   **/
+  | { name: 'ForcePersonhoodRecognized'; data: { people: Array<FixedBytes<32>> } }
+  /**
+   * An alias-to-account mapping was cleaned up.
+   **/
+  | { name: 'AliasCleanedUp'; data: { alias: IndivSupportRealityContextualAlias; account: AccountId32 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletMobRuleEvent =
+  /**
+   * A case has been created.
+   **/
+  | {
+      name: 'CaseCreated';
+      data: {
+        /**
+         * The case index that was created.
+         **/
+        caseIndex: number;
+      };
+    }
+  /**
+   * A callback was triggered from mob-rule.
+   **/
+  | {
+      name: 'Callback';
+      data: {
+        /**
+         * The result of the callback.
+         **/
+        result: Result<[], DispatchError>;
+      };
+    }
+  /**
+   * There was a codec error when trying to decode the callback call.
+   **/
+  | {
+      name: 'CallbackError';
+      data: {
+        /**
+         * The case whose callback failed to decode.
+         **/
+        caseIndex: number;
+
+        /**
+         * The mob-rule extrinsic call which attempted to trigger the callback.
+         **/
+        trigger: IndivPalletMobRuleCallbackTrigger;
+      };
+    }
+  /**
+   * The case has been closed with the following result.
+   **/
+  | {
+      name: 'CaseClosed';
+      data: {
+        /**
+         * The case index that was closed.
+         **/
+        caseIndex: number;
+
+        /**
+         * The verdict of the closed case.
+         **/
+        verdict: IndivSupportRealityJudgement;
+      };
+    }
+  /**
+   * A vote has been placed on a case.
+   **/
+  | {
+      name: 'Voted';
+      data: {
+        /**
+         * The case voted on.
+         **/
+        caseIndex: number;
+
+        /**
+         * The alias that voted.
+         **/
+        voter: FixedBytes<32>;
+
+        /**
+         * The opinion of the voter.
+         **/
+        opinion: IndivSupportRealityJudgement;
+      };
+    }
+  /**
+   * A vote has been cleaned.
+   **/
+  | {
+      name: 'VoteCleaned';
+      data: {
+        /**
+         * The case voted on.
+         **/
+        caseIndex: number;
+
+        /**
+         * The alias that voted.
+         **/
+        voter: FixedBytes<32>;
+      };
+    }
+  /**
+   * A case has been removed.
+   **/
+  | {
+      name: 'CaseRemoved';
+      data: {
+        /**
+         * The case voted on.
+         **/
+        caseIndex: number;
+      };
+    }
+  /**
+   * A case has been intervened.
+   **/
+  | {
+      name: 'CaseIntervened';
+      data: {
+        /**
+         * The case that has been intervened.
+         **/
+        caseIndex: number;
+
+        /**
+         * The verdict applied to the case.
+         **/
+        verdict: IndivSupportRealityJudgement;
+      };
+    }
+  /**
+   * Credits for votes have been claimed.
+   **/
+  | {
+      name: 'VotesClaimed';
+      data: {
+        /**
+         * The alias that voted.
+         **/
+        voter: FixedBytes<32>;
+
+        /**
+         * The case that has been intervened.
+         **/
+        caseIndices: Array<number>;
+      };
+    }
+  /**
+   * A reward that has been paid out.
+   **/
+  | {
+      name: 'RewardPayout';
+      data: {
+        /**
+         * The alias that earned a reward.
+         **/
+        voter: FixedBytes<32>;
+
+        /**
+         * The destination account for the payout.
+         **/
+        destination: AccountId32;
+
+        /**
+         * The payout amount that was transferred.
+         **/
+        amount: bigint;
+      };
+    }
+  /**
+   * A new payout round has been started.
+   **/
+  | {
+      name: 'PayoutRoundStarted';
+      data: {
+        /**
+         * The index of the new payout round.
+         **/
+        round: number;
+
+        /**
+         * The initial balance allocated for the round.
+         **/
+        initialBalance: bigint;
+
+        /**
+         * Total accumulated points claimable in this round.
+         **/
+        totalPoints: bigint;
+      };
+    }
+  /**
+   * Payout rounds have been scheduled.
+   **/
+  | {
+      name: 'PayoutRoundsScheduled';
+      data: {
+        /**
+         * The amount of funds per round.
+         **/
+        amount: bigint;
+
+        /**
+         * The number of rounds scheduled.
+         **/
+        count: number;
+
+        /**
+         * The minimum period (in blocks) between rounds.
+         **/
+        period: number;
+      };
+    }
+  /**
+   * A payout schedule has been removed.
+   **/
+  | {
+      name: 'PayoutScheduleRemoved';
+      data: {
+        /**
+         * The index of the removed schedule.
+         **/
+        index: number;
+      };
+    }
+  /**
+   * Credit has been claimed from the payout distribution.
+   **/
+  | {
+      name: 'CreditClaimed';
+      data: {
+        /**
+         * The alias of the voter who claimed.
+         **/
+        voter: FixedBytes<32>;
+
+        /**
+         * The amount of credit claimed.
+         **/
+        amount: bigint;
+      };
+    }
+  /**
+   * Stale voting points have been cleaned.
+   **/
+  | {
+      name: 'PointsCleaned';
+      data: {
+        /**
+         * The round index from which points were removed.
+         **/
+        round: number;
+
+        /**
+         * The alias whose points were removed.
+         **/
+        voter: FixedBytes<32>;
+      };
+    }
+  /**
+   * A case has been touched (re-evaluated).
+   **/
+  | {
+      name: 'CaseTouched';
+      data: {
+        /**
+         * The case that was touched.
+         **/
+        caseIndex: number;
+
+        /**
+         * Whether the case was ripened as a result.
+         **/
+        ripened: boolean;
+      };
+    }
+  /**
+   * A voting penalty has been cleared.
+   **/
+  | {
+      name: 'VotingPenaltyCleared';
+      data: {
+        /**
+         * The alias whose penalty was cleared.
+         **/
+        who: FixedBytes<32>;
+      };
+    };
+
+export type IndivPalletMobRuleCallbackTrigger = 'CloseCase' | 'Intervene';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletProofOfInkEvent =
+  /**
+   * Candidate applied for verification.
+   **/
+  | { name: 'CandidateApplied'; data: { accountId: AccountId32 } }
+  /**
+   * Candidate opened a Mob Rule case for their verification evidence.
+   **/
+  | { name: 'JudgementRequested'; data: { accountId: AccountId32 } }
+  /**
+   * Oracle has provided the judgement for a Mob Rule case.
+   **/
+  | { name: 'JudgementProvided'; data: { accountId: AccountId32; judgement: IndivSupportRealityJudgement } }
+  /**
+   * A candidate has been granted a free retry attempt after a failure to verify their
+   * evidence.
+   **/
+  | { name: 'RetryGranted'; data: { accountId: AccountId32; failures: number } }
+  /**
+   * Register an account as a person.
+   **/
+  | { name: 'PersonRegistered'; data: { accountId: AccountId32; personalId: bigint } }
+  /**
+   * Person referred an account.
+   **/
+  | { name: 'CandidateReferred'; data: { referrer: bigint; referred: AccountId32 } }
+  /**
+   * Entropy for a candidate changed after expiry.
+   **/
+  | { name: 'Rerolled'; data: { accountId: AccountId32 } }
+  /**
+   * Candidate committed to an ink design.
+   **/
+  | { name: 'DesignCommitted'; data: { accountId: AccountId32; reservedId: bigint } }
+  /**
+   * Storage fully allocated for a committed design.
+   **/
+  | { name: 'FullyAllocated'; data: { accountId: AccountId32 } }
+  /**
+   * Candidate removed after timeout.
+   **/
+  | { name: 'TimedOut'; data: { accountId: AccountId32 } }
+  /**
+   * Uncommitted candidate removed.
+   **/
+  | { name: 'FlakedOut'; data: { accountId: AccountId32 } }
+  /**
+   * Referral ticket created by storing the public key on chain.
+   **/
+  | { name: 'TicketReferred'; data: { referrer: bigint; ticket: AccountId32 } }
+  /**
+   * Referral ticket removed by removing the public key from chain storage.
+   **/
+  | { name: 'TicketCancelled'; data: { referrer: bigint; ticket: AccountId32 } }
+  /**
+   * Candidate applied using a referral ticket.
+   **/
+  | { name: 'TicketApplied'; data: { accountId: AccountId32; referrer: bigint } }
+  /**
+   * Design family added.
+   **/
+  | { name: 'FamilyAdded'; data: { index: number; kind: IndivPalletProofOfInkFamilyKind; id: FixedBytes<32> } }
+  /**
+   * All invites have been removed for the inviter.
+   **/
+  | { name: 'AllInvitesRemoved'; data: { inviter: AccountId32 } }
+  /**
+   * Some invites have been removed for the inviter, some are remaining.
+   **/
+  | { name: 'SomeInvitesRemoved'; data: { inviter: AccountId32 } }
+  /**
+   * Candidate applied using an invitation.
+   **/
+  | { name: 'InvitedCandidateApplied'; data: { who: AccountId32; inviter: AccountId32 } }
+  /**
+   * A referrer's reward voucher has been registered.
+   **/
+  | { name: 'ReferralVoucherRegistered'; data: { referrer: bigint } }
+  /**
+   * Invites have been granted to an account.
+   **/
+  | { name: 'InvitesGranted'; data: { account: AccountId32; count: number } }
+  /**
+   * An invite ticket has been set.
+   **/
+  | { name: 'InviteTicketSet'; data: { inviter: AccountId32; ticket: AccountId32 } }
+  /**
+   * An invite ticket has been cancelled.
+   **/
+  | { name: 'InviteTicketCancelled'; data: { inviter: AccountId32; ticket: AccountId32 } }
+  /**
+   * The pallet configuration has been updated.
+   **/
+  | { name: 'ConfigurationSet'; data: { config: IndivPalletProofOfInkConfigRecord } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletGameEvent =
+  /**
+   * A new game is starting.
+   **/
+  | { name: 'NewGame'; data: { registrationEnds: number; gameDate: number; reportEnds: number } }
+  /**
+   * The game and its post-process has ended.
+   **/
+  | { name: 'GameEnded'; data: { index: number } }
+  /**
+   * The game phase durations were overridden by [`Config::ManagerOrigin`].
+   **/
+  | { name: 'GamePhasesSet'; data: { phases: IndivPalletGamePhaseDurationValues } }
+  /**
+   * A player signed up for the game.
+   **/
+  | { name: 'SignedUp'; data: { who: IndivSupportIdentityAccountOrPerson } }
+  /**
+   * A player submitted their report.
+   **/
+  | { name: 'ReportSubmitted'; data: { who: IndivSupportIdentityAccountOrPerson; gameIndex: number } }
+  /**
+   * A player offboarded from the game.
+   **/
+  | { name: 'Offboarded'; data: { who: IndivSupportIdentityAccountOrPerson } }
+  /**
+   * An archived player was kicked out.
+   **/
+  | { name: 'KickedOut'; data: { player: IndivSupportIdentityAccountOrPerson } }
+  /**
+   * Invites were granted to an account.
+   **/
+  | { name: 'InvitesGranted'; data: { account: AccountId32; count: number } }
+  /**
+   * An invite ticket was set.
+   **/
+  | { name: 'InviteTicketSet'; data: { inviter: AccountId32 } }
+  /**
+   * An invite ticket was cancelled.
+   **/
+  | { name: 'InviteTicketCancelled'; data: { inviter: AccountId32 } }
+  /**
+   * A lite person invited the account `player` to play on their behalf, which is now a
+   * player with an invited credibility.
+   **/
+  | { name: 'LiteInvited'; data: { player: AccountId32 } }
+  /**
+   * Games were scheduled.
+   **/
+  | { name: 'GamesScheduled'; data: { count: number } }
+  /**
+   * A scheduled game was removed.
+   **/
+  | { name: 'ScheduledGameRemoved'; data: { gamePlayTime: number } }
+  /**
+   * Statement store usage removed for the account.
+   **/
+  | { name: 'StmtUsageRemoved'; data: { who: FixedBytes<32> } }
+  /**
+   * All invites have been removed for the inviter.
+   **/
+  | { name: 'AllInvitesRemoved'; data: { inviter: AccountId32 } }
+  /**
+   * Some invites have been removed for the inviter, some are remaining.
+   **/
+  | { name: 'SomeInvitesRemoved'; data: { inviter: AccountId32 } }
+  /**
+   * The configured play deposit was updated.
+   **/
+  | { name: 'PlayDepositSet'; data: { amount: bigint } }
+  /**
+   * An airdrop event was scheduled for the current game.
+   **/
+  | { name: 'AirdropScheduled'; data: { gameIndex: number; airdropIndex: number; eventId: FixedBytes<32> } }
+  /**
+   * An airdrop event for the current game failed to schedule.
+   **/
+  | { name: 'AirdropScheduleFailed'; data: { gameIndex: number; airdropIndex: number; error: DispatchError } }
+  /**
+   * Game `game_index` was cancelled.
+   **/
+  | { name: 'GameCancelled'; data: { gameIndex: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletScoreEvent =
+  /**
+   * A person has claimed credit.
+   **/
+  | {
+      name: 'CreditClaimed';
+      data: {
+        /**
+         * The person who claimed credit.
+         **/
+        who: IndivSupportIdentityAccountOrPerson;
+
+        /**
+         * Destination account that received the transfer.
+         **/
+        destination: AccountId32;
+
+        /**
+         * Amount transferred.
+         **/
+        amount: bigint;
+      };
+    }
+  /**
+   * Personhood was recognized for an account.
+   **/
+  | {
+      name: 'PersonhoodRecognized';
+      data: {
+        /**
+         * The account whose personhood was recognized.
+         **/
+        who: IndivSupportIdentityAccountOrPerson;
+
+        /**
+         * Whether this was resuming from suspension or first-time recognition.
+         **/
+        resumed: boolean;
+      };
+    }
+  /**
+   * Payout rounds have been scheduled.
+   **/
+  | {
+      name: 'PayoutRoundsScheduled';
+      data: {
+        /**
+         * The amount per round.
+         **/
+        amount: bigint;
+
+        /**
+         * The number of rounds.
+         **/
+        count: number;
+
+        /**
+         * The duration per round in blocks.
+         **/
+        duration: number;
+      };
+    }
+  /**
+   * A payout schedule has been removed.
+   **/
+  | {
+      name: 'PayoutScheduleRemoved';
+      data: {
+        /**
+         * The index of the removed schedule.
+         **/
+        index: number;
+      };
+    }
+  /**
+   * A round has been transitioned.
+   **/
+  | {
+      name: 'RoundTransitioned';
+      data: {
+        /**
+         * The round index that was transitioned.
+         **/
+        roundIndex: number;
+      };
+    }
+  /**
+   * A payout round has been operated (credit distributed to participants).
+   **/
+  | {
+      name: 'PayoutRoundOperated';
+      data: {
+        /**
+         * The round index that was operated.
+         **/
+        roundIndex: number;
+      };
+    }
+  /**
+   * A participant has cashed out score for points.
+   **/
+  | {
+      name: 'CashedOut';
+      data: {
+        /**
+         * The participant who cashed out.
+         **/
+        who: IndivSupportIdentityAccountOrPerson;
+      };
+    }
+  /**
+   * The personhood-threshold schedule has been set.
+   **/
+  | { name: 'PersonhoodThresholdScheduleSet' }
+  /**
+   * The absence-grace schedule has been set.
+   **/
+  | { name: 'AbsenceGraceScheduleSet' }
+  /**
+   * The attendance of a participant was set by root.
+   **/
+  | {
+      name: 'AttendanceForced';
+      data: {
+        /**
+         * The participant whose attendance was set.
+         **/
+        who: IndivSupportIdentityAccountOrPerson;
+
+        /**
+         * Whether the participant was marked as attended.
+         **/
+        attended: boolean;
+
+        /**
+         * The game index the attendance was recorded for.
+         **/
+        gameIndex: number;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletNftCreditsEvent =
+  /**
+   * An NFT claim credit was awarded to `claimant` and recorded as leaf `leaf_index` of the
+   * tree of `block`.
+   *
+   * `block` is the block whose root commits the credit, which is the current one unless its
+   * tree was already full. An indexer keys the leaf by `block`, not by the block the event
+   * was emitted in.
+   *
+   * One event per awarded credit, in leaf order, lets an inclusion proof still be built
+   * once a block's awards have been pruned: the leaf is `blake2_256(claimant ++ credit)`
+   * and the block's leaf set is the `leaf_index`-ordered sequence of the events naming
+   * it, so no block replay is needed.
+   **/
+  | {
+      name: 'NftClaimCreditAwarded';
+      data: { claimant: IndivSupportIdentityAccountOrPerson; credit: FixedBytes<32>; block: number; leafIndex: number };
+    }
+  /**
+   * The credits `block` committed can be minted from now on: `credit_root`'s root is what
+   * an inclusion proof for any of them verifies against, and never changes.
+   **/
+  | {
+      name: 'NftClaimCreditRootRecorded';
+      data: { block: number; creditRoot: IndivSupportCreditTreesNftClaimCreditTree };
+    }
+  /**
+   * An earned NFT claim credit was not recorded, no buffer having room for it.
+   *
+   * The credit is committed to no root and cannot be minted. Its slot is left unset, so the
+   * attendance backfill awards it again if the claimant goes on to attend. Every caller
+   * checks [`Pallet::remaining_credit_capacity`] first, so this event reports a bug.
+   **/
+  | { name: 'NftClaimCreditDropped'; data: { claimant: IndivSupportIdentityAccountOrPerson; credit: FixedBytes<32> } }
+  /**
+   * Credit trees were handed to the XCM router for delivery to the NFT claims chain.
+   **/
+  | {
+      name: 'CreditTreesSent';
+      data: {
+        /**
+         * The tree block of every tree the message carries, in the order they go out.
+         * Empty means every tree of this message had lost its root, so nothing was sent.
+         *
+         * The sequence each block travels under is not spelled out: the message takes a
+         * contiguous run of sequences off the queue, starting at the call's `first_sequence`,
+         * minus the ones this block's [`Event::CreditTreeDeliverySkipped`] names.
+         **/
+        trees: Array<number>;
+      };
+    }
+  /**
+   * A queued credit tree was not sent because its root is no longer recorded.
+   *
+   * Its sequence is spent without a tree ever arriving, so the claims chain reports a gap.
+   * No [`Pallet::replay_credit_trees`] can fill it: the root proofs verify against is gone.
+   **/
+  | { name: 'CreditTreeDeliverySkipped'; data: { sequence: bigint; block: number } }
+  /**
+   * Delivering credit trees to the NFT claims chain failed. The trees stay queued and the
+   * next offchain worker cycle retries them.
+   **/
+  | { name: 'CreditTreeSendFailed' }
+  /**
+   * Credit trees were resent to the NFT claims chain out of band.
+   **/
+  | { name: 'CreditTreesReplayed'; data: { count: number } }
+  /**
+   * A freshly built credit tree could not be queued for delivery because
+   * `CreditTreeDeliveryQueue` is full, which means delivery has been failing for
+   * `MaxQueuedCreditTrees` trees. Its credits stay unmintable until a
+   * [`Pallet::replay_credit_trees`] names `block`.
+   **/
+  | { name: 'CreditTreeDeliveryDropped'; data: { block: number } }
+  /**
+   * The claims chain has finished with these roots, so this chain removed them too. `count`
+   * of the `named` blocks held a root.
+   *
+   * Every credit those roots committed to has been minted, or the claims chain's deadline
+   * for them has passed. No proof can be built against them again.
+   **/
+  | { name: 'CreditRootsDeleted'; data: { named: number; count: number } }
+  /**
+   * `count` roots outlived [`Pallet::root_ttl`] with the claims chain never asking for
+   * their deletion, so this chain removed them. Its deadline for them passed first, so
+   * nothing mintable is lost.
+   *
+   * The blocks are not named. A root this sweep removes is one the claims chain gave up on
+   * long before, so nothing is waiting on the removal.
+   **/
+  | { name: 'CreditRootsExpired'; data: { count: number } }
+  /**
+   * `count` tree blocks outlived [`Config::AwardRetentionTtl`], so their awards were
+   * removed. Their roots stay until [`Pallet::root_ttl`] runs out.
+   *
+   * A credit of theirs is still mintable, but its proof now has to be rebuilt from the
+   * tree block's `NftClaimCreditAwarded` events rather than read from state.
+   **/
+  | { name: 'CreditAwardsExpired'; data: { count: number } };
+
+export type IndivSupportCreditTreesNftClaimCreditTree = {
+  gameIndex: number;
+  root: IndivSupportCreditTreesCreditProofNode;
+  leafCount: number;
+  timestamp: number;
+};
+
+export type IndivSupportCreditTreesCreditProofNode = FixedBytes<32>;
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletDummyDimEvent =
+  /**
+   * A number of IDs was reserved.
+   **/
+  | { name: 'IdsReserved'; data: { count: number } }
+  /**
+   * An ID was renewed.
+   **/
+  | { name: 'IdRenewed'; data: { id: bigint } }
+  /**
+   * A reserved ID was removed.
+   **/
+  | { name: 'IdUnreserved'; data: { id: bigint } }
+  /**
+   * Register multiple people.
+   **/
+  | { name: 'PeopleRegistered'; data: { count: number } }
+  /**
+   * Suspend a number of people.
+   **/
+  | { name: 'PeopleSuspended'; data: { count: number } }
+  /**
+   * Someone's personhood was resumed.
+   **/
+  | { name: 'PersonhoodResumed'; data: { id: bigint } }
+  /**
+   * The pallet enabled suspensions.
+   **/
+  | { name: 'SuspensionsStarted' }
+  /**
+   * The pallet disabled suspensions.
+   **/
+  | { name: 'SuspensionsEnded' };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletStorageInitializationEvent =
+  /**
+   * The foreign asset was created and reserves were set.
+   **/
+  | 'AssetCreated'
+  /**
+   * An XCM funds transfer was sent to Asset Hub.
+   **/
+  | 'XcmFundsTransferSent'
+  /**
+   * The XCM transfer timed out and will be retried.
+   **/
+  | 'XcmFundsTransferTimedOut'
+  /**
+   * Transferred funds have been verified.
+   **/
+  | 'FundsVerified'
+  /**
+   * All pots have been funded.
+   **/
+  | 'PotsFunded'
+  /**
+   * People Lite attestation allowances have been set.
+   **/
+  | 'PeopleLiteAttestationAllowancesSet'
+  /**
+   * Mob Rule payout schedule has been set.
+   **/
+  | 'MobRulePayoutsScheduled'
+  /**
+   * Score payout schedule has been set.
+   **/
+  | 'ScorePayoutsScheduled'
+  /**
+   * The one-time on_poll initialization has completed.
+   **/
+  | 'OnPollInitializationCompleted'
+  /**
+   * Migration: initial people have been recognized.
+   **/
+  | 'MigrationPeopleRecognized'
+  /**
+   * Migration: onboarding size has been set.
+   **/
+  | 'MigrationOnboardingSizeSet'
+  /**
+   * Migration: Proof-of-Ink pallet has been initialized.
+   **/
+  | 'MigrationProofOfInkInitialized'
+  /**
+   * Migration: games have been scheduled.
+   **/
+  | 'MigrationGamesScheduled'
+  /**
+   * Migration: invites have been granted.
+   **/
+  | 'MigrationInvitesGranted'
+  /**
+   * Migration: Proof-of-Ink reimbursement values have been set.
+   **/
+  | 'MigrationReimbursementValuesSet'
+  /**
+   * Migration: People Lite attestation allowances have been set.
+   **/
+  | 'MigrationAttestationAllowancesSet'
+  /**
+   * Migration has completed and on_poll initialization has been triggered.
+   **/
+  | 'MigrationCompleted';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletPeopleLiteEvent =
+  /**
+   * All attestation allowance has been removed for the verifier.
+   **/
+  | { name: 'AllAttestationAllowanceCleared'; data: { verifier: AccountId32 } }
+  /**
+   * Attestation allowance was increased for an account by `count` attestations.
+   **/
+  | { name: 'AttestationAllowanceIncreased'; data: { account: AccountId32; count: number } }
+  /**
+   * A new lite person was registered through attestation.
+   **/
+  | { name: 'PersonAttested'; data: { candidate: AccountId32; verifier: AccountId32 } }
+  /**
+   * A new lite person was registered by paying the registration fee.
+   **/
+  | { name: 'PersonRegisteredWithFee'; data: { candidate: AccountId32 } }
+  /**
+   * A lite person was registered as a consumer.
+   **/
+  | { name: 'ConsumerRegistered'; data: { account: AccountId32 } }
+  /**
+   * An alias-to-account mapping was set or updated.
+   **/
+  | { name: 'AliasAccountSet'; data: { alias: IndivSupportRealityContextualAlias; account: AccountId32 } }
+  /**
+   * An alias-to-account mapping was removed.
+   **/
+  | { name: 'AliasAccountUnset'; data: { alias: IndivSupportRealityContextualAlias; account: AccountId32 } }
+  /**
+   * The lite people member collection was created.
+   **/
+  | { name: 'CollectionCreated' };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletResourcesEvent =
+  /**
+   * A person has registered as a consumer.
+   **/
+  | { name: 'PersonRegistered'; data: { alias: FixedBytes<32>; account: AccountId32 } }
+  /**
+   * A lite person has registered as a consumer.
+   **/
+  | { name: 'LitePersonRegistered'; data: { account: AccountId32 } }
+  /**
+   * Notification statement usage has been assigned for a sequence.
+   **/
+  | {
+      name: 'NotificationStmtUsageSet';
+      data: { alias: FixedBytes<32>; period: number; seq: number; account: AccountId32 };
+    }
+  /**
+   * Notification statement usage has been removed.
+   **/
+  | { name: 'NotificationStmtUsageRemoved'; data: { account: AccountId32 } }
+  /**
+   * A person's authorization was touched.
+   **/
+  | { name: 'PersonAuthorizationTouched'; data: { account: AccountId32 } }
+  /**
+   * An expired username reservation was removed.
+   **/
+  | { name: 'ExpiredUsernameReservationRemoved'; data: { username: Bytes; account: AccountId32 } }
+  /**
+   * A consumer's identifier key was updated.
+   **/
+  | { name: 'IdentifierKeyUpdated'; data: { account: AccountId32 } }
+  /**
+   * The username reservation duration was set.
+   **/
+  | { name: 'UsernameReservationDurationSet'; data: { duration: bigint } }
+  /**
+   * An anonymous statement store allowance was granted.
+   **/
+  | {
+      name: 'StmtStoreAllowanceSet';
+      data: { alias: FixedBytes<32>; period: number; seq: number; account: AccountId32 };
+    }
+  /**
+   * Expired statement store allowances were cleaned up.
+   **/
+  | { name: 'StmtStoreAllowancesCleared'; data: { period: number; firstKey: FixedBytes<32>; count: number } }
+  /**
+   * A full person was demoted due to expired authorization.
+   **/
+  | { name: 'PersonDemoted'; data: { account: AccountId32 } }
+  /**
+   * Long-term storage has been claimed for an account.
+   **/
+  | {
+      name: 'LongTermStorageClaimed';
+      data: {
+        alias: FixedBytes<32>;
+        period: number;
+        counter: number;
+        account: AccountId32;
+        collection: IndivPalletResourcesMembershipCollection;
+      };
+    }
+  /**
+   * A long-term storage claim was accepted but the downstream allocation failed. The alias
+   * is still marked spent for the period.
+   **/
+  | {
+      name: 'LongTermStorageAllocationFailed';
+      data: {
+        alias: FixedBytes<32>;
+        period: number;
+        counter: number;
+        account: AccountId32;
+        collection: IndivPalletResourcesMembershipCollection;
+      };
+    }
+  /**
+   * Expired long-term storage aliases have been cleared for a period.
+   **/
+  | { name: 'LongTermStorageAliasesCleared'; data: { period: number; count: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletChunksManagerEvent =
+  /**
+   * A new chunk page hash set has been initialized (e.g., during genesis).
+   **/
+  | { name: 'ChunkPageHashesInitialized'; data: { ringExponent: IndivSupportRealityRingExponent; totalPages: number } }
+  /**
+   * New chunks have been successfully added to an existing or new chunk set.
+   **/
+  | { name: 'ChunksAdded'; data: { ringExponent: IndivSupportRealityRingExponent; startIndex: number; count: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletMembersEvent =
+  /**
+   * An entity has had their membership recognised and indexed.
+   **/
+  | { name: 'MemberAdded'; data: { key: FixedBytes<32> } }
+  /**
+   * An entity has had their membership revoked.
+   **/
+  | { name: 'MemberRemoved'; data: { key: FixedBytes<32> } }
+  /**
+   * A collection has been marked for deletion.
+   **/
+  | { name: 'CollectionMarkedForDeletion'; data: { identifier: FixedBytes<32> } }
+  /**
+   * A collection has been fully deleted.
+   **/
+  | { name: 'CollectionDeleted'; data: { identifier: FixedBytes<32> } }
+  /**
+   * A ring root was built.
+   **/
+  | { name: 'RingBuilt'; data: { identifier: FixedBytes<32>; ringIndex: number } }
+  /**
+   * Members were onboarded.
+   **/
+  | { name: 'MembersOnboarded'; data: { identifier: FixedBytes<32> } }
+  /**
+   * Two rings were merged.
+   **/
+  | { name: 'RingsMerged'; data: { identifier: FixedBytes<32>; baseRingIndex: number; targetRingIndex: number } }
+  /**
+   * The onboarding size was set for a collection.
+   **/
+  | { name: 'OnboardingSizeSet'; data: { identifier: FixedBytes<32>; onboardingSize: number } }
+  /**
+   * A member self-included into a ring.
+   **/
+  | { name: 'MemberSelfIncluded'; data: { identifier: FixedBytes<32>; key: FixedBytes<32> } }
+  /**
+   * An old root revision has been cleaned up.
+   **/
+  | { name: 'OldRootCleanedUp'; data: { identifier: FixedBytes<32>; ringIndex: number; revision: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletCoinageEvent =
+  | { name: 'CoinSplit'; data: { instanceId: number; outputCount: number } }
+  | { name: 'CoinTransferred'; data: { instanceId: number; to: AccountId32; value: number; newAge: number } }
+  | { name: 'RecyclerLoadedWithCoin'; data: { instanceId: number; value: number } }
+  | {
+      name: 'RecyclerLoadedWithExternalAsset';
+      data: { instanceId: number; who: AccountId32; value: number; amount: bigint };
+    }
+  | {
+      name: 'RecyclerUnloadedIntoCoin';
+      data: { instanceId: number; to: AccountId32; inputValue: number; outputValue: number; inputCount: number };
+    }
+  | {
+      name: 'RecyclerUnloadedIntoExternalAsset';
+      data: { instanceId: number; to: AccountId32; value: number; inputCount: number; amount: bigint };
+    }
+  | {
+      name: 'RecyclerUnloadedIntoExternalAssetAndLoadedCoins';
+      data: {
+        instanceId: number;
+        to: AccountId32;
+        value: number;
+        inputCount: number;
+        externalAssetAmount: bigint;
+        loadedCoinCount: number;
+      };
+    }
+  /**
+   * An alias was permanently marked as unloaded from a live recycler ring.
+   *
+   * Emitted once per alias on every unload from a live (not yet archived) ring;
+   * recoveries from an archived ring emit
+   * [`Event::ArchivedRecyclerUnloadedIntoExternalAsset`] instead. Together, these events
+   * let an offchain service reconstruct the unloaded-aliases trie committed to by
+   * [`Event::RecyclerArchived`], and hence build the proofs needed by
+   * [`Pallet::unload_archived_recycler_into_external_asset`].
+   **/
+  | {
+      name: 'RecyclerAliasUnloaded';
+      data: { instanceId: number; value: number; ringIndex: number; alias: FixedBytes<32> };
+    }
+  | { name: 'PaidUnloadTokenRegisteredWithCoin'; data: { instanceId: number; fee: bigint; destroyed: bigint } }
+  | { name: 'PaidUnloadTokenRegisteredWithNative'; data: { who: AccountId32; fee: bigint } }
+  | { name: 'PaidUnloadTokenRegisteredWithExternalAsset'; data: { instanceId: number; who: AccountId32; fee: bigint } }
+  | { name: 'PeopleFreeUnloadTokenConsumed'; data: { period: number } }
+  | { name: 'LitePeopleFreeUnloadTokenConsumed'; data: { period: number } }
+  | {
+      name: 'RecyclersUnloadedIntoCoin';
+      data: { instanceId: number; to: AccountId32; outputValue: number; inputCount: number };
+    }
+  | {
+      name: 'RecyclersUnloadedIntoExternalAsset';
+      data: { instanceId: number; to: AccountId32; inputCount: number; amount: bigint };
+    }
+  | {
+      name: 'RecyclersUnloadedIntoExternalAssetNonAnonymous';
+      data: {
+        instanceId: number;
+        who: AccountId32;
+        to: AccountId32;
+        inputCount: number;
+        amount: bigint;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+      };
+    }
+  | { name: 'RecyclerUnloadedIntoCoins'; data: { instanceId: number; outputCount: number } }
+  | {
+      name: 'CoinOffboardedIntoExternalAsset';
+      data: { instanceId: number; to: AccountId32; value: number; amount: bigint };
+    }
+  /**
+   * A recycler ring was cleaned. `remaining_coins` is the number of not-yet-unloaded coins;
+   * when non-zero the ring is archived (see [Event::RecyclerArchived]) and that value is
+   * retained for recovery rather than destroyed.
+   **/
+  | { name: 'RecyclerCleaned'; data: { instanceId: number; value: number; remainingCoins: number } }
+  /**
+   * A cleaned recycler ring with recoverable coins was archived: its archival commitment
+   * (see [`archive_commitment`]) was recorded in [RecyclersArchives].
+   *
+   * The ring-VRF `recycler_root` is emitted here because the ring is removed from storage
+   * in the same operation: this event is the last on-chain source of the root, which
+   * offchain services must retain to build the recovery proofs for
+   * [`Pallet::unload_archived_recycler_into_external_asset`].
+   **/
+  | {
+      name: 'RecyclerArchived';
+      data: { instanceId: number; value: number; ringIndex: number; recyclerRoot: VerifiableRingMembersCommitment };
+    }
+  /**
+   * A coin was recovered from an archived recycler ring into the external asset.
+   **/
+  | {
+      name: 'ArchivedRecyclerUnloadedIntoExternalAsset';
+      data: {
+        instanceId: number;
+        who: AccountId32;
+        to: AccountId32;
+        value: number;
+        ringIndex: number;
+        amount: bigint;
+        feeCurrency: IndivPalletCoinageFeeCurrency;
+        alias: FixedBytes<32>;
+      };
+    }
+  | { name: 'ConsumedFreeTokensCleaned'; data: { period: number } }
+  | { name: 'PaidUnloadTokenRingCleaned'; data: { period: number; ringIndex: number } }
+  | { name: 'RecyclerDustCleaned' }
+  | { name: 'PaidUnloadTokenDustCleaned' }
+  | { name: 'ExpiredPaidUnloadTokenCollectionDeleted'; data: { period: number } }
+  /**
+   * A coinage instance was created for an underlying asset.
+   **/
+  | {
+      name: 'InstanceCreated';
+      data: {
+        instanceId: number;
+        assetId: StagingXcmV5Location;
+        assetUnit: bigint;
+        mode: IndivPalletCoinageInstanceMode;
+      };
+    }
+  /**
+   * A tracked contribution was added to a sponsored instance's pot.
+   **/
+  | {
+      name: 'PotFunded';
+      data: { instanceId: number; funder: AccountId32; currency: StagingXcmV5Location; amount: bigint };
+    }
+  /**
+   * A funder took back part of their recorded pot contribution.
+   **/
+  | {
+      name: 'PotFundsWithdrawn';
+      data: { instanceId: number; funder: AccountId32; currency: StagingXcmV5Location; amount: bigint };
+    }
+  /**
+   * `count` load deposits of `price` each were taken from a sponsored instance's pot.
+   **/
+  | {
+      name: 'LoadDepositsHeld';
+      data: { instanceId: number; currency: StagingXcmV5Location; price: bigint; count: number };
+    }
+  /**
+   * `count` settled keys released `amount` of `currency` to the pot's free balance.
+   **/
+  | {
+      name: 'LoadDepositsReleased';
+      data: { instanceId: number; currency: StagingXcmV5Location; amount: bigint; count: number };
+    }
+  /**
+   * Every live load deposit of the instance was re-priced to the current
+   * [`Config::LoadDeposit`].
+   **/
+  | {
+      name: 'LoadDepositsCollapsed';
+      data: { instanceId: number; currency: StagingXcmV5Location; price: bigint; count: number };
+    }
+  /**
+   * Governance switched the instance's mode.
+   **/
+  | { name: 'InstanceModeSet'; data: { instanceId: number; mode: IndivPalletCoinageInstanceMode } };
+
+export type IndivPalletCoinageInstanceMode = 'Sufficient' | 'Sponsored';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletMembersNotifierEvent =
+  /**
+   * A parachain subscribed.
+   **/
+  | { name: 'Subscribed'; data: { paraId: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * A parachain unsubscribed.
+   **/
+  | { name: 'Unsubscribed'; data: { paraId: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Update batch sent to subscriber.
+   **/
+  | { name: 'UpdatesSent'; data: { paraId: PolkadotParachainPrimitivesPrimitivesId; updateCount: number } }
+  /**
+   * Sending ring root updates to a subscriber failed.
+   **/
+  | { name: 'UpdateSendFailed'; data: { paraId: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Replay of ring roots requested by a subscriber.
+   **/
+  | {
+      name: 'ReplayRequested';
+      data: { paraId: PolkadotParachainPrimitivesPrimitivesId; identifier: FixedBytes<32>; indicesCount: number };
+    }
+  /**
+   * A stuck batch was abandoned by the offchain worker.
+   **/
+  | { name: 'BatchAbandoned'; data: { sequence: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletAirdropEvent =
+  | { name: 'EventScheduled'; data: { eventId: FixedBytes<32> } }
+  | { name: 'ScheduledEventRemoved'; data: { eventId: FixedBytes<32> } }
+  | { name: 'EventCancelled'; data: { eventId: FixedBytes<32> } }
+  | { name: 'RegistrationStarted'; data: { eventId: FixedBytes<32> } }
+  | {
+      name: 'AliasRegistered';
+      data: {
+        eventId: FixedBytes<32>;
+        slot: IndivSupportUtilsBigEndianU256;
+        participantOrigin: IndivPalletAirdropRegistrationEntry;
+      };
+    }
+  | {
+      name: 'AccountRegistered';
+      data: { eventId: FixedBytes<32>; slot: IndivSupportUtilsBigEndianU256; accountId: AccountId32 };
+    }
+  | {
+      name: 'SlotRegistered';
+      data: {
+        eventId: FixedBytes<32>;
+        slot: IndivSupportUtilsBigEndianU256;
+        entry: IndivPalletAirdropRegistrationEntry;
+      };
+    }
+  | { name: 'RegistrationClosed'; data: { eventId: FixedBytes<32>; effectiveWinners: number } }
+  | { name: 'DrawingWinners'; data: { eventId: FixedBytes<32>; effectiveWinners: number } }
+  | { name: 'ClaimingStarted'; data: { eventId: FixedBytes<32>; effectiveWinners: number } }
+  | { name: 'EventCanceled'; data: { eventId: FixedBytes<32> } }
+  | {
+      name: 'PrizeClaimed';
+      data: {
+        eventId: FixedBytes<32>;
+        slot: IndivSupportUtilsBigEndianU256;
+        beneficiary: AccountId32;
+        assetId: StagingXcmV5Location;
+        amount: bigint;
+      };
+    }
+  | { name: 'ClearingRegistrations'; data: { eventId: FixedBytes<32>; unclaimed: number } }
+  | { name: 'ClearingWinners'; data: { eventId: FixedBytes<32> } }
+  | { name: 'FinalizingEvent'; data: { eventId: FixedBytes<32> } }
+  | { name: 'EventCompleted'; data: { eventId: FixedBytes<32> } }
+  | { name: 'AssetEnabled'; data: { assetId: StagingXcmV5Location; funded: bigint } }
+  | { name: 'AssetDisabled'; data: { assetId: StagingXcmV5Location; refunded: bigint } };
+
+/**
+ * A U256 encoded in big-endian format for correct lexicographic ordering.
+ **/
+export type IndivSupportUtilsBigEndianU256 = FixedBytes<32>;
+
+export type IndivPalletAirdropRegistrationEntry =
+  | { type: 'Alias'; value: { alias: FixedBytes<32> } }
+  | { type: 'Account'; value: { accountId: AccountId32 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletHonourEvent =
+  /**
+   * A subject was voted on with a previously unused point.
+   **/
+  | {
+      name: 'VoteCast';
+      data: {
+        /**
+         * The subject that was voted on.
+         **/
+        subject: FixedBytes<32>;
+
+        /**
+         * The direction of the vote.
+         **/
+        direction: IndivPalletHonourDirection;
+      };
+    }
+  /**
+   * A point was redirected from one subject to another.
+   **/
+  | {
+      name: 'VoteReused';
+      data: {
+        /**
+         * The subject that previously held the redirected point.
+         **/
+        oldSubject: FixedBytes<32>;
+
+        /**
+         * The previous direction of the point.
+         **/
+        oldDirection: IndivPalletHonourDirection;
+
+        /**
+         * The subject that now holds the redirected point.
+         **/
+        newSubject: FixedBytes<32>;
+
+        /**
+         * The new direction of the vote.
+         **/
+        newDirection: IndivPalletHonourDirection;
+      };
+    }
+  /**
+   * The honour score of a subject has changed.
+   **/
+  | {
+      name: 'HonourChanged';
+      data: {
+        /**
+         * The subject whose honour score changed.
+         **/
+        subject: FixedBytes<32>;
+
+        /**
+         * The honour value before the update.
+         **/
+        oldValue: number;
+
+        /**
+         * The honour value after the update.
+         **/
+        newValue: number;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletPeopleAirdropsEvent =
+  /**
+   * A draw was scheduled. Registration and claim events are emitted by the airdrop
+   * implementation under this `event_id`.
+   **/
+  | { name: 'DrawScheduled'; data: { drawIndex: bigint; eventId: FixedBytes<32> } }
+  /**
+   * A scheduled draw was asked to be removed before opening.
+   **/
+  | { name: 'DrawRemoved'; data: { eventId: FixedBytes<32> } }
+  /**
+   * A draw was asked to be cancelled.
+   **/
+  | { name: 'DrawCancelled'; data: { eventId: FixedBytes<32> } }
+  /**
+   * A draw's salt entry was removed after its end time.
+   **/
+  | { name: 'DrawSaltRemoved'; data: { eventId: FixedBytes<32> } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: PeoplePaseoRuntimeParametersRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: PeoplePaseoRuntimeParametersRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: PeoplePaseoRuntimeParametersRuntimeParametersValue | undefined;
+    };
+  };
+
+export type PeoplePaseoRuntimeParametersRuntimeParametersKey =
+  | { type: 'StatementStorage'; value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageParametersKey }
+  | { type: 'BulletinStorage'; value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageParametersKey }
+  | { type: 'PeopleAirdrops'; value: PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsParametersKey }
+  | { type: 'LitePersonhood'; value: PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodParametersKey };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageParametersKey =
+  | {
+      type: 'AccountsApiAllowance';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageAccountsApiAllowance;
+    }
+  | {
+      type: 'NotificationAllowance';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationAllowance;
+    }
+  | {
+      type: 'LitePersonStatementLimit';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLitePersonStatementLimit;
+    }
+  | {
+      type: 'PersonStatementLimit';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStoragePersonStatementLimit;
+    }
+  | {
+      type: 'StmtStoreSlotsPerPeriod';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreSlotsPerPeriod;
+    }
+  | {
+      type: 'LiteStmtStoreSlotsPerPeriod';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLiteStmtStoreSlotsPerPeriod;
+    }
+  | {
+      type: 'StmtStoreCleanupLimit';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreCleanupLimit;
+    }
+  | {
+      type: 'StmtStoreReplacementCooldown';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreReplacementCooldown;
+    }
+  | {
+      type: 'StmtStoreGraceWindow';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageStmtStoreGraceWindow;
+    }
+  | {
+      type: 'NotificationSlotsPerPeriod';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationSlotsPerPeriod;
+    }
+  | {
+      type: 'LiteNotificationSlotsPerPeriod';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageLiteNotificationSlotsPerPeriod;
+    }
+  | {
+      type: 'NotificationPeriodDuration';
+      value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageNotificationPeriodDuration;
+    };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageParametersKey =
+  | {
+      type: 'LongTermStoragePeriodDuration';
+      value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStoragePeriodDuration;
+    }
+  | {
+      type: 'LongTermStorageGraceWindow';
+      value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageGraceWindow;
+    }
+  | {
+      type: 'LongTermStorageClaimsPerPeriod';
+      value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageClaimsPerPeriod;
+    }
+  | {
+      type: 'LongTermStorageCleanupLimit';
+      value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageCleanupLimit;
+    }
+  | {
+      type: 'LongTermStorageAllowanceForPeople';
+      value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageAllowanceForPeople;
+    }
+  | {
+      type: 'LongTermStorageAllowanceForLitePeople';
+      value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageLongTermStorageAllowanceForLitePeople;
+    };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsParametersKey = {
+  type: 'PrizeSource';
+  value: PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsPrizeSource;
+};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodParametersKey = {
+  type: 'RegistrationFee';
+  value: PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee;
+};
+
+export type PeoplePaseoRuntimeParametersRuntimeParametersValue =
+  | { type: 'StatementStorage'; value: PeoplePaseoRuntimeParametersDynamicParamsStatementStorageParametersValue }
+  | { type: 'BulletinStorage'; value: PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageParametersValue }
+  | { type: 'PeopleAirdrops'; value: PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsParametersValue }
+  | { type: 'LitePersonhood'; value: PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodParametersValue };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsStatementStorageParametersValue =
+  | { type: 'AccountsApiAllowance'; value: IndivSupportParametersStatementAllowanceParameter }
+  | { type: 'NotificationAllowance'; value: IndivSupportParametersStatementAllowanceParameter }
+  | { type: 'LitePersonStatementLimit'; value: IndivSupportParametersStatementAllowanceParameter }
+  | { type: 'PersonStatementLimit'; value: IndivSupportParametersStatementAllowanceParameter }
+  | { type: 'StmtStoreSlotsPerPeriod'; value: number }
+  | { type: 'LiteStmtStoreSlotsPerPeriod'; value: number }
+  | { type: 'StmtStoreCleanupLimit'; value: number }
+  | { type: 'StmtStoreReplacementCooldown'; value: number }
+  | { type: 'StmtStoreGraceWindow'; value: number }
+  | { type: 'NotificationSlotsPerPeriod'; value: number }
+  | { type: 'LiteNotificationSlotsPerPeriod'; value: number }
+  | { type: 'NotificationPeriodDuration'; value: number };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsBulletinStorageParametersValue =
+  | { type: 'LongTermStoragePeriodDuration'; value: number }
+  | { type: 'LongTermStorageGraceWindow'; value: number }
+  | { type: 'LongTermStorageClaimsPerPeriod'; value: number }
+  | { type: 'LongTermStorageCleanupLimit'; value: number }
+  | { type: 'LongTermStorageAllowanceForPeople'; value: IndivPalletResourcesLongTermStorageAllocation }
+  | { type: 'LongTermStorageAllowanceForLitePeople'; value: IndivPalletResourcesLongTermStorageAllocation };
+
+export type PeoplePaseoRuntimeParametersDynamicParamsPeopleAirdropsParametersValue = {
+  type: 'PrizeSource';
+  value: AccountId32;
+};
+
+export type PeoplePaseoRuntimeParametersDynamicParamsLitePersonhoodParametersValue = {
+  type: 'RegistrationFee';
+  value: bigint;
+};
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletNetworkSuffixEvent =
+  /**
+   * The network suffix changed.
+   **/
+  { name: 'NetworkSuffixSet'; data: { old: Bytes; new: Bytes } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletSudoEvent =
   /**
    * A sudo call just took place.
@@ -6854,6 +15737,7 @@ export type CumulusPalletParachainSystemPoVMessages = {
   bundleIndex: number;
   umpMsgCount: number;
   hrmpOutboundCount: number;
+  hrmpOutboundRecipients: Array<PolkadotParachainPrimitivesPrimitivesId>;
 };
 
 /**
@@ -6909,6 +15793,13 @@ export type PalletMigrationsMbmStatus = {
   progress?: PalletMigrationsMbmProgress | undefined;
   prefixes: Array<Bytes>;
 };
+
+export type IndivPalletRelayRandomnessRandomnessValues = {
+  block?: IndivPalletRelayRandomnessRandomnessEntry | undefined;
+  oneEpochAgo?: IndivPalletRelayRandomnessRandomnessEntry | undefined;
+};
+
+export type IndivPalletRelayRandomnessRandomnessEntry = { randomness: FixedBytes<32>; moment: number };
 
 export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
 
@@ -7110,9 +16001,14 @@ export type PalletAssetsError =
    **/
   | 'CallbackFailed'
   /**
-   * The asset ID must be equal to the [`NextAssetId`].
+   * The asset ID is not the one required by [`Config::AssetIdAllocator`].
    **/
   | 'BadAssetId'
+  /**
+   * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+   * exhausted.
+   **/
+  | 'AssetIdAllocationFailed'
   /**
    * The asset cannot be destroyed because some accounts for this asset contain freezes.
    **/
@@ -7152,9 +16048,130 @@ export type PalletAssetsHolderError =
    **/
   'TooManyHolds';
 
-export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
+export type IndivPalletOriginRestrictionUsage = { used: bigint; atBlock: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletOriginRestrictionError =
+  /**
+   * The origin has no usage tracked.
+   **/
+  | 'NoUsage'
+  /**
+   * The usage is not zero.
+   **/
+  | 'NotZero';
+
+export type PalletAssetConversionPoolInfo = { lpToken: number };
 
 export type FrameSupportPalletId = FixedBytes<8>;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetConversionError =
+  /**
+   * Provided asset pair is not supported for pool.
+   **/
+  | 'InvalidAssetPair'
+  /**
+   * Pool already exists.
+   **/
+  | 'PoolExists'
+  /**
+   * Desired amount can't be zero.
+   **/
+  | 'WrongDesiredAmount'
+  /**
+   * Provided amount should be greater than or equal to the existential deposit/asset's
+   * minimal amount.
+   **/
+  | 'AmountOneLessThanMinimal'
+  /**
+   * Provided amount should be greater than or equal to the existential deposit/asset's
+   * minimal amount.
+   **/
+  | 'AmountTwoLessThanMinimal'
+  /**
+   * Reserve needs to always be greater than or equal to the existential deposit/asset's
+   * minimal amount.
+   **/
+  | 'ReserveLeftLessThanMinimal'
+  /**
+   * Desired amount can't be equal to the pool reserve.
+   **/
+  | 'AmountOutTooHigh'
+  /**
+   * The pool doesn't exist.
+   **/
+  | 'PoolNotFound'
+  /**
+   * An overflow happened.
+   **/
+  | 'Overflow'
+  /**
+   * The minimal amount requirement for the first token in the pair wasn't met.
+   **/
+  | 'AssetOneDepositDidNotMeetMinimum'
+  /**
+   * The minimal amount requirement for the second token in the pair wasn't met.
+   **/
+  | 'AssetTwoDepositDidNotMeetMinimum'
+  /**
+   * The minimal amount requirement for the first token in the pair wasn't met.
+   **/
+  | 'AssetOneWithdrawalDidNotMeetMinimum'
+  /**
+   * The minimal amount requirement for the second token in the pair wasn't met.
+   **/
+  | 'AssetTwoWithdrawalDidNotMeetMinimum'
+  /**
+   * Optimal calculated amount is less than desired.
+   **/
+  | 'OptimalAmountLessThanDesired'
+  /**
+   * Insufficient liquidity minted.
+   **/
+  | 'InsufficientLiquidityMinted'
+  /**
+   * Requested liquidity can't be zero.
+   **/
+  | 'ZeroLiquidity'
+  /**
+   * Amount can't be zero.
+   **/
+  | 'ZeroAmount'
+  /**
+   * Calculated amount out is less than provided minimum amount.
+   **/
+  | 'ProvidedMinimumNotSufficientForSwap'
+  /**
+   * Provided maximum amount is not sufficient for swap.
+   **/
+  | 'ProvidedMaximumNotSufficientForSwap'
+  /**
+   * The provided path must consists of 2 assets at least.
+   **/
+  | 'InvalidPath'
+  /**
+   * The provided path must consists of unique assets.
+   **/
+  | 'NonUniquePath'
+  /**
+   * It was not possible to get or increment the Id of the pool.
+   **/
+  | 'IncorrectPoolAssetId'
+  /**
+   * The destination account cannot exist with the swapped funds.
+   **/
+  | 'BelowMinimum'
+  /**
+   * The pool exists but has no liquidity (at least one of the reserves is zero).
+   **/
+  | 'PoolEmpty';
+
+export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
 /**
  * The `Error` enum of this pallet.
@@ -7267,6 +16284,7 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   firstIndex: number;
   lastIndex: number;
   flags: CumulusPalletXcmpQueueOutboundChannelFlags;
+  queuedBytes: number;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
@@ -7849,6 +16867,1797 @@ export type PalletIdentityError =
    **/
   | 'InsufficientPrivileges';
 
+export type IndivPalletPeoplePersonRecord = { key: FixedBytes<32>; account?: AccountId32 | undefined };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletPeopleError =
+  /**
+   * The supplied identifier does not represent a person.
+   **/
+  | 'NotPerson'
+  /**
+   * The given person has no associated key.
+   **/
+  | 'NoKey'
+  /**
+   * The context is not a member of those allowed to have account aliases held.
+   **/
+  | 'InvalidContext'
+  /**
+   * The account is not known.
+   **/
+  | 'InvalidAccount'
+  /**
+   * The account is already in use under another alias.
+   **/
+  | 'AccountInUse'
+  /**
+   * The proof is invalid.
+   **/
+  | 'InvalidProof'
+  /**
+   * The signature is invalid.
+   **/
+  | 'InvalidSignature'
+  /**
+   * There are not yet any members of our personhood set.
+   **/
+  | 'NoMembers'
+  /**
+   * The root cannot be finalized as there are still unpushed members.
+   **/
+  | 'Incomplete'
+  /**
+   * The root is still fresh.
+   **/
+  | 'StillFresh'
+  /**
+   * Too many members have been pushed.
+   **/
+  | 'TooManyMembers'
+  /**
+   * Key already in use by another person.
+   **/
+  | 'KeyAlreadyInUse'
+  /**
+   * The old key was not found when expected.
+   **/
+  | 'KeyNotFound'
+  /**
+   * Could not push member into the ring.
+   **/
+  | 'CouldNotPush'
+  /**
+   * The record is already using this key.
+   **/
+  | 'SameKey'
+  /**
+   * Personal Id was not reserved.
+   **/
+  | 'PersonalIdNotReserved'
+  /**
+   * Personal Id has never been reserved.
+   **/
+  | 'PersonalIdReservationCannotRenew'
+  /**
+   * Personal Id was not reserved or not already recognized.
+   **/
+  | 'PersonalIdNotReservedOrNotRecognized'
+  /**
+   * Ring cannot be merged if it's the top ring.
+   **/
+  | 'InvalidRing'
+  /**
+   * Ring cannot be built while there are suspensions pending.
+   **/
+  | 'SuspensionsPending'
+  /**
+   * Ring cannot be merged if it's not below 1/2 capacity.
+   **/
+  | 'RingAboveMergeThreshold'
+  /**
+   * Suspension indices provided are invalid.
+   **/
+  | 'InvalidSuspensions'
+  /**
+   * An mutating action was queued when there was no mutation session in progress.
+   **/
+  | 'NoMutationSession'
+  /**
+   * An mutating session could not be started.
+   **/
+  | 'CouldNotStartMutationSession'
+  /**
+   * Cannot merge rings while a suspension session is in progress.
+   **/
+  | 'SuspensionSessionInProgress'
+  /**
+   * The alias mapping is not stale.
+   **/
+  | 'AliasNotStale'
+  /**
+   * Call is too late or too early.
+   **/
+  | 'TimeOutOfRange'
+  /**
+   * Alias <-> Account is already set and up to date.
+   **/
+  | 'AliasAccountAlreadySet'
+  /**
+   * Personhood cannot be resumed if it is not suspended.
+   **/
+  | 'NotSuspended'
+  /**
+   * Personhood is suspended.
+   **/
+  | 'Suspended'
+  /**
+   * Invalid state for attempted key migration.
+   **/
+  | 'InvalidKeyMigration'
+  /**
+   * Invalid suspension of a key belonging to a person whose index in the ring has already
+   * been included in the pending suspensions list.
+   **/
+  | 'KeyAlreadySuspended'
+  /**
+   * The onboarding size must not exceed the maximum ring size.
+   **/
+  | 'InvalidOnboardingSize'
+  /**
+   * The member key is not valid for the crypto.
+   **/
+  | 'InvalidMemberKey'
+  /**
+   * The people collection has already been created.
+   **/
+  | 'PeopleCollectionAlreadyExists'
+  /**
+   * The provided alias does not match the account's current alias mapping.
+   **/
+  | 'AliasMismatch'
+  /**
+   * None of the supplied aliases were stale.
+   **/
+  | 'NoStaleAliases';
+
+export type IndivPalletMobRuleMobCredit = { voted: number; cleaned: number; correct: number; credit: bigint };
+
+export type IndivPalletMobRuleOpenCase = {
+  since: bigint;
+  details: IndivPalletMobRuleCaseDetails;
+  tally: IndivPalletMobRuleVoteTally;
+};
+
+export type IndivPalletMobRuleCaseDetails = {
+  statement: IndivSupportRealityStatement;
+  context: Bytes;
+  callback: IndivSupportRealityCallback;
+};
+
+export type IndivSupportRealityStatement =
+  | {
+      type: 'ProofOfInk';
+      value: { design: IndivSupportRealityProofOfInkInkSpec; evidence: FixedBytes<32>; probableAcceptable: boolean };
+    }
+  | { type: 'IdentityCredential'; value: { platform: IndivSupportRealityIdentitySocial; evidence: Bytes } }
+  | { type: 'UsernameValid'; value: { username: Bytes } };
+
+export type IndivSupportRealityProofOfInkInkSpec =
+  | { type: 'DesignedElective'; value: [number, number] }
+  | { type: 'ProceduralAccount'; value: [number, FixedBytes<32>] }
+  | { type: 'ProceduralPersonal'; value: [number, bigint] }
+  | { type: 'Procedural'; value: [number, FixedBytes<4>] };
+
+export type IndivSupportRealityIdentitySocial =
+  | { type: 'Twitter'; value: { username: Bytes } }
+  | { type: 'Github'; value: { username: Bytes } }
+  | { type: 'Discord'; value: { displayAndTag: Bytes } };
+
+export type IndivSupportRealityCallback = { palletIndex: number; callIndex: number };
+
+export type IndivPalletMobRuleVoteTally = { aye: number; nay: number; contempt: number };
+
+export type IndivPalletMobRuleRipeCase = {
+  details: IndivPalletMobRuleCaseDetails;
+  verdict: IndivSupportRealityJudgement;
+};
+
+export type IndivPalletMobRuleDoneCase = { since: bigint; verdict: IndivSupportRealityJudgement };
+
+export type IndivPalletMobRuleCreditDistribution = {
+  round: number;
+  initialBalance: bigint;
+  remainingBalance: bigint;
+  totalPoints: bigint;
+  start: number;
+};
+
+export type IndivPalletMobRulePayoutSchedule = { remaining: number; amountPerRound: bigint; period: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletMobRuleError =
+  /**
+   * The case does not exist.
+   **/
+  | 'NoSuchCase'
+  /**
+   * The vote does not exist.
+   **/
+  | 'NoSuchVote'
+  /**
+   * The case is not open.
+   **/
+  | 'NotOpen'
+  /**
+   * The case is not ripe.
+   **/
+  | 'NotRipe'
+  /**
+   * The case is not yet done.
+   **/
+  | 'NotDone'
+  /**
+   * The decode of the call failed. Maybe there was a breaking runtime upgrade in between?
+   **/
+  | 'CodecError'
+  /**
+   * The call failed to dispatch. Maybe there was a breaking runtime upgrade in between?
+   **/
+  | 'DispatchError'
+  /**
+   * The case is too recent to be reaped.
+   **/
+  | 'Recent'
+  /**
+   * Not enough credit to payout the rewards.
+   **/
+  | 'NoCredit'
+  /**
+   * No mob credit distribution in place to reward voters.
+   **/
+  | 'NoReward'
+  /**
+   * No points to be converted to mob credit.
+   **/
+  | 'NoPoints'
+  /**
+   * Too many vote claims.
+   **/
+  | 'TooManyClaims'
+  /**
+   * No payout in progress.
+   **/
+  | 'NoPayout'
+  /**
+   * The point and/or credit arithmetic overflows.
+   **/
+  | 'ArithmeticOverflow'
+  /**
+   * Too many payout round schedules.
+   **/
+  | 'TooManySchedules'
+  /**
+   * No payout round schedule found.
+   **/
+  | 'NoSchedule'
+  /**
+   * No vote penalty found.
+   **/
+  | 'NoPenalty'
+  /**
+   * The vote penalty has not expired yet.
+   **/
+  | 'Early'
+  /**
+   * The vote cannot be cast due to a voting penalty in effect.
+   **/
+  | 'UnderPenalty'
+  /**
+   * The open case expiration is disabled due to insufficient active voters.
+   **/
+  | 'CaseExpirationDisabled'
+  /**
+   * The dispatched callback's weight exceeds the declared `max_callback_weight` upper
+   * bound.
+   **/
+  | 'CallbackWeightTooLow';
+
+export type IndivPalletProofOfInkCandidate =
+  | {
+      type: 'Applied';
+      value: { cred: IndivPalletProofOfInkCredibility; entropy: FixedBytes<32>; entropySince: number };
+    }
+  | {
+      type: 'Selected';
+      value: {
+        since: number;
+        cred: IndivPalletProofOfInkCredibility;
+        reserved: bigint;
+        entropy: FixedBytes<32>;
+        design: IndivSupportRealityProofOfInkInkSpec;
+        allocation: IndivPalletProofOfInkAllocation;
+        judging?: number | undefined;
+        failed: number;
+      };
+    }
+  | {
+      type: 'Proven';
+      value: {
+        design: IndivSupportRealityProofOfInkInkSpec;
+        reserved: bigint;
+        wasReferred: boolean;
+        wasInvited: boolean;
+      };
+    };
+
+export type IndivPalletProofOfInkCredibility =
+  | { type: 'Referred'; value: bigint }
+  | { type: 'Deposit'; value: FrameSupportTokensFungibleHoldConsideration }
+  | { type: 'Invited'; value: AccountId32 };
+
+export type IndivPalletProofOfInkAllocation = 'Initial' | 'InitDone' | 'Full';
+
+export type IndivPalletProofOfInkPerson = {
+  design?: IndivSupportRealityProofOfInkInkSpec | undefined;
+  activeReferrals: Array<AccountId32>;
+  allowedReferralTickets: number;
+  badReferrals: number;
+  successfulReferrals: number;
+  referrals: number;
+  derivatives: number;
+  banned: boolean;
+  pendingReferralRewards: number;
+};
+
+export type IndivPalletProofOfInkReferralTicket = { ticket: AccountId32 };
+
+export type IndivPalletProofOfInkFamily = { kind: IndivPalletProofOfInkFamilyKind; id: FixedBytes<32> };
+
+export type IndivPalletProofOfInkDesignStatus = 'Reserved' | 'Committed';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletProofOfInkError =
+  /**
+   * Account is already applying to make a proof-of-ink.
+   **/
+  | 'InProgress'
+  /**
+   * Account has not been referred.
+   **/
+  | 'NoReferral'
+  /**
+   * The callback context is invalid; this should never happen.
+   **/
+  | 'BadContext'
+  /**
+   * The incoming judgement ID is not what we were expecting for the account.
+   **/
+  | 'UnexpectedJudgement'
+  /**
+   * No arguments were supplied with the judgement.
+   **/
+  | 'NoArgs'
+  /**
+   * The account has not applied to make a proof-of-ink.
+   **/
+  | 'NotApplied'
+  /**
+   * The candidate has not committed to a design.
+   **/
+  | 'NotSelected'
+  /**
+   * The candidate did not prove themselves yet.
+   **/
+  | 'NotProven'
+  /**
+   * The candidate has already started their judgement.
+   **/
+  | 'AlreadyStarted'
+  /**
+   * The personal ID is not in range.
+   **/
+  | 'OutOfRange'
+  /**
+   * The personal ID has already been taken.
+   **/
+  | 'AlreadyTaken'
+  /**
+   * The person has no more referrals left to give.
+   **/
+  | 'NoMoreReferrals'
+  /**
+   * The reroll is too early.
+   **/
+  | 'TooEarly'
+  /**
+   * The referrer's design is not procedural.
+   **/
+  | 'DesignInvalid'
+  /**
+   * The referrer's design is already taken.
+   **/
+  | 'DesignTaken'
+  /**
+   * The referrer doesn't appear to be a person. This should never happen.
+   **/
+  | 'BadParent'
+  /**
+   * The design family doesn't exist.
+   **/
+  | 'BadFamily'
+  /**
+   * The design family is invalid for this choice.
+   **/
+  | 'WrongFamily'
+  /**
+   * The index of the design or variant is beyond the allowed maximum for the family.
+   **/
+  | 'IndexTooBig'
+  /**
+   * The system is busy with too many commitments; try again later.
+   **/
+  | 'Busy'
+  /**
+   * The person has been banned from referring.
+   **/
+  | 'Banned'
+  /**
+   * The candidate has not demonstrated probably through the initial evidence.
+   **/
+  | 'Improbable'
+  /**
+   * The personal identity has already been reserved.
+   **/
+  | 'IdReserved'
+  /**
+   * The personal identity is already taken by a proven person.
+   **/
+  | 'IdUsed'
+  /**
+   * The ticket provided is invalid.
+   **/
+  | 'InvalidTicket'
+  /**
+   * The caller has not provided a referral or invitation ticket.
+   **/
+  | 'NoTicket'
+  /**
+   * The account is not authorized to do this.
+   **/
+  | 'NotAuthorized'
+  /**
+   * The personal identity doesn't exist.
+   **/
+  | 'NotPerson'
+  /**
+   * The candidate is referred. But the operation requires the candidate to not be referred.
+   **/
+  | 'ReferredCandidate'
+  /**
+   * The candidate is not referred. But the operation requires the candidate to be referred.
+   **/
+  | 'NotReferredCandidate'
+  /**
+   * There is no referral reward to register.
+   **/
+  | 'NoRewardToRegister'
+  /**
+   * There is a pending referral reward that must be registered first.
+   **/
+  | 'RewardToRegister'
+  /**
+   * No inviter found.
+   **/
+  | 'NoInviter'
+  /**
+   * Invalid signature.
+   **/
+  | 'InvalidSignature'
+  /**
+   * No invite available.
+   **/
+  | 'NoInvites'
+  /**
+   * Invite is already set.
+   **/
+  | 'AlreadyInvited'
+  /**
+   * The referrer is not a person.
+   **/
+  | 'NoReferrer'
+  /**
+   * The individual is not a person recognized by proof of ink.
+   **/
+  | 'NotPoiPerson'
+  /**
+   * The proof of ownership is invalid.
+   **/
+  | 'InvalidProofOfOwnership'
+  /**
+   * The reimbursement values are invalid.
+   **/
+  | 'InvalidReimbursementValues';
+
+export type IndivPalletGameArchivedPlayer =
+  | { type: 'Kickable'; value: { firstGame: number; archivedSince: number } }
+  | { type: 'Unkickable'; value: { firstGame: number } };
+
+export type IndivPalletGamePlayer = {
+  firstGame: number;
+  registered: boolean;
+  sentReport: boolean;
+  earlyAttendanceEnactment?: IndivPalletGameEarlyAttendanceEnactment | undefined;
+  yesPerson: number;
+  noNotPerson: number;
+  expectedMaxVoteWeight: number;
+  voteWeight: number;
+  credibility: IndivPalletGamePlayerCredibility;
+};
+
+export type IndivPalletGameEarlyAttendanceEnactment = {
+  attendance: boolean;
+  disposition: IndivPalletGamePlayerDisposition;
+};
+
+export type IndivPalletGamePlayerDisposition = 'Keep' | 'ArchiveKickable' | 'ArchiveUnkickable';
+
+export type IndivPalletGamePlayerCredibility =
+  | { type: 'Invited' }
+  | { type: 'Recognized' }
+  | { type: 'Deposit'; value: FrameSupportTokensFungibleHoldConsideration };
+
+export type IndivPalletGameGameInfo = {
+  index: number;
+  registrationEnds: number;
+  shuffleDeadline: number;
+  gameDate: number;
+  reportEnds: number;
+  state: IndivPalletGameGameState;
+  maxGroupSize: number;
+  rounds: number;
+  pendingAttendance: number;
+  airdropsScheduled: number;
+};
+
+export type IndivPalletGameGameState =
+  | { type: 'Registration'; value: { nextPlayerIndex: number } }
+  | { type: 'Shuffle'; value: { step: IndivPalletGameShuffleStep } }
+  | { type: 'Reporting'; value: { playerCount: number } }
+  | { type: 'PlayerProcess'; value: { step: IndivPalletGamePlayerProcessStep } }
+  | { type: 'Cancelling'; value: { step: IndivPalletGameCancellingStep } };
+
+export type IndivPalletGameShuffleStep =
+  | { type: 'Step1Insert'; value: { lastIteration?: IndivSupportIdentityAccountOrPerson | undefined } }
+  | { type: 'Step2Retrieve'; value: { nextPlayerIndex: number; phase: IndivPalletGameShuffleRetrievePhase } }
+  | {
+      type: 'Step3ComputeWeights';
+      value: {
+        lastIteration?: IndivSupportIdentityAccountOrPerson | undefined;
+        playerCount: number;
+        recognizedCount: number;
+      };
+    }
+  | { type: 'Step4AwaitSession'; value: { playerCount: number } };
+
+export type IndivPalletGameShuffleRetrievePhase =
+  | { type: 'Recognized' }
+  | { type: 'NotRecognized'; value: { recognizedCount: number } };
+
+export type IndivPalletGamePlayerProcessStep =
+  | {
+      type: 'Step1ProcessPlayers';
+      value: { lastIteration?: IndivSupportIdentityAccountOrPerson | undefined; playerCount: number };
+    }
+  | { type: 'Step2ClearIndices' };
+
+export type IndivPalletGameCancellingStep =
+  | { type: 'Step1DrainShuffle' }
+  | { type: 'Step2DrainPlayers'; value: { lastIteration?: IndivSupportIdentityAccountOrPerson | undefined } };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletGameError =
+  /**
+   * Game ongoing.
+   **/
+  | 'GameOngoing'
+  /**
+   * No registration phase ongoing.
+   **/
+  | 'NoRegistration'
+  /**
+   * The setup is outdated.
+   **/
+  | 'OutdatedGameSetup'
+  /**
+   * Invalid setup.
+   **/
+  | 'InvalidGameSetup'
+  /**
+   * Invalid report.
+   **/
+  | 'InvalidReport'
+  /**
+   * No game ongoing.
+   **/
+  | 'NoGame'
+  /**
+   * No report phase ongoing.
+   **/
+  | 'NoReporting'
+  /**
+   * Not registered.
+   **/
+  | 'NotRegistered'
+  /**
+   * Player already registered.
+   **/
+  | 'AlreadyRegistered'
+  /**
+   * Report already sent.
+   **/
+  | 'ReportAlreadySent'
+  /**
+   * Operation is not valid yet.
+   **/
+  | 'Early'
+  /**
+   * The operation expect a player account.
+   **/
+  | 'NotKickablePlayer'
+  /**
+   * No archived player found.
+   **/
+  | 'NoArchivedPlayer'
+  /**
+   * No ticket found.
+   **/
+  | 'NoTicket'
+  /**
+   * No invite available.
+   **/
+  | 'NoInvites'
+  /**
+   * Invite is already set.
+   **/
+  | 'AlreadyInvited'
+  /**
+   * Not an account based player, expected an account based player.
+   **/
+  | 'NotAccountPlayer'
+  /**
+   * The player can't use an invite if already playing.
+   **/
+  | 'UseInviteButAlreadyPlaying'
+  /**
+   * The lite person already invited another account, and invites only one account ever.
+   **/
+  | 'AnotherAccountInvited'
+  /**
+   * The number of existing schedules and new schedules exceeds the configured limit.
+   **/
+  | 'TooManyGameSchedules'
+  /**
+   * The game that was supposed to be removed was not found in scheduled games.
+   **/
+  | 'NoSuchGameScheduled'
+  /**
+   * The statement account signature is invalid.
+   **/
+  | 'InvalidStatementAccountSignature'
+  /**
+   * The statement account is already in used by another player.
+   **/
+  | 'StatementAccountAlreadyInUse'
+  /**
+   * Internal error invalid state.
+   **/
+  | 'InternalErrorInvalidState'
+  /**
+   * The operation cannot be performed in the current game state.
+   **/
+  | 'InvalidGameState'
+  /**
+   * No player found.
+   **/
+  | 'NoPlayer'
+  /**
+   * The player cannot offboard while registered for a game.
+   **/
+  | 'CannotOffboardWhileRegisteredForGame'
+  /**
+   * Invalid state
+   **/
+  | 'InvalidState'
+  /**
+   * `set_play_deposit`: the supplied amount must be non-zero.
+   **/
+  | 'InvalidPlayDeposit'
+  | 'InvalidAirdropVrfVariantForAccount'
+  | 'InvalidAirdropVrfVariantForRecognition'
+  /**
+   * The number of supplied airdrop VRF entries does not match the number of scheduled
+   * airdrop events.
+   **/
+  | 'InvalidAirdropVrfCount'
+  /**
+   * `claim_airdrop`: the claimant is not recognized in pallet-score, or their most recent
+   * attended game does not match the `game_index` of the airdrop.
+   **/
+  | 'NotEligibleForAirdrop'
+  /**
+   * `report`: fewer NFT claim credits can be recorded right now than the report may award.
+   * Submit it again once later blocks have committed the buffered credits.
+   **/
+  | 'CreditCapacityExhausted';
+
+export type IndivPalletScoreParticipant = {
+  score: number;
+  streak: IndivPalletScoreStreak;
+  attendanceHistory: IndivPalletScoreAttendanceHistory;
+  credit: bigint;
+  cashedOut: boolean;
+  reachedPersonhood: boolean;
+  hasEverReachedPersonhood: boolean;
+  recognition: IndivPalletScoreRecognition;
+  lastAttendedGame?: number | undefined;
+};
+
+export type IndivPalletScoreStreak = { type: 'Attended'; value: number } | { type: 'Absent'; value: number };
+
+export type IndivPalletScoreAttendanceHistory = number;
+
+export type IndivPalletScoreRecognition =
+  | { type: 'ExternallyRecognized' }
+  | { type: 'NotRecognized' }
+  | { type: 'Suspended'; value: bigint }
+  | { type: 'Recognized'; value: bigint };
+
+export type IndivPalletScoreRoundPayout = {
+  remainingBalance: bigint;
+  pointPrice: bigint;
+  remainder: bigint;
+  totalPoints: number;
+};
+
+export type IndivPalletScoreRoundInfo = { finishAt: number; credit: bigint };
+
+export type IndivPalletScorePayoutSchedule = { remaining: number; amountPerRound: bigint; duration: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletScoreError =
+  /**
+   * The calling origin is not a person.
+   **/
+  | 'NotPerson'
+  /**
+   * The person didn't reach personhood.
+   **/
+  | 'HasNotReachedPersonhood'
+  /**
+   * No reward available.
+   **/
+  | 'NoReward'
+  /**
+   * The person has no associated score.
+   **/
+  | 'NoScore'
+  /**
+   * No payout schedule available.
+   **/
+  | 'NoSchedule'
+  /**
+   * Too many payout schedules already registered.
+   **/
+  | 'TooManySchedules'
+  /**
+   * The participant is recognized or has been recognized as a person.
+   **/
+  | 'Recognized'
+  /**
+   * The participant has already cashed out in this era.
+   **/
+  | 'CashOutCooldown'
+  /**
+   * The round is on going or no schedule.
+   **/
+  | 'RoundOnGoingOrNoSchedule'
+  /**
+   * The payout round has not started.
+   **/
+  | 'NoRound'
+  /**
+   * The origin is neither a person nor a signed account.
+   **/
+  | 'BadOriginNotPersonNotSigned'
+  /**
+   * The origin is neither a person nor a signed account nor an account participant.
+   **/
+  | 'BadOriginNotPersonNotSignedNotAccountParticipant'
+  /**
+   * The origin is neither a signed account nor an account participant.
+   **/
+  | 'BadOriginNotSignedNotAccountParticipant'
+  /**
+   * The participant is already participating.
+   **/
+  | 'AlreadyParticipating'
+  /**
+   * The key must be provided.
+   **/
+  | 'KeyMustBeProvided'
+  /**
+   * The key must not be provided.
+   **/
+  | 'KeyMustNotBeProvided'
+  /**
+   * Has reached personhood in the past.
+   **/
+  | 'HasReachedPersonhood'
+  /**
+   * The proof of ownership is invalid.
+   **/
+  | 'InvalidProofOfOwnership'
+  /**
+   * An absence grace tier has a window exceeding the maximum trackable history (8).
+   **/
+  | 'WindowTooLarge'
+  /**
+   * The allowed misses must be strictly less than the window (or both zero).
+   **/
+  | 'AllowedMissesTooLarge'
+  /**
+   * Absence-grace tiers must be sorted by ascending `population_size_threshold`.
+   **/
+  | 'AbsenceScheduleNotSorted'
+  /**
+   * The personhood-threshold schedule must contain at least one tier.
+   **/
+  | 'PersonhoodScheduleEmpty'
+  /**
+   * A personhood-threshold tier has `score_threshold == 0`.
+   **/
+  | 'PersonhoodScoreThresholdZero'
+  /**
+   * A personhood-threshold tier exceeds `MAX_PERSONHOOD_THRESHOLD`.
+   **/
+  | 'PersonhoodScoreThresholdTooLarge'
+  /**
+   * Personhood-threshold tiers must be sorted by ascending
+   * `population_size_threshold`.
+   **/
+  | 'PersonhoodScheduleNotSorted'
+  /**
+   * Personhood-threshold `score_threshold` values must be non-decreasing
+   * across tiers (a larger population must not have a lower bar).
+   **/
+  | 'PersonhoodScheduleNotMonotonic'
+  /**
+   * The last personhood-threshold tier must cover all populations
+   * (`population_size_threshold == u32::MAX`).
+   **/
+  | 'PersonhoodScheduleNotTotal';
+
+export type IndivPalletNftCreditsAwardedCredits = bigint;
+
+export type IndivPalletNftCreditsNftClaimCreditAward = {
+  claimant: IndivSupportIdentityAccountOrPerson;
+  credit: FixedBytes<32>;
+};
+
+/**
+ * A u32 encoded in big-endian format for correct lexicographic ordering.
+ **/
+export type IndivSupportUtilsBigEndianU32 = FixedBytes<4>;
+
+export type IndivPalletNftCreditsCreditBuffer = { gameIndex: number; timestamp: number; awards: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletNftCreditsError =
+  /**
+   * A credit tree replay was requested for an empty list of blocks.
+   **/
+  | 'NoBlocksToReplay'
+  /**
+   * The blocks to replay are not in strictly ascending order.
+   **/
+  | 'UnsortedReplayBlocks'
+  /**
+   * None of the blocks to replay has a credit tree.
+   **/
+  | 'NoCreditTreeForBlock'
+  /**
+   * A credit tree replay ran within `ReplayCooldownSeconds` of the last one. The window is
+   * shared by every caller.
+   **/
+  | 'ReplayCooldownActive'
+  /**
+   * The replay does not fit what the HRMP channel to the NFT claims chain can carry in
+   * one message.
+   **/
+  | 'ExceedsClaimsChannelCapacity'
+  /**
+   * Sending the credit trees to the NFT claims chain over XCM failed.
+   **/
+  | 'CreditTreeXcmFailed'
+  /**
+   * The round is not below `MaxRounds`, or the attester slot is not below `MaxGroupSize`,
+   * so the two name a credit slot no game can use.
+   **/
+  | 'CreditSlotOutOfBounds'
+  /**
+   * No credit was awarded: the claimant already holds the slot's credit for that game, or
+   * no buffer has room for another award.
+   **/
+  | 'CreditNotAwarded';
+
+export type IndivPalletDummyDimRecord = { key: FixedBytes<32>; suspended: boolean };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletDummyDimError =
+  /**
+   * The personal ID does not belong to a recognized person.
+   **/
+  | 'NotPerson'
+  /**
+   * The personal ID does not belong to a suspended person.
+   **/
+  | 'NotSuspended'
+  /**
+   * The personal ID is not reserved and awaiting recognition.
+   **/
+  | 'NotReserved'
+  /**
+   * The operation does not support this many people.
+   **/
+  | 'TooManyPeople';
+
+export type IndivPalletStorageInitializationOnPollState =
+  | 'Inactive'
+  | 'CreatingAsset'
+  | 'XcmFundsTransfer'
+  | 'VerifyingFunds'
+  | 'FundingPots'
+  | 'SettingPeopleLiteAttestationAllowances'
+  | 'SchedulingMobRulePayouts'
+  | 'SchedulingScorePayouts'
+  | 'Done';
+
+export type IndivPalletPeopleLiteLitePersonInfo = {
+  ringVrfKey: FixedBytes<32>;
+  method: IndivPalletPeopleLiteRecognitionMethod;
+};
+
+export type IndivPalletPeopleLiteRecognitionMethod = { type: 'UniqueDevice'; value: AccountId32 } | { type: 'Fee' };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletPeopleLiteError =
+  /**
+   * No attestation allowance.
+   **/
+  | 'NoAttestationAllowance'
+  /**
+   * The signature created by the candidate's account is invalid.
+   **/
+  | 'InvalidAttestationSignature'
+  /**
+   * The signature created by the candidate's ring vrf key is invalid.
+   **/
+  | 'InvalidProofOfOwnership'
+  /**
+   * The candidate is already registered.
+   **/
+  | 'AlreadyRegistered'
+  /**
+   * The ring VRF key is already enrolled by another lite person.
+   **/
+  | 'KeyAlreadyInUse'
+  /**
+   * The account is already in use.
+   **/
+  | 'AccountInUse'
+  /**
+   * The alias <-> account mapping is already set and current.
+   **/
+  | 'AliasAccountAlreadySet'
+  /**
+   * The alias <-> account mapping is not set.
+   **/
+  | 'AliasAccountNotSet'
+  /**
+   * The requested alias setup block window is invalid for the current block.
+   **/
+  | 'CallBlockOutOfRange'
+  /**
+   * The alias context is invalid.
+   **/
+  | 'InvalidAliasContext'
+  /**
+   * The lite people member collection has not been initialized yet.
+   **/
+  | 'LitePeopleCollectionNotCreated'
+  /**
+   * The consumer registration account does not match the candidate.
+   **/
+  | 'InvalidConsumerRegistrationAccount';
+
+export type IndivPalletResourcesConsumerInfo = {
+  identifierKey: FixedBytes<65>;
+  fullUsername?: Bytes | undefined;
+  liteUsername: Bytes;
+  credibility: IndivPalletResourcesCredibility;
+};
+
+export type IndivPalletResourcesCredibility =
+  | { type: 'Lite' }
+  | { type: 'Person'; value: { alias: FixedBytes<32>; lastUpdate: bigint; demoted: boolean } };
+
+export type IndivPalletResourcesStmtStoreAllowanceEntry = { accountId: AccountId32; seq: number; since: bigint };
+
+export type IndivPalletResourcesNotificationRegistration = {
+  accountId: AccountId32;
+  reference: IndivPalletResourcesNotificationReference;
+};
+
+export type IndivPalletResourcesReservationQueueEntry = { account: AccountId32; joinedAt: bigint };
+
+export type SpStatementStoreStatementAllowance = { maxCount: number; maxSize: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletResourcesError =
+  /**
+   * Username does not fit the requirements.
+   **/
+  | 'InvalidUsername'
+  /**
+   * Username is already taken.
+   **/
+  | 'UsernameTaken'
+  /**
+   * Consumer is already registered.
+   **/
+  | 'AlreadyRegistered'
+  /**
+   * Provided proof of ownership is invalid.
+   **/
+  | 'InvalidProofOfOwnership'
+  /**
+   * Person is not registered as a consumer.
+   **/
+  | 'NotRegistered'
+  /**
+   * Consumer is not a full person.
+   **/
+  | 'NotFullPerson'
+  /**
+   * Attempted to update person authorization too early.
+   **/
+  | 'TouchNotReady'
+  /**
+   * Reservation is not active.
+   **/
+  | 'NoReservation'
+  /**
+   * The linked lite identity is not the active holder of the reservation.
+   **/
+  | 'NotReservationHolder'
+  /**
+   * The username in the reservation request is already taken.
+   **/
+  | 'UsernameReservationTaken'
+  /**
+   * The reservation has not expired.
+   **/
+  | 'ReservationFresh'
+  /**
+   * There is no lite consumer to be linked.
+   **/
+  | 'NoLinkedIdentity'
+  /**
+   * The lite consumer is already linked to a full person consumer.
+   **/
+  | 'AlreadyLinked'
+  /**
+   * The person's authorization has not expired yet.
+   **/
+  | 'PersonAuthNotExpired'
+  /**
+   * The person has already been demoted.
+   **/
+  | 'AlreadyDemoted'
+  /**
+   * Queue for this username is full.
+   **/
+  | 'QueueFull'
+  /**
+   * Account is not in the queue for this username.
+   **/
+  | 'NotInQueue'
+  /**
+   * Account already has a reservation for another username.
+   **/
+  | 'AlreadyHasReservation'
+  /**
+   * Notification sequence is invalid for the consumer.
+   **/
+  | 'InvalidNotificationSequence'
+  /**
+   * Notification period is outside the accepted claim window.
+   **/
+  | 'InvalidNotificationPeriod'
+  /**
+   * Notification registration is not expired yet.
+   **/
+  | 'NotificationRegistrationNotExpired'
+  /**
+   * Notification registration already exists for the alias/context.
+   **/
+  | 'NotificationRegistrationAlreadyExists'
+  /**
+   * The replacement cooldown has not elapsed since the entry was last set.
+   **/
+  | 'StmtStoreReplacementTooEarly'
+  /**
+   * The provided `limit` exceeds `LongTermStorageCleanupLimit`.
+   **/
+  | 'LongTermStorageCleanupLimitExceeded';
+
+export type IndivPalletChunksManagerUncheckedChunk = VerifiableRingStaticChunk;
+
+export type VerifiableRingStaticChunk = FixedBytes<96>;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletChunksManagerError =
+  /**
+   * The requested chunk index doesn't exist.
+   **/
+  | 'ChunkNotFound'
+  /**
+   * The provided chunk data couldn't be decoded.
+   **/
+  | 'InvalidChunks'
+  /**
+   * The start index isn't strictly less than the end index.
+   **/
+  | 'InvalidChunkRange';
+
+export type IndivPalletMembersCollectionInfo = {
+  owner: IndivPalletMembersCollectionOwner;
+  mode: IndivSupportRealityRingMode;
+  ringSize: IndivSupportRealityRingExponent;
+  selfInclusionDelay?: bigint | undefined;
+};
+
+export type IndivPalletMembersCollectionOwner =
+  | { type: 'External'; value: StagingXcmV5Location }
+  | { type: 'Local'; value: AccountId32 };
+
+export type IndivSupportRealityRingMode = 'AppendOnly' | 'Flexible';
+
+export type IndivPalletMembersRingRoot = {
+  root: VerifiableRingMembersCommitment;
+  revision: number;
+  intermediate: VerifiableRingMembersSet;
+};
+
+export type VerifiableRingMembersSet = FixedBytes<848>;
+
+export type IndivPalletMembersOldRoot = { root: VerifiableRingMembersCommitment; archivedAt: bigint };
+
+export type IndivSupportRealityRingStatus = { total: number; included: number; immutableSince?: bigint | undefined };
+
+export type IndivSupportRealityRingPosition =
+  | { type: 'Onboarding'; value: { queuePage: number; queuedAt: bigint } }
+  | { type: 'Included'; value: { ringIndex: number; ringPage: number; ringPosition: number } }
+  | { type: 'Suspended' };
+
+export type IndivSupportRealityRingMembersState = { mode: IndivSupportRealityRingMutationMode };
+
+export type IndivSupportRealityRingMutationMode = { type: 'AppendOnly' } | { type: 'Mutating'; value: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletMembersError =
+  /**
+   * The supplied identifier does not represent a member.
+   **/
+  | 'NotMember'
+  /**
+   * Ring has no root.
+   **/
+  | 'NoRoot'
+  /**
+   * The proof is invalid.
+   **/
+  | 'InvalidProof'
+  /**
+   * The root cannot be finalized as there are still unpushed members.
+   **/
+  | 'Incomplete'
+  /**
+   * Too many members have been pushed.
+   **/
+  | 'TooManyMembers'
+  /**
+   * Key already in use by another member.
+   **/
+  | 'KeyAlreadyInUse'
+  /**
+   * The old key was not found when expected.
+   **/
+  | 'KeyNotFound'
+  /**
+   * Could not push member into the ring.
+   **/
+  | 'CouldNotPush'
+  /**
+   * The ring index is not valid for the requested operation: it is the top ring used for
+   * onboarding or it refers to an empty ring.
+   **/
+  | 'InvalidRing'
+  /**
+   * Ring cannot be built while there are suspensions pending.
+   **/
+  | 'SuspensionsPending'
+  /**
+   * Ring cannot be merged if it's not below 1/2 capacity.
+   **/
+  | 'RingAboveMergeThreshold'
+  /**
+   * Suspension indices provided are invalid.
+   **/
+  | 'InvalidSuspensions'
+  /**
+   * A mutating action was queued when there was no removal session in progress.
+   **/
+  | 'NoRemovalSession'
+  /**
+   * A removal session could not be started.
+   **/
+  | 'CouldNotStartRemovalSession'
+  /**
+   * Cannot merge rings while a removal session is in progress.
+   **/
+  | 'RemovalSessionInProgress'
+  /**
+   * Invalid suspension of a key belonging to a member whose index in the ring has already
+   * been included in the pending suspensions list.
+   **/
+  | 'KeyAlreadySuspended'
+  /**
+   * The onboarding size must not exceed the maximum ring size.
+   **/
+  | 'InvalidOnboardingSize'
+  /**
+   * The member key is not valid for the crypto.
+   **/
+  | 'InvalidMemberKey'
+  /**
+   * The collection does not exist.
+   **/
+  | 'CollectionNotFound'
+  /**
+   * The collection already exists.
+   **/
+  | 'CollectionAlreadyExists'
+  /**
+   * The identifier belonged to a deleted collection and cannot be reused.
+   **/
+  | 'IdentifierRetired'
+  /**
+   * Too many collections for this owner.
+   **/
+  | 'TooManyCollections'
+  /**
+   * Flexible collections must use the MaxFlexibleRingExponent ring size.
+   **/
+  | 'InvalidRingSizeForFlexible'
+  /**
+   * The ring exponent is not supported.
+   **/
+  | 'InvalidRingExponent'
+  /**
+   * Insufficient members in the queue to onboard.
+   **/
+  | 'PrematureOnboarding'
+  /**
+   * The collection is marked for deletion and cannot be modified.
+   **/
+  | 'CollectionMarkedForDeletion'
+  /**
+   * The caller is not the owner of the collection.
+   **/
+  | 'NotCollectionOwner'
+  /**
+   * The member is not in the onboarding queue.
+   **/
+  | 'NotOnboarding'
+  /**
+   * There is no ring root to build.
+   **/
+  | 'NothingToBuild'
+  /**
+   * Only the rings of a flexible collection can be merged.
+   **/
+  | 'CollectionNotFlexible';
+
+export type IndivPalletCoinageLockInfo = { reason: IndivPalletCoinageLockReason; until: bigint };
+
+export type IndivPalletCoinageLockReason = { type: 'FailedDispatch'; value: { retries: number } };
+
+export type IndivPalletCoinageAliasState = { type: 'Locked'; value: IndivPalletCoinageLockInfo } | { type: 'Unloaded' };
+
+export type IndivPalletCoinageArchivedRecycler = { commitment: H256; remaining: number };
+
+export type IndivPalletCoinageInstanceRecord = {
+  assetId: StagingXcmV5Location;
+  assetUnit: bigint;
+  mode: IndivPalletCoinageInstanceMode;
+  currentLoadDeposit?: IndivPalletCoinageDepositTier | undefined;
+  oldLoadDeposit?: IndivPalletCoinageDepositTier | undefined;
+  creator?: [AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined;
+};
+
+export type IndivPalletCoinageDepositTier = { assetId: StagingXcmV5Location; price: bigint; count: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletCoinageError =
+  | 'MemberKeyAlreadyUsed'
+  | 'InvalidMemberKey'
+  | 'InternalError'
+  | 'RecyclerAlreadyUnloaded'
+  | 'InvalidConsolidation'
+  | 'ConsolidationTooBig'
+  | 'DenominationTooBig'
+  | 'DenominationTooSmall'
+  | 'CoinAmountBelowFee'
+  | 'DenominationOutOfBound'
+  /**
+   * The denomination cannot be losslessly converted to an asset amount because the
+   * instance's `asset_unit` is not evenly divisible by `2^|value|`.
+   **/
+  | 'LossyDenominationConversion'
+  | 'InvalidAliasProof'
+  | 'NoUnloadingRecycler'
+  | 'ProofAndAliasMismatch'
+  | 'NothingToBuild'
+  | 'TooManyRings'
+  | 'AddressAlreadyHasCoin'
+  | 'InvalidProofOfOwnership'
+  | 'EmptyInputs'
+  /**
+   * The fee recycler in the origin does not match the call's recycler.
+   **/
+  | 'RecyclerMismatch'
+  /**
+   * The total unloaded amount is less than the fee.
+   **/
+  | 'InsufficientUnloadForFee'
+  /**
+   * The first alias was not pre-marked by extension (required for FromOutput fee).
+   **/
+  | 'AliasNotPremarked'
+  /**
+   * The recycler revision does not match (recycler may not exist or has been rebuilt).
+   **/
+  | 'InvalidRecyclerRevision'
+  | 'InvalidSplit'
+  /**
+   * The asset cannot be converted into the native currency to pay the fee.
+   **/
+  | 'CannotConvertAssetToNative'
+  | 'AliasTemporarilyLocked'
+  /**
+   * [`Call::unload_recycler_into_coins`] with [`UnloadFee::Prepaid`] requires `max_fee` to
+   * be 0.
+   **/
+  | 'MaxFeeNotAllowedForPrepaid'
+  /**
+   * The max_fee exceeds the total input value.
+   **/
+  | 'MaxFeeExceedsInput'
+  /**
+   * The max fee argument doesn't satisfy the requirements.
+   **/
+  | 'InvalidMaxFee'
+  /**
+   * The underlying asset id does not exist in [`Config::Fungibles`].
+   **/
+  | 'UnknownAsset'
+  /**
+   * No coinage instance exists for the given [`InstanceId`].
+   **/
+  | 'InstanceNotFound'
+  /**
+   * The asset unit is zero, or cannot represent every denomination in
+   * `[MinimumExponent, MaximumExponent]` without truncation.
+   **/
+  | 'InvalidAssetUnit'
+  /**
+   * No archived recycler exists for the given `(instance, denomination, ring index)`.
+   **/
+  | 'ArchivedRecyclerNotFound'
+  /**
+   * The supplied `recycler_root`/`unloaded_root` do not match the stored archival
+   * commitment.
+   **/
+  | 'InvalidArchivedRoots'
+  /**
+   * The recycler ring exponent could not be converted to the crypto config.
+   **/
+  | 'InvalidRingExponent'
+  /**
+   * The alias was already unloaded, or the supplied non-inclusion proof is invalid.
+   **/
+  | 'AliasWasUnloadedOrInvalidProof'
+  /**
+   * A `fund_pot` or `withdraw_pot_funds` amount of zero.
+   **/
+  | 'ZeroAmount'
+  /**
+   * The instance is not sponsored, so it has no pot.
+   **/
+  | 'InstanceNotSponsored'
+  /**
+   * The withdrawal exceeds the caller's recorded pot contribution in that currency.
+   **/
+  | 'WithdrawExceedsContribution'
+  /**
+   * The sponsored instance's pot cannot fund this load's deposit.
+   **/
+  | 'PotCannotCoverLoadDeposit'
+  /**
+   * The load deposit changed while the sponsored instance's old tier still holds deposits,
+   * so the instance needs [`Pallet::collapse_load_deposits`] before it can load again.
+   **/
+  | 'LoadDepositOldTierOccupied'
+  /**
+   * The ledger is already a single tier at the current [`Config::LoadDeposit`], so there is
+   * nothing to collapse.
+   **/
+  | 'NothingToCollapse'
+  /**
+   * The instance is already sponsored.
+   **/
+  | 'InstanceAlreadySponsored'
+  /**
+   * [`Config::EnablePermissionless`] is false, so no sponsored instance can be created.
+   **/
+  | 'SponsoredInstancesDisabled'
+  /**
+   * The pallet account cannot receive the underlying asset because it has not been
+   * touched for it, which [`Pallet::create_sufficient_instance`] expects to have happened
+   * already.
+   **/
+  | 'PalletAccountNotTouched'
+  /**
+   * The pallet account holds less than the underlying asset's minimum balance, which
+   * [`Pallet::create_sufficient_instance`] expects as a buffer against the account being
+   * dusted.
+   **/
+  | 'PalletAccountBelowMinimumBalance'
+  /**
+   * A `fund_pot` amount below the currency's minimum balance, which the transfer could
+   * dust right away.
+   **/
+  | 'FundingBelowMinimumBalance'
+  /**
+   * Paying the fee would cost more than the caller's `max_fee`, in the currency paying it.
+   **/
+  | 'FeeExceedsMaxFee';
+
+export type IndivPalletCoinagePotPotView = {
+  loadDeposit: [StagingXcmV5Location, bigint];
+  freeInDepositAsset: bigint;
+  loadsAffordable: number;
+  redeemableKeys: number;
+  currentTier?: IndivPalletCoinageDepositTier | undefined;
+  oldTier?: IndivPalletCoinageDepositTier | undefined;
+  loadsBlocked?: IndivPalletCoinageCustomInvalidity | undefined;
+};
+
+export type IndivPalletCoinageCustomInvalidity =
+  | 'NoCoin'
+  | 'CoinTooOld'
+  | 'SplitIntoNotSorted'
+  | 'SplitExponentTooSmall'
+  | 'InternalError'
+  | 'SplitTooBig'
+  | 'InvalidSplit'
+  | 'EmptySplit'
+  | 'TooManySplits'
+  | 'MemberKeyAlreadyUsed'
+  | 'RecyclerAlreadyUnloaded'
+  | 'DenominationTooBig'
+  | 'DenominationTooSmall'
+  | 'DenominationOutOfBound'
+  | 'NoUnloadingRecycler'
+  | 'InvalidMemberKey'
+  | 'InvalidCall'
+  | 'AddressAlreadyHasCoin'
+  | 'OriginToAsCoinMustBeSigned'
+  | 'InvalidUnloadTokenProof'
+  | 'InvalidUnloadTokenPeriod'
+  | 'UnloadTokenAlreadyConsumed'
+  | 'UnloadTokenCounterOutOfRange'
+  | 'InvalidRecyclerRevision'
+  | 'NoRecycler'
+  | 'TransactionNotLocal'
+  | 'NothingToBuild'
+  | 'SplitExponentTooBig'
+  | 'InvalidUnloadTokenPeriodOrRingIndex'
+  | 'DuplicateDestinationsInSplit'
+  | 'CoinAmountBelowFee'
+  | 'InvalidProofOfOwnership'
+  | 'FeeCoinBelowMinimum'
+  | 'FromOutputFeeNotAllowed'
+  | 'EmptyAliasProofs'
+  | 'InvalidPaidTokenRingRevision'
+  | 'CannotConvertAssetToNative'
+  | 'CoinTemporarilyLocked'
+  | 'InvalidAliasProof'
+  | 'MaxFeeInsufficientForUnload'
+  | 'MaxFeeNotAllowedForPrepaid'
+  | 'LossyDenominationConversion'
+  | 'FirstCallAliasMismatch'
+  | 'InfallibleUnpaidSignedOriginMustBeSigned'
+  | 'InfallibleUnpaidSignedInsufficientBalance'
+  | 'EmptyMixedOutput'
+  | 'EmptyUnpaidLoadBatch'
+  | 'InstanceNotFound'
+  | 'AliasTemporarilyLocked'
+  | 'PotCannotCoverLoadDeposit'
+  | 'LoadDepositOldTierOccupied'
+  | 'EmptyInputs'
+  | 'UnloadedValueBelowFee';
+
+export type IndivPalletMembersNotifierSubscriberInfo = {
+  collections: Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>;
+  lastInitSequence: bigint;
+  palletIndex: number;
+};
+
+export type IndivPalletMembersNotifierWhitelistedSubscription = {
+  collections: Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>;
+  palletIndex: number;
+};
+
+export type IndivPalletMembersNotifierPagingState = { writePage: number; sendPage: number; lastUpdateBlock: number };
+
+export type IndivPalletMembersNotifierPendingInitState = {
+  collections: Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>;
+  currentCollectionIndex: number;
+  afterRingIndex?: number | undefined;
+  sequence: bigint;
+  sourceTime: bigint;
+  palletIndex: number;
+};
+
+export type IndivPalletMembersNotifierBatchDistributionState = {
+  sequence: bigint;
+  sourceTime: bigint;
+  sealedAt: number;
+  remainingSubscribers: number;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletMembersNotifierError =
+  /**
+   * Subscriber not found.
+   **/
+  | 'SubscriberNotFound'
+  /**
+   * Subscriber already exists.
+   **/
+  | 'AlreadySubscribed'
+  /**
+   * Maximum subscribers reached.
+   **/
+  | 'TooManySubscribers'
+  /**
+   * Collections list must be sorted in strictly ascending order with no duplicates.
+   **/
+  | 'InvalidCollectionsList'
+  /**
+   * Too many ring root updates to fit in a single batch.
+   **/
+  | 'TooManyUpdates'
+  /**
+   * XCM send failed.
+   **/
+  | 'XcmSendFailed'
+  /**
+   * Subscriber is not subscribed to the requested collection.
+   **/
+  | 'NotSubscribedToCollection'
+  /**
+   * Ring root index is out of range.
+   **/
+  | 'InvalidRingIndex'
+  /**
+   * Requested updates exceed the subscriber's HRMP channel capacity.
+   **/
+  | 'ExceedsChannelCapacity'
+  /**
+   * No active batch exists.
+   **/
+  | 'NoBatchActive'
+  /**
+   * No pending initialization for this subscriber.
+   **/
+  | 'NoPendingInit'
+  /**
+   * Replay cooldown has not elapsed for this subscriber and collection.
+   **/
+  | 'ReplayCooldownActive'
+  /**
+   * Replay requested with an empty list of ring root indices.
+   **/
+  | 'EmptyRingIndices'
+  /**
+   * Parachain has no whitelisted subscription left to activate.
+   **/
+  | 'NotWhitelisted';
+
+export type IndivPalletAirdropActiveEvent = {
+  id: FixedBytes<32>;
+  info: IndivPalletAirdropEventInfo;
+  status: IndivPalletAirdropStatus;
+  source?: AccountId32 | undefined;
+};
+
+export type IndivPalletAirdropStatus =
+  | { type: 'Scheduled' }
+  | { type: 'Registering'; value: { totalParticipants: number } }
+  | { type: 'AwaitingEntropy'; value: { totalParticipants: number; effectiveWinners: number; lastMoment: number } }
+  | {
+      type: 'DrawWinners';
+      value: {
+        totalParticipants: number;
+        effectiveWinners: number;
+        winnersAdded: number;
+        fromWinnerKey: IndivSupportUtilsBigEndianU256;
+      };
+    }
+  | { type: 'Claiming'; value: { totalParticipants: number; effectiveWinners: number; claimed: number } }
+  | {
+      type: 'ClearingRegistrations';
+      value: { totalParticipants: number; effectiveWinners: number; claimed: number; cleanedRegistrations: number };
+    }
+  | {
+      type: 'ClearingWinners';
+      value: { totalParticipants: number; effectiveWinners: number; claimed: number; cleanedWinners: number };
+    }
+  | { type: 'Finalizing'; value: { effectiveWinners: number; claimed: number } };
+
+/**
+ * A u64 encoded in big-endian format for correct lexicographic ordering.
+ **/
+export type IndivSupportUtilsBigEndianU64 = FixedBytes<8>;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletAirdropError =
+  | 'PrizeBelowMinBalance'
+  | 'NoWinnersConfigured'
+  | 'TooManyWinners'
+  | 'InvalidEventTimes'
+  | 'DuplicateEventId'
+  | 'NoScheduledEvent'
+  | 'UnknownEvent'
+  /**
+   * Operation requires a specific status the event isn't in.
+   **/
+  | 'WrongStatus'
+  | 'NotAcceptingRegistrations'
+  | 'NotClaiming'
+  /**
+   * Claim attempted after the event's `end_time`.
+   **/
+  | 'ClaimingWindowClosed'
+  | 'EntropySlotTaken'
+  | 'InvalidVrfProof'
+  /**
+   * Supplied account id does not correspond to any sr25519 public key.
+   **/
+  | 'UnsupportedAccountKey'
+  | 'InvalidMembershipProof'
+  | 'NoSuchWinner'
+  | 'ParticipantOverflow'
+  | 'PrizeAllocationOverflow'
+  /**
+   * The prize asset has not been enabled via `enable_asset`.
+   **/
+  | 'AssetNotEnabled'
+  /**
+   * `enable_asset` was called for an asset that is already enabled.
+   **/
+  | 'AssetAlreadyEnabled'
+  /**
+   * No randomness produced after registration closed is available yet.
+   **/
+  | 'EntropyNotReady'
+  /**
+   * The event's product name is not a bare dotNS label (see [`ProductName`]).
+   **/
+  | 'InvalidProductName';
+
+export type IndivPalletHonourPointInfo = {
+  subject: FixedBytes<32>;
+  subjectAlias: FixedBytes<32>;
+  direction: IndivPalletHonourDirection;
+  lastUsedAt: bigint;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletHonourError =
+  /**
+   * Arithmetic error like over/underflow, division by zero or similar.
+   **/
+  | 'Arithmetic'
+  /**
+   * There is already a vote by the same voter for the same subject.
+   **/
+  | 'SubjectAlreadyVoted'
+  /**
+   * The provided ring proof failed verification.
+   **/
+  | 'InvalidProof';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletPeopleAirdropsError =
+  /**
+   * The randomness source has no value to salt the scheduled draws with.
+   **/
+  | 'RandomnessUnavailable'
+  /**
+   * No draw with this event id was scheduled by this pallet.
+   **/
+  | 'UnknownDraw'
+  /**
+   * `register` was called with an empty batch.
+   **/
+  | 'EmptyRegistration';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletNetworkSuffixError =
+  /**
+   * A network suffix cannot be empty.
+   **/
+  'EmptySuffix';
+
 /**
  * Error for the Sudo pallet.
  **/
@@ -7963,6 +18772,8 @@ export type XcmRuntimeApisDryRunXcmDryRunEffects = {
 
 export type XcmRuntimeApisConversionsError = 'Unsupported' | 'VersionedConversionFailed';
 
+export type XcmRuntimeApisAuthorizedAliasesError = 'LocationVersionConversionFailed';
+
 export type XcmVersionedAsset =
   | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
   | { type: 'V4'; value: StagingXcmV4Asset }
@@ -7970,7 +18781,18 @@ export type XcmVersionedAsset =
 
 export type XcmRuntimeApisTrustedQueryError = 'VersionedAssetConversionFailed' | 'VersionedLocationConversionFailed';
 
-export type XcmRuntimeApisAuthorizedAliasesError = 'LocationVersionConversionFailed';
+export type IndivPalletNftCreditsNftClaimCreditProof = {
+  credit: FixedBytes<32>;
+  leafIndex: number;
+  proof: Array<IndivSupportCreditTreesCreditProofNode>;
+};
+
+export type IndivPalletNftCreditsNftClaimCreditProofError =
+  | { type: 'UnknownCreditTree' }
+  | { type: 'AwardsPruned' }
+  | { type: 'LeafCountMismatch'; value: { expected: number } }
+  | { type: 'LeafIndexOutOfBounds' }
+  | { type: 'RootMismatch' };
 
 export type CumulusPrimitivesCoreCollationInfo = {
   upwardMessages: Array<Bytes>;
@@ -7991,6 +18813,9 @@ export type PeoplePaseoRuntimeRuntimeError =
   | { pallet: 'Assets'; palletError: PalletAssetsError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'AssetsHolder'; palletError: PalletAssetsHolderError }
+  | { pallet: 'OriginRestriction'; palletError: IndivPalletOriginRestrictionError }
+  | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
+  | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }
@@ -8000,4 +18825,21 @@ export type PeoplePaseoRuntimeRuntimeError =
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
+  | { pallet: 'People'; palletError: IndivPalletPeopleError }
+  | { pallet: 'MobRule'; palletError: IndivPalletMobRuleError }
+  | { pallet: 'ProofOfInk'; palletError: IndivPalletProofOfInkError }
+  | { pallet: 'Game'; palletError: IndivPalletGameError }
+  | { pallet: 'Score'; palletError: IndivPalletScoreError }
+  | { pallet: 'NftCredits'; palletError: IndivPalletNftCreditsError }
+  | { pallet: 'DummyDim'; palletError: IndivPalletDummyDimError }
+  | { pallet: 'PeopleLite'; palletError: IndivPalletPeopleLiteError }
+  | { pallet: 'Resources'; palletError: IndivPalletResourcesError }
+  | { pallet: 'ChunksManager'; palletError: IndivPalletChunksManagerError }
+  | { pallet: 'Members'; palletError: IndivPalletMembersError }
+  | { pallet: 'Coinage'; palletError: IndivPalletCoinageError }
+  | { pallet: 'MembersNotifier'; palletError: IndivPalletMembersNotifierError }
+  | { pallet: 'Airdrop'; palletError: IndivPalletAirdropError }
+  | { pallet: 'Honour'; palletError: IndivPalletHonourError }
+  | { pallet: 'PeopleAirdrops'; palletError: IndivPalletPeopleAirdropsError }
+  | { pallet: 'NetworkSuffix'; palletError: IndivPalletNetworkSuffixError }
   | { pallet: 'Sudo'; palletError: PalletSudoError };

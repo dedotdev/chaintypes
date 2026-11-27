@@ -493,136 +493,6 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
-   * Pallet `Democracy`'s errors
-   **/
-  democracy: {
-    /**
-     * Value too low
-     **/
-    ValueLow: GenericPalletError;
-
-    /**
-     * Proposal does not exist
-     **/
-    ProposalMissing: GenericPalletError;
-
-    /**
-     * Cannot cancel the same proposal twice
-     **/
-    AlreadyCanceled: GenericPalletError;
-
-    /**
-     * Proposal already made
-     **/
-    DuplicateProposal: GenericPalletError;
-
-    /**
-     * Proposal still blacklisted
-     **/
-    ProposalBlacklisted: GenericPalletError;
-
-    /**
-     * Next external proposal not simple majority
-     **/
-    NotSimpleMajority: GenericPalletError;
-
-    /**
-     * Invalid hash
-     **/
-    InvalidHash: GenericPalletError;
-
-    /**
-     * No external proposal
-     **/
-    NoProposal: GenericPalletError;
-
-    /**
-     * Identity may not veto a proposal twice
-     **/
-    AlreadyVetoed: GenericPalletError;
-
-    /**
-     * Vote given for invalid referendum
-     **/
-    ReferendumInvalid: GenericPalletError;
-
-    /**
-     * No proposals waiting
-     **/
-    NoneWaiting: GenericPalletError;
-
-    /**
-     * The given account did not vote on the referendum.
-     **/
-    NotVoter: GenericPalletError;
-
-    /**
-     * The actor has no permission to conduct the action.
-     **/
-    NoPermission: GenericPalletError;
-
-    /**
-     * The account is already delegating.
-     **/
-    AlreadyDelegating: GenericPalletError;
-
-    /**
-     * Too high a balance was provided that the account cannot afford.
-     **/
-    InsufficientFunds: GenericPalletError;
-
-    /**
-     * The account is not currently delegating.
-     **/
-    NotDelegating: GenericPalletError;
-
-    /**
-     * The account currently has votes attached to it and the operation cannot succeed until
-     * these are removed, either through `unvote` or `reap_vote`.
-     **/
-    VotesExist: GenericPalletError;
-
-    /**
-     * The instant referendum origin is currently disallowed.
-     **/
-    InstantNotAllowed: GenericPalletError;
-
-    /**
-     * Delegation to oneself makes no sense.
-     **/
-    Nonsense: GenericPalletError;
-
-    /**
-     * Invalid upper bound.
-     **/
-    WrongUpperBound: GenericPalletError;
-
-    /**
-     * Maximum number of votes reached.
-     **/
-    MaxVotesReached: GenericPalletError;
-
-    /**
-     * Maximum number of items reached.
-     **/
-    TooMany: GenericPalletError;
-
-    /**
-     * Voting period too low
-     **/
-    VotingPeriodLow: GenericPalletError;
-
-    /**
-     * The preimage does not exist.
-     **/
-    PreimageNotExist: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s errors
    **/
   technicalCommittee: {
@@ -1221,6 +1091,8 @@ export interface ChainErrors extends GenericChainErrors {
      * Aave - the reserve is paused and no operations are allowed
      **/
     AaveReservePaused: GenericPalletError;
+    UniswapV3InsufficientLiquidity: GenericPalletError;
+    UniswapV3SwapFailed: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2069,6 +1941,20 @@ export interface ChainErrors extends GenericChainErrors {
     ExistingProcessedVotes: GenericPalletError;
 
     /**
+     * Retained for API/error-index stability. No longer emitted: migration
+     * (`force_unstake`) now refuses any registered vote with `ExistingVotes`,
+     * matching the regular `unstake` precondition.
+     **/
+    ActiveVotesOngoing: GenericPalletError;
+
+    /**
+     * Caller's HDX is claimed by another pallet (e.g. `ghdxlock`).
+     * Strict policy: legacy staking refuses any HDX backing that overlaps
+     * with a non-whitelisted lock elsewhere.
+     **/
+    BlockedByExternalLock: GenericPalletError;
+
+    /**
      * Action cannot be completed because unexpected error has occurred. This should be reported
      * to protocol maintainers.
      **/
@@ -2237,6 +2123,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Invariant check failed inside a trade or liquidity operation.
      **/
     InvariantError: GenericPalletError;
+
+    /**
+     * Attempt to burn more shares than the pool's tracked share issuance.
+     **/
+    InsufficientShareIssuance: GenericPalletError;
+
+    /**
+     * Total issuance of pool shares exceeds the pallet-tracked issuance - shares were minted outside the pallet.
+     **/
+    UnaccountedShareIssuance: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2693,6 +2589,64 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidLiquidationData: GenericPalletError;
 
     /**
+     * Gigahdx liquidation only supports HOLLAR debt.
+     **/
+    UnsupportedDebtAsset: GenericPalletError;
+
+    /**
+     * Borrower has no active gigahdx position.
+     **/
+    NoGigaHdxPosition: GenericPalletError;
+
+    /**
+     * Realizing the borrower's accrued gigahdx yield before the seize failed.
+     **/
+    RealizeYieldFailed: GenericPalletError;
+
+    /**
+     * The gigahdx liquidation account is not bound to its EVM address, so
+     * the seized aToken would land in a different account than the ledger.
+     **/
+    LiquidationAccountNotBound: GenericPalletError;
+
+    /**
+     * Selective vote clearing failed before seize.
+     **/
+    ClearVotingLocksFailed: GenericPalletError;
+
+    /**
+     * Treasury's HOLLAR borrow against the GIGAHDX pool reverted.
+     **/
+    BorrowFailed: GenericPalletError;
+
+    /**
+     * Final state move (HDX transfer + lock refresh) failed.
+     **/
+    SeizeFailed: GenericPalletError;
+
+    /**
+     * GIGAHDX pool contract address not set in `pallet_gigahdx`.
+     **/
+    GigaHdxPoolNotSet: GenericPalletError;
+
+    /**
+     * Borrower has no `debt_asset` debt on the GIGAHDX pool, so there is
+     * nothing to liquidate.
+     **/
+    NoPoolDebt: GenericPalletError;
+
+    /**
+     * Repaying the unconsumed protocol-borrowed HOLLAR surplus reverted.
+     **/
+    RepayFailed: GenericPalletError;
+
+    /**
+     * The `pool` provided to `liquidate_with_pool` is not the pool this liquidation
+     * would execute against.
+     **/
+    PoolAddressMismatch: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2848,6 +2802,18 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `Parameters`'s errors
+   **/
+  parameters: {
+    AlreadySuspended: GenericPalletError;
+    AlreadyResumed: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Signet`'s errors
    **/
   signet: {
@@ -2971,6 +2937,374 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `GigaHdx`'s errors
+   **/
+  gigaHdx: {
+    /**
+     * Stake amount is below `Config::MinStake`.
+     **/
+    BelowMinStake: GenericPalletError;
+
+    /**
+     * Caller doesn't have enough unencumbered HDX to back the stake
+     * after subtracting their existing gigahdx commitment.
+     **/
+    InsufficientFreeBalance: GenericPalletError;
+
+    /**
+     * Caller holds a non-overlapping lock (legacy staking, vesting, …)
+     * reported by `Config::ExternalClaims`. Strict policy: gigahdx
+     * admission requires the caller to have no claims on their HDX
+     * other than those the runtime explicitly allows to coexist
+     * (e.g. `pyconvot`). Release the conflicting lock before staking.
+     **/
+    BlockedByExternalLock: GenericPalletError;
+
+    /**
+     * Unstake amount exceeds the caller's `Stakes.gigahdx`.
+     **/
+    InsufficientStake: GenericPalletError;
+
+    /**
+     * Caller has no active stake record.
+     **/
+    NoStake: GenericPalletError;
+
+    /**
+     * Amount must be strictly greater than zero.
+     **/
+    ZeroAmount: GenericPalletError;
+
+    /**
+     * stHDX mint failed (asset not registered, max issuance hit, or
+     * other `fungibles::Mutate::mint_into` precondition violated).
+     * Distinct from `MoneyMarketSupplyFailed` — this is a substrate-side
+     * asset-registry error, not an AAVE-side revert.
+     **/
+    StHdxMintFailed: GenericPalletError;
+
+    /**
+     * AAVE `Pool.supply` reverted — typical causes: caller's EVM address
+     * is not bound, the asset reserve is misconfigured, or `Pool` is
+     * paused.
+     **/
+    MoneyMarketSupplyFailed: GenericPalletError;
+
+    /**
+     * AAVE `Pool.withdraw` reverted.
+     **/
+    MoneyMarketWithdrawFailed: GenericPalletError;
+
+    /**
+     * Arithmetic overflow during rate, lock, or storage update math.
+     **/
+    Overflow: GenericPalletError;
+
+    /**
+     * The cooldown period has not yet elapsed for the targeted position.
+     **/
+    CooldownNotElapsed: GenericPalletError;
+
+    /**
+     * No pending unstake position with the supplied id exists for the caller.
+     **/
+    PendingUnstakeNotFound: GenericPalletError;
+
+    /**
+     * Caller has reached `Config::MaxPendingUnstakes` concurrent positions.
+     **/
+    TooManyPendingUnstakes: GenericPalletError;
+
+    /**
+     * `set_pool_contract` was called while gigahdx (aToken / stHDX) is
+     * still in circulation. The pool is settable only when total stHDX
+     * supply is zero.
+     **/
+    OutstandingStake: GenericPalletError;
+
+    /**
+     * Unstake would drop `Stakes[who].hdx` below the HDX backing the
+     * caller's active votes (`T::VotingCommitment`); remove the relevant
+     * conviction votes first.
+     **/
+    StakeFrozen: GenericPalletError;
+
+    /**
+     * `slash` fallback could not extract the full `seize_hdx` from the
+     * borrower's account (e.g. existential-deposit constraint).
+     **/
+    SeizeFailed: GenericPalletError;
+
+    /**
+     * The gigapot lacks the HDX to cover the caller's accrued yield.
+     * Only reachable in a drained/floored state, not normal operation.
+     **/
+    GigapotInsufficient: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `GigaHdxRewards`'s errors
+   **/
+  gigaHdxRewards: {
+    /**
+     * `PendingRewards[who]` is zero.
+     **/
+    NoPendingRewards: GenericPalletError;
+
+    /**
+     * Not enough rewards in the allocated pot to cover the amount owed.
+     **/
+    PotInsufficient: GenericPalletError;
+
+    /**
+     * Arithmetic overflow during share computation.
+     **/
+    Overflow: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `LazyExecutor`'s errors
+   **/
+  lazyExecutor: {
+    /**
+     * `id` reached max. value.
+     **/
+    IdOverflow: GenericPalletError;
+
+    /**
+     * Arithmetic or type conversion overflow
+     **/
+    Overflow: GenericPalletError;
+
+    /**
+     * User failed to pay fees for future execution.
+     **/
+    FailedToPayFees: GenericPalletError;
+
+    /**
+     * Failed to deposit collected fees.
+     **/
+    FailedToDepositFees: GenericPalletError;
+
+    /**
+     * Queue is empty.
+     **/
+    EmptyQueue: GenericPalletError;
+
+    /**
+     * Forward's weight is bigger than max allowed weight.
+     **/
+    Overweight: GenericPalletError;
+
+    /**
+     * The forwarded EVM call reverted or returned a wrong/missing ack.
+     **/
+    ForwardFailed: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Intent`'s errors
+   **/
+  intent: {
+    /**
+     * Invalid deadline
+     **/
+    InvalidDeadline: GenericPalletError;
+
+    /**
+     * Invalid intent parameters
+     **/
+    InvalidIntent: GenericPalletError;
+
+    /**
+     * `on_resolved` forward names the zero contract address.
+     **/
+    InvalidForwardContract: GenericPalletError;
+
+    /**
+     * Referenced intent doesn't exist.
+     **/
+    IntentNotFound: GenericPalletError;
+
+    /**
+     * Referenced intent has expired.
+     **/
+    IntentExpired: GenericPalletError;
+
+    /**
+     * Referenced intent is still active.
+     **/
+    IntentActive: GenericPalletError;
+
+    /**
+     * Intent's resolution doesn't match intent's parameters.
+     **/
+    ResolveMismatch: GenericPalletError;
+
+    /**
+     * Resolution violates intent's limits.
+     **/
+    LimitViolation: GenericPalletError;
+
+    /**
+     * Calculation overflow.
+     **/
+    ArithmeticOverflow: GenericPalletError;
+
+    /**
+     * Referenced intent's owner doesn't exist.
+     **/
+    IntentOwnerNotFound: GenericPalletError;
+
+    /**
+     * Account is not intent's owner.
+     **/
+    InvalidOwner: GenericPalletError;
+
+    /**
+     * User doesn't have enough reserved funds.
+     **/
+    InsufficientReservedBalance: GenericPalletError;
+
+    /**
+     * Partial intents are not supported at the moment.
+     **/
+    NotImplemented: GenericPalletError;
+
+    /**
+     * Asset with specified id doesn't exists.
+     **/
+    AssetNotFound: GenericPalletError;
+
+    /**
+     * DCA period is below minimum.
+     **/
+    InvalidDcaPeriod: GenericPalletError;
+
+    /**
+     * DCA budget is less than a single trade amount.
+     **/
+    InvalidDcaBudget: GenericPalletError;
+
+    /**
+     * DCA intent must not have a deadline.
+     **/
+    InvalidDcaDeadline: GenericPalletError;
+
+    /**
+     * DCA slippage exceeds `MaxDcaSlippage`.
+     **/
+    InvalidDcaSlippage: GenericPalletError;
+
+    /**
+     * Nothing can settle intents right now, so new ones are not accepted.
+     **/
+    SettlementDisabled: GenericPalletError;
+
+    /**
+     * Account has reached the maximum number of allowed intents.
+     **/
+    MaxIntentsReached: GenericPalletError;
+
+    /**
+     * Match window is zero or does not end before the deadline, when one is set.
+     **/
+    InvalidMatchWindow: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `ICE`'s errors
+   **/
+  ice: {
+    /**
+     * Provided solution is not valid.
+     **/
+    InvalidSolution: GenericPalletError;
+
+    /**
+     * Referenced intent doesn't exist.
+     **/
+    IntentNotFound: GenericPalletError;
+
+    /**
+     * Referenced intent's owner doesn't exist.
+     **/
+    IntentOwnerNotFound: GenericPalletError;
+
+    /**
+     * Resolution violates user's limit.
+     **/
+    LimitViolation: GenericPalletError;
+
+    /**
+     * Trade price doesn't match execution price.
+     **/
+    PriceInconsistency: GenericPalletError;
+
+    /**
+     * Intent was referenced multiple times.
+     **/
+    DuplicateIntent: GenericPalletError;
+
+    /**
+     * Trade's route is invalid.
+     **/
+    InvalidRoute: GenericPalletError;
+
+    /**
+     * Provided score doesn't match execution score.
+     **/
+    ScoreMismatch: GenericPalletError;
+
+    /**
+     * Intent's kind is not supported.
+     **/
+    UnsupportedIntentKind: GenericPalletError;
+
+    /**
+     * Calculation overflow.
+     **/
+    ArithmeticOverflow: GenericPalletError;
+
+    /**
+     * Asset with specified id doesn't exists.
+     **/
+    AssetNotFound: GenericPalletError;
+
+    /**
+     * Traded amount is bellow limit.
+     **/
+    InvalidAmount: GenericPalletError;
+
+    /**
+     * Holding-pot residual for some asset does not cover the expected
+     * matched-volume protocol fee — the solver under-priced matched
+     * volume, or claimed more matched volume than the trades support.
+     **/
+    FeeMismatch: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Tokens`'s errors
    **/
   tokens: {
@@ -3038,6 +3372,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Operation is not supported for this currency
      **/
     NotSupported: GenericPalletError;
+
+    /**
+     * The beneficiary cannot be the reserve account itself.
+     **/
+    InvalidBeneficiary: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3224,6 +3563,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Insufficient asset balance of the claimed asset
      **/
     InsufficientAssetBalance: GenericPalletError;
+
+    /**
+     * Zero address cannot be used as a minter
+     **/
+    InvalidMinterAddress: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3572,6 +3916,16 @@ export interface ChainErrors extends GenericChainErrors {
      * No reserves are locked for the user for the given asset
      **/
     NoReservesLocked: GenericPalletError;
+
+    /**
+     * Buy orders can no longer be scheduled. Existing buy schedules keep executing.
+     **/
+    NoLongerSupported: GenericPalletError;
+
+    /**
+     * Schedules cannot be created while they are being migrated to DCA intents
+     **/
+    MigrationInProgress: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -4257,6 +4611,40 @@ export interface ChainErrors extends GenericChainErrors {
      * The execution context call stack is empty, unable to decrease level
      **/
     ExecutionCallStackUnderflow: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `FeeProcessor`'s errors
+   **/
+  feeProcessor: {
+    /**
+     * Asset is already HDX, no conversion needed.
+     **/
+    AlreadyHdx: GenericPalletError;
+
+    /**
+     * Conversion failed.
+     **/
+    ConversionFailed: GenericPalletError;
+
+    /**
+     * Transfer failed.
+     **/
+    TransferFailed: GenericPalletError;
+
+    /**
+     * Spot price not available for asset pair.
+     **/
+    PriceNotAvailable: GenericPalletError;
+
+    /**
+     * Arithmetic overflow/underflow.
+     **/
+    Arithmetic: GenericPalletError;
 
     /**
      * Generic pallet error

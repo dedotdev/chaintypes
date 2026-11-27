@@ -348,12 +348,6 @@ export interface ChainErrors extends GenericChainErrors {
     VestedBalanceExists: GenericPalletError;
 
     /**
-     * The claim has a vesting schedule but its value is below the existential deposit, so the
-     * destination account could not be kept alive to carry the vesting lock.
-     **/
-    ClaimBelowExistentialDeposit: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1140,11 +1134,6 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyReserves: GenericPalletError;
 
     /**
-     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
-     **/
-    IncompleteDepositTransfer: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1262,11 +1251,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Wrong attribute key/value bytes supplied.
      **/
     WrongAttribute: GenericPalletError;
-
-    /**
-     * The collection deposit could not be fully moved due to a lock or freeze on the owner.
-     **/
-    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1503,11 +1487,6 @@ export interface ChainErrors extends GenericChainErrors {
     WitnessRequired: GenericPalletError;
 
     /**
-     * The collection deposit could not be fully moved due to a lock or freeze on the owner.
-     **/
-    IncompleteDepositTransfer: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1644,11 +1623,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Tried setting too many reserves.
      **/
     TooManyReserves: GenericPalletError;
-
-    /**
-     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
-     **/
-    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1789,11 +1763,6 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyReserves: GenericPalletError;
 
     /**
-     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
-     **/
-    IncompleteDepositTransfer: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1926,15 +1895,151 @@ export interface ChainErrors extends GenericChainErrors {
     PoolEmpty: GenericPalletError;
 
     /**
-     * The fee exceeds [`Config::MaxSwapFee`].
+     * Generic pallet error
      **/
-    FeeTooHigh: GenericPalletError;
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetsFreezer`'s errors
+   **/
+  assetsFreezer: {
+    /**
+     * Number of freezes on an account would exceed `MaxFreezes`.
+     **/
+    TooManyFreezes: GenericPalletError;
 
     /**
-     * The pool account can't send one of its assets (e.g. the asset class is frozen or the
-     * pool account is blocked).
+     * Generic pallet error
      **/
-    PoolUnavailable: GenericPalletError;
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetsHolder`'s errors
+   **/
+  assetsHolder: {
+    /**
+     * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
+     **/
+    TooManyHolds: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Scarcity`'s errors
+   **/
+  scarcity: {
+    /**
+     * The collection identifier space is exhausted.
+     **/
+    TooManyCollections: GenericPalletError;
+
+    /**
+     * The collection does not exist.
+     **/
+    UnknownCollection: GenericPalletError;
+
+    /**
+     * Only the current collection owner may perform this operation.
+     **/
+    NoPermission: GenericPalletError;
+
+    /**
+     * The current collection owner cannot be nominated as its replacement.
+     **/
+    AlreadyCollectionOwner: GenericPalletError;
+
+    /**
+     * The signer is not the account currently nominated to claim this collection.
+     **/
+    NotPendingCollectionOwner: GenericPalletError;
+
+    /**
+     * The per-collection item index space is exhausted.
+     **/
+    TooManyItems: GenericPalletError;
+
+    /**
+     * The requested item definition does not exist.
+     **/
+    UnknownItem: GenericPalletError;
+
+    /**
+     * An item with live instances cannot be deleted.
+     **/
+    ItemInUse: GenericPalletError;
+
+    /**
+     * Item metadata must be removed before deleting the item.
+     **/
+    ItemMetadataNotEmpty: GenericPalletError;
+
+    /**
+     * Item definitions must be deleted before deleting the collection.
+     **/
+    CollectionItemsNotEmpty: GenericPalletError;
+
+    /**
+     * Collection metadata must be removed before deleting the collection.
+     **/
+    CollectionMetadataNotEmpty: GenericPalletError;
+
+    /**
+     * Stored dependency counters or deposits do not permit deletion.
+     **/
+    DeletionInvariant: GenericPalletError;
+
+    /**
+     * The destination purse key already holds an NFT.
+     **/
+    AddressOccupied: GenericPalletError;
+
+    /**
+     * The permanent instance identifier space is exhausted.
+     **/
+    TooManyInstances: GenericPalletError;
+
+    /**
+     * An item definition's minted supply is exhausted.
+     **/
+    SupplyOverflow: GenericPalletError;
+
+    /**
+     * The requested live instance does not exist.
+     **/
+    UnknownInstance: GenericPalletError;
+
+    /**
+     * The configured per-instance metadata entry limit was reached.
+     **/
+    TooManyInstanceMetadata: GenericPalletError;
+
+    /**
+     * An NFT cannot be transferred to its current purse key.
+     **/
+    SelfTransfer: GenericPalletError;
+
+    /**
+     * An NFT has exhausted its ownership-state nonce.
+     **/
+    StateNonceOverflow: GenericPalletError;
+
+    /**
+     * The item definition binds its instances to the purse key they were minted into.
+     **/
+    Soulbound: GenericPalletError;
+
+    /**
+     * The configured per-collection metadata entry limit was reached.
+     **/
+    TooManyCollectionMetadata: GenericPalletError;
+
+    /**
+     * The configured per-item metadata entry limit was reached.
+     **/
+    TooManyItemMetadata: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2060,45 +2165,6 @@ export interface ChainErrors extends GenericChainErrors {
      * An unexpected invariant violation occurred. This should be reported.
      **/
     Unexpected: GenericPalletError;
-
-    /**
-     * An admin origin was supplied that cannot be used as an authority, such as the system
-     * `None` origin.
-     **/
-    InvalidAdminOrigin: GenericPalletError;
-
-    /**
-     * The PSM reserve account cannot receive the external asset.
-     **/
-    ReserveCannotReceive: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `AssetsFreezer`'s errors
-   **/
-  assetsFreezer: {
-    /**
-     * Number of freezes on an account would exceed `MaxFreezes`.
-     **/
-    TooManyFreezes: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `AssetsHolder`'s errors
-   **/
-  assetsHolder: {
-    /**
-     * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
-     **/
-    TooManyHolds: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2349,26 +2415,6 @@ export interface ChainErrors extends GenericChainErrors {
     CallAlreadyWhitelisted: GenericPalletError;
 
     /**
-     * No deferred dispatch entry exists for this call hash.
-     **/
-    DeferredDispatchNotFound: GenericPalletError;
-
-    /**
-     * The deferred dispatch entry has not yet expired.
-     **/
-    DeferredDispatchNotExpired: GenericPalletError;
-
-    /**
-     * The dispatch has already been deferred.
-     **/
-    AlreadyDeferred: GenericPalletError;
-
-    /**
-     * The deferred dispatch has expired.
-     **/
-    DeferredDispatchExpired: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2437,11 +2483,6 @@ export interface ChainErrors extends GenericChainErrors {
      * User is not the proposer of the bounty.
      **/
     NotProposer: GenericPalletError;
-
-    /**
-     * The bounty is still active and its account cannot be reclaimed.
-     **/
-    BountyStillActive: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2588,6 +2629,51 @@ export interface ChainErrors extends GenericChainErrors {
      * The preimage does not exist.
      **/
     PreimageNotExist: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s errors
+   **/
+  stateTrieMigration: {
+    /**
+     * Max signed limits not respected.
+     **/
+    MaxSignedLimits: GenericPalletError;
+
+    /**
+     * A key was longer than the configured maximum.
+     *
+     * This means that the migration halted at the current [`Progress`] and
+     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+     * The value should only be increased to avoid a storage migration for the currently
+     * stored [`crate::Progress::LastKey`].
+     **/
+    KeyTooLong: GenericPalletError;
+
+    /**
+     * submitter does not have enough funds.
+     **/
+    NotEnoughFunds: GenericPalletError;
+
+    /**
+     * Bad witness data provided.
+     **/
+    BadWitness: GenericPalletError;
+
+    /**
+     * Signed migration is not allowed because the maximum limit is not set yet.
+     **/
+    SignedMigrationNotAllowed: GenericPalletError;
+
+    /**
+     * Bad child root provided.
+     **/
+    BadChildRoot: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3006,16 +3092,6 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyInvulnerables: GenericPalletError;
 
     /**
-     * No [`UnpaidRewards`] entry exists for the caller in the given round.
-     **/
-    NoUnpaidReward: GenericPalletError;
-
-    /**
-     * The [`Config::RewardSource`] pot is still insufficient to pay the unpaid reward.
-     **/
-    PotStillDepleted: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -3221,14 +3297,247 @@ export interface ChainErrors extends GenericChainErrors {
     OptimumGreaterThanCap: GenericPalletError;
 
     /**
-     * Validator inactivity proof is invalid.
+     * Generic pallet error
      **/
-    InvalidInactivityProof: GenericPalletError;
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `NftClaims`'s errors
+   **/
+  nftClaims: {
+    /**
+     * No tree is held for the block, so nothing can be proven against it. The tree may
+     * still be on its way, or have been lost, in which case a `replay_credit_trees` on the
+     * game pallet delivers it.
+     **/
+    UnknownCreditTree: GenericPalletError;
 
     /**
-     * Cannot set [`ChillInactiveThreshold`] to the provided value.
+     * The leaf index is not one of the tree's leaves.
      **/
-    InvalidChillInactiveThreshold: GenericPalletError;
+    LeafIndexOutOfBounds: GenericPalletError;
+
+    /**
+     * The credit has already been claimed and mints one NFT only.
+     **/
+    AlreadyClaimed: GenericPalletError;
+
+    /**
+     * The proof does not rehash the credit's leaf to the tree's root, so the origin holds no
+     * such credit in that block.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
+     * The collection does not exist in Scarcity.
+     **/
+    UnknownCollection: GenericPalletError;
+
+    /**
+     * Only the collection's owner may register or withdraw its minter.
+     **/
+    NotCollectionOwner: GenericPalletError;
+
+    /**
+     * The collection's owner has not registered it for claims, so no claim can mint into
+     * it.
+     **/
+    CollectionNotRegistered: GenericPalletError;
+
+    /**
+     * The collection has changed owners since registration, so its current owner must
+     * register it again. Only a runtime that leaves
+     * [`indiv_pallet_scarcity::Config::OnCollectionOwnerChanged`] unwired reaches this.
+     **/
+    CollectionOwnerChanged: GenericPalletError;
+
+    /**
+     * The collection has no live item definitions for [`ItemSelection::Random`] to draw
+     * from, either because none were defined or because all were deleted.
+     **/
+    NoItems: GenericPalletError;
+
+    /**
+     * The registered minter contract reverted instead of selecting an item.
+     **/
+    MinterContractReverted: GenericPalletError;
+
+    /**
+     * The registered minter contract returned data that is not one canonical `uint32`
+     * item index.
+     **/
+    MinterContractInvalidReturn: GenericPalletError;
+
+    /**
+     * The address given for a minter registration holds no contract code.
+     **/
+    MinterNotAContract: GenericPalletError;
+
+    /**
+     * The selected item has no definition in the collection, so the mint would reject it.
+     * An [`ItemSelection::Random`] draw reaches this by landing on a deleted index, which
+     * stays inside the draw range, and a contract selection by naming such an index.
+     **/
+    UnknownItem: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MembersSubscriber`'s errors
+   **/
+  membersSubscriber: {
+    /**
+     * XCM message send failed.
+     **/
+    XcmSendFailed: GenericPalletError;
+
+    /**
+     * Subscription is currently inactive.
+     **/
+    SubscriptionInactive: GenericPalletError;
+
+    /**
+     * Subscription is in terminated state.
+     **/
+    SubscriptionTerminated: GenericPalletError;
+
+    /**
+     * Subscription is active with a different sequence; must be terminated first.
+     **/
+    SubscriptionAlreadyActive: GenericPalletError;
+
+    /**
+     * Collection with the given identifier is not tracked.
+     **/
+    CollectionNotFound: GenericPalletError;
+
+    /**
+     * No ring root stored for the given ring index.
+     **/
+    NoRoot: GenericPalletError;
+
+    /**
+     * Proof failed to verify against any stored ring root.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
+     * Stored ring exponent does not convert into the crypto's capacity.
+     **/
+    InvalidRingExponent: GenericPalletError;
+
+    /**
+     * Requested revision is not present in the stored sliding window.
+     **/
+    RevisionNotFound: GenericPalletError;
+
+    /**
+     * Requested revision has been superseded for longer than the retention duration.
+     **/
+    RevisionExpired: GenericPalletError;
+
+    /**
+     * The notifier initialized more than `MaxCollections` collections.
+     **/
+    TooManyCollections: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AliasAccounts`'s errors
+   **/
+  aliasAccounts: {
+    /**
+     * The collection is not accepted.
+     **/
+    InvalidCollection: GenericPalletError;
+
+    /**
+     * The account is already in use under another alias.
+     **/
+    AccountInUse: GenericPalletError;
+
+    /**
+     * The account is not known.
+     **/
+    InvalidAccount: GenericPalletError;
+
+    /**
+     * Alias <-> Account is already set and up to date.
+     **/
+    AliasAccountAlreadySet: GenericPalletError;
+
+    /**
+     * Call is too late or too early.
+     **/
+    TimeOutOfRange: GenericPalletError;
+
+    /**
+     * The PGAS fee for alias registrations has not been set yet.
+     **/
+    AliasFeeUnset: GenericPalletError;
+
+    /**
+     * The proof passed to `reprove_alias_account` produced an alias / context
+     * that does not match the stored mapping for the signer.
+     **/
+    ReproveMismatch: GenericPalletError;
+
+    /**
+     * No ring root was found for the requested collection / ring index.
+     **/
+    RingRootNotFound: GenericPalletError;
+
+    /**
+     * The requested ring revision is no longer accepted for this ring.
+     **/
+    StaleRevision: GenericPalletError;
+
+    /**
+     * Ring-VRF proof verification failed.
+     **/
+    BadProof: GenericPalletError;
+
+    /**
+     * The configured ring capacity is invalid for this collection.
+     **/
+    InvalidRingCapacity: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Pgas`'s errors
+   **/
+  pgas: {
+    /**
+     * This alias has already been used to claim PGAS in this period.
+     **/
+    AlreadyClaimed: GenericPalletError;
+
+    /**
+     * The PGAS asset does not exist or minting failed.
+     **/
+    PgasMintFailed: GenericPalletError;
+
+    /**
+     * `clean_pgas_claim_records` was called with a day that has no stored records.
+     **/
+    NoRecordsForDay: GenericPalletError;
+
+    /**
+     * The `first_alias` passed to `clean_pgas_claim_records` does not match the first alias
+     * currently stored under the prefix.
+     **/
+    FirstAliasMismatch: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3561,12 +3870,6 @@ export interface ChainErrors extends GenericChainErrors {
     PendingDepositCleanup: GenericPalletError;
 
     /**
-     * The logs of the ethereum transaction would exceed
-     * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
-     **/
-    ReceiptTooLarge: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -3614,165 +3917,6 @@ export interface ChainErrors extends GenericChainErrors {
      * The spender address is invalid (e.g., zero address).
      **/
     InvalidSpender: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `MembersSubscriber`'s errors
-   **/
-  membersSubscriber: {
-    /**
-     * XCM message send failed.
-     **/
-    XcmSendFailed: GenericPalletError;
-
-    /**
-     * Subscription is currently inactive.
-     **/
-    SubscriptionInactive: GenericPalletError;
-
-    /**
-     * Subscription is in terminated state.
-     **/
-    SubscriptionTerminated: GenericPalletError;
-
-    /**
-     * Subscription is active with a different sequence; must be terminated first.
-     **/
-    SubscriptionAlreadyActive: GenericPalletError;
-
-    /**
-     * Collection with the given identifier is not tracked.
-     **/
-    CollectionNotFound: GenericPalletError;
-
-    /**
-     * No ring root stored for the given ring index.
-     **/
-    NoRoot: GenericPalletError;
-
-    /**
-     * Proof failed to verify against any stored ring root.
-     **/
-    InvalidProof: GenericPalletError;
-
-    /**
-     * Stored ring exponent does not convert into the crypto's capacity.
-     **/
-    InvalidRingExponent: GenericPalletError;
-
-    /**
-     * Requested revision is not present in the stored sliding window.
-     **/
-    RevisionNotFound: GenericPalletError;
-
-    /**
-     * Requested revision has been superseded for longer than the retention duration.
-     **/
-    RevisionExpired: GenericPalletError;
-
-    /**
-     * The notifier initialized more than `MaxCollections` collections.
-     **/
-    TooManyCollections: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `AliasAccounts`'s errors
-   **/
-  aliasAccounts: {
-    /**
-     * The collection is not accepted.
-     **/
-    InvalidCollection: GenericPalletError;
-
-    /**
-     * The account is already in use under another alias.
-     **/
-    AccountInUse: GenericPalletError;
-
-    /**
-     * The account is not known.
-     **/
-    InvalidAccount: GenericPalletError;
-
-    /**
-     * Alias <-> Account is already set and up to date.
-     **/
-    AliasAccountAlreadySet: GenericPalletError;
-
-    /**
-     * Call is too late or too early.
-     **/
-    TimeOutOfRange: GenericPalletError;
-
-    /**
-     * The PGAS fee for alias registrations has not been set yet.
-     **/
-    AliasFeeUnset: GenericPalletError;
-
-    /**
-     * The proof passed to `reprove_alias_account` produced an alias / context
-     * that does not match the stored mapping for the signer.
-     **/
-    ReproveMismatch: GenericPalletError;
-
-    /**
-     * No ring root was found for the requested collection / ring index.
-     **/
-    RingRootNotFound: GenericPalletError;
-
-    /**
-     * The requested ring revision is no longer accepted for this ring.
-     **/
-    StaleRevision: GenericPalletError;
-
-    /**
-     * Ring-VRF proof verification failed.
-     **/
-    BadProof: GenericPalletError;
-
-    /**
-     * The configured ring capacity is invalid for this collection.
-     **/
-    InvalidRingCapacity: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `Pgas`'s errors
-   **/
-  pgas: {
-    /**
-     * This alias has already been used to claim PGAS in this period.
-     **/
-    AlreadyClaimed: GenericPalletError;
-
-    /**
-     * The PGAS asset does not exist or minting failed.
-     **/
-    PgasMintFailed: GenericPalletError;
-
-    /**
-     * `clean_pgas_claim_records` was called with a day that has no stored records.
-     **/
-    NoRecordsForDay: GenericPalletError;
-
-    /**
-     * The `first_alias` passed to `clean_pgas_claim_records` does not match the first alias
-     * currently stored under the prefix.
-     **/
-    FirstAliasMismatch: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3870,6 +4014,20 @@ export interface ChainErrors extends GenericChainErrors {
      * A network suffix cannot be empty.
      **/
     EmptySuffix: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Sudo`'s errors
+   **/
+  sudo: {
+    /**
+     * Sender must be the Sudo account.
+     **/
+    RequireSudo: GenericPalletError;
 
     /**
      * Generic pallet error

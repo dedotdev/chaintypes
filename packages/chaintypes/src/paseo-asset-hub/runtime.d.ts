@@ -19,7 +19,7 @@ import type {
 } from 'dedot/codecs';
 import type {
   SpConsensusSlotsSlotDuration,
-  SpConsensusAuraEd25519AppEd25519Public,
+  SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
   SpRuntimeBlockLazyBlock,
   SpRuntimeExtrinsicInclusionMode,
@@ -36,7 +36,7 @@ import type {
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
-  AssetHubPolkadotRuntimeRuntimeCallLike,
+  AssetHubPaseoRuntimeRuntimeCallLike,
   XcmVersionedAssetId,
   XcmRuntimeApisFeesError,
   XcmVersionedXcm,
@@ -44,7 +44,7 @@ import type {
   XcmVersionedLocation,
   XcmRuntimeApisDryRunCallDryRunEffects,
   XcmRuntimeApisDryRunError,
-  AssetHubPolkadotRuntimeOriginCaller,
+  AssetHubPaseoRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
   XcmRuntimeApisTrustedQueryError,
@@ -52,75 +52,30 @@ import type {
   XcmRuntimeApisAuthorizedAliasesOriginAliaser,
   XcmRuntimeApisAuthorizedAliasesError,
   AssetsCommonRuntimeApiFungiblesAccessError,
+  IndivPalletScarcityRuntimeApiMetadataLayers,
+  IndivPalletScarcityRuntimeApiMetadataQuery,
+  IndivPalletNftClaimsRuntimeApiPreviewOutcome,
+  IndivPalletNftClaimsRuntimeApiPreviewQuery,
   CumulusPrimitivesCoreCollationInfo,
   StagingXcmV5Location,
   PolkadotParachainPrimitivesPrimitivesId,
   SystemParachainsCommonApisInflationInfo,
-  PalletReviveTypesRuntimeApiTypesBlockBlockV1,
-  PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1,
-  PalletReviveTypesRuntimeApiTypesContractContractResultV1,
-  PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1,
-  PalletReviveTypesRuntimeApiTypesContractCodeV1,
-  PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1,
+  PalletReviveEvmApiRpcTypesGenBlock,
+  PalletReviveEvmBlockHashReceiptGasInfo,
+  PalletRevivePrimitivesContractResult,
+  PalletRevivePrimitivesContractResultInstantiateReturnValue,
+  PalletRevivePrimitivesCode,
+  PalletRevivePrimitivesEthTransactInfo,
   PalletRevivePrimitivesEthTransactError,
-  PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1,
-  PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1,
-  PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1,
+  PalletReviveEvmApiRpcTypesGenGenericTransaction,
+  PalletReviveEvmApiRpcTypesDryRunConfig,
+  PalletRevivePrimitivesCodeUploadReturnValue,
   PalletRevivePrimitivesContractAccessError,
-  PalletReviveTypesRuntimeApiTypesTracesTraceV1,
+  PalletReviveEvmApiDebugRpcTypesTrace,
   SpRuntimeBlock,
-  PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1,
-  PalletReviveTypesRuntimeApiTypesStateOverridesTracingConfigV1,
+  PalletReviveEvmApiDebugRpcTypesTracerType,
+  PalletReviveEvmApiRpcTypesTracingConfig,
   PalletRevivePrimitivesBalanceConversionError,
-  PalletReviveTypesRuntimeApiDeclarationReviveRuntimeApiVersionDeclarations,
-  PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsCallCallVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsCallCallVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedInputPayload,
-  PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedOutputPayload,
-  PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedInputPayload,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -142,7 +97,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: AuraApi_authorities
      **/
-    authorities: GenericRuntimeApiMethod<() => Promise<Array<SpConsensusAuraEd25519AppEd25519Public>>>;
+    authorities: GenericRuntimeApiMethod<() => Promise<Array<SpConsensusAuraSr25519AppSr25519Public>>>;
 
     /**
      * Generic runtime api call
@@ -535,25 +490,22 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Query information of a dispatch class, weight, and fee of a given encoded `Call`.
      *
      * @callname: TransactionPaymentCallApi_query_call_info
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      * @param {number} len
      **/
     queryCallInfo: GenericRuntimeApiMethod<
-      (
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
-        len: number,
-      ) => Promise<PalletTransactionPaymentRuntimeDispatchInfo>
+      (call: AssetHubPaseoRuntimeRuntimeCallLike, len: number) => Promise<PalletTransactionPaymentRuntimeDispatchInfo>
     >;
 
     /**
      * Query fee details of a given encoded `Call`.
      *
      * @callname: TransactionPaymentCallApi_query_call_fee_details
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      * @param {number} len
      **/
     queryCallFeeDetails: GenericRuntimeApiMethod<
-      (call: AssetHubPolkadotRuntimeRuntimeCallLike, len: number) => Promise<PalletTransactionPaymentFeeDetails>
+      (call: AssetHubPaseoRuntimeRuntimeCallLike, len: number) => Promise<PalletTransactionPaymentFeeDetails>
     >;
 
     /**
@@ -663,14 +615,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
-     * @param {AssetHubPolkadotRuntimeOriginCaller} origin
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeOriginCaller} origin
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
      * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       (
-        origin: AssetHubPolkadotRuntimeOriginCaller,
-        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        origin: AssetHubPaseoRuntimeOriginCaller,
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
         resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
@@ -813,6 +765,53 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
+   * @runtimeapi: ScarcityApi - 0x82527d61e8e140e3
+   **/
+  scarcityApi: {
+    /**
+     * Returns one positionally aligned result per query without failing on missing targets.
+     * The bounded argument enforces the batch ceiling at decode, so an accepted request is
+     * never truncated.
+     *
+     * @callname: ScarcityApi_metadata_batch
+     * @param {Array<IndivPalletScarcityRuntimeApiMetadataQuery>} queries
+     **/
+    metadataBatch: GenericRuntimeApiMethod<
+      (
+        queries: Array<IndivPalletScarcityRuntimeApiMetadataQuery>,
+      ) => Promise<Array<IndivPalletScarcityRuntimeApiMetadataLayers>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: NftClaimsApi - 0xfe26fc1a0dd5ae00
+   **/
+  nftClaimsApi: {
+    /**
+     * Executes the claim selector once per query and returns positionally aligned outcomes.
+     * Every query runs in its own discarded storage layer, so each one is previewed
+     * independently against the block's state and none observes another's contract writes.
+     * A preview cannot bind a later claim, which runs against whatever state its block holds.
+     *
+     * @callname: NftClaimsApi_preview_mints
+     * @param {Array<IndivPalletNftClaimsRuntimeApiPreviewQuery>} queries
+     **/
+    previewMints: GenericRuntimeApiMethod<
+      (
+        queries: Array<IndivPalletNftClaimsRuntimeApiPreviewQuery>,
+      ) => Promise<Array<IndivPalletNftClaimsRuntimeApiPreviewOutcome>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
    * @runtimeapi: CollectCollationInfo - 0xea93e3f16f3d6962
    **/
   collectCollationInfo: {
@@ -883,29 +882,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: GenesisBuilder_preset_names
      **/
     presetNames: GenericRuntimeApiMethod<() => Promise<Array<string>>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
-   * @runtimeapi: AssetHubMigrationApi - 0xc1b8f0c037f97de8
-   **/
-  assetHubMigrationApi: {
-    /**
-     * Returns the block number when the migration started.
-     *
-     * @callname: AssetHubMigrationApi_migration_start_block
-     **/
-    migrationStartBlock: GenericRuntimeApiMethod<() => Promise<number>>;
-
-    /**
-     * Returns the block number when the migration ended.
-     *
-     * @callname: AssetHubMigrationApi_migration_end_block
-     **/
-    migrationEndBlock: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -1161,18 +1137,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * This is one block behind the substrate block.
      *
      * @callname: ReviveApi_eth_block
-     *
-     * @deprecated Use the versioned equivalent `eth_block_versioned` if available on your runtime
      **/
-    ethBlock: GenericRuntimeApiMethod<() => Promise<PalletReviveTypesRuntimeApiTypesBlockBlockV1>>;
+    ethBlock: GenericRuntimeApiMethod<() => Promise<PalletReviveEvmApiRpcTypesGenBlock>>;
 
     /**
      * Returns the ETH block hash for the given block number.
      *
      * @callname: ReviveApi_eth_block_hash
      * @param {U256} number
-     *
-     * @deprecated Use the versioned equivalent `eth_block_hash_versioned` if available on your runtime
      **/
     ethBlockHash: GenericRuntimeApiMethod<(number: U256) => Promise<H256 | undefined>>;
 
@@ -1184,19 +1156,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Each entry corresponds to the appropriate Ethereum transaction in the current block.
      *
      * @callname: ReviveApi_eth_receipt_data
-     *
-     * @deprecated Use the versioned equivalent `eth_receipt_data_versioned` if available on your runtime
      **/
-    ethReceiptData: GenericRuntimeApiMethod<
-      () => Promise<Array<PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1>>
-    >;
+    ethReceiptData: GenericRuntimeApiMethod<() => Promise<Array<PalletReviveEvmBlockHashReceiptGasInfo>>>;
 
     /**
      * Returns the block gas limit.
      *
      * @callname: ReviveApi_block_gas_limit
-     *
-     * @deprecated Use the versioned equivalent `block_gas_limit_versioned` if available on your runtime
      **/
     blockGasLimit: GenericRuntimeApiMethod<() => Promise<U256>>;
 
@@ -1204,8 +1170,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the block gas limit as calculated from the weights.
      *
      * @callname: ReviveApi_max_extrinsic_weight_in_gas
-     *
-     * @deprecated Use the versioned equivalent `max_extrinsic_weight_in_gas_versioned` if available on your runtime
      **/
     maxExtrinsicWeightInGas: GenericRuntimeApiMethod<() => Promise<U256>>;
 
@@ -1214,8 +1178,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_balance
      * @param {H160} address
-     *
-     * @deprecated Use the versioned equivalent `balance_versioned` if available on your runtime
      **/
     balance: GenericRuntimeApiMethod<(address: H160) => Promise<U256>>;
 
@@ -1223,8 +1185,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the gas price.
      *
      * @callname: ReviveApi_gas_price
-     *
-     * @deprecated Use the versioned equivalent `gas_price_versioned` if available on your runtime
      **/
     gasPrice: GenericRuntimeApiMethod<() => Promise<U256>>;
 
@@ -1233,8 +1193,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_nonce
      * @param {H160} address
-     *
-     * @deprecated Use the versioned equivalent `nonce_versioned` if available on your runtime
      **/
     nonce: GenericRuntimeApiMethod<(address: H160) => Promise<number>>;
 
@@ -1250,8 +1208,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {SpWeightsWeightV2Weight | undefined} gas_limit
      * @param {bigint | undefined} storage_deposit_limit
      * @param {BytesLike} input_data
-     *
-     * @deprecated Use the versioned equivalent `call_versioned` if available on your runtime
      **/
     call: GenericRuntimeApiMethod<
       (
@@ -1261,7 +1217,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
         gasLimit: SpWeightsWeightV2Weight | undefined,
         storageDepositLimit: bigint | undefined,
         inputData: BytesLike,
-      ) => Promise<PalletReviveTypesRuntimeApiTypesContractContractResultV1>
+      ) => Promise<PalletRevivePrimitivesContractResult>
     >;
 
     /**
@@ -1274,11 +1230,9 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {bigint} value
      * @param {SpWeightsWeightV2Weight | undefined} gas_limit
      * @param {bigint | undefined} storage_deposit_limit
-     * @param {PalletReviveTypesRuntimeApiTypesContractCodeV1} code
+     * @param {PalletRevivePrimitivesCode} code
      * @param {BytesLike} data
      * @param {FixedBytes<32> | undefined} salt
-     *
-     * @deprecated Use the versioned equivalent `instantiate_versioned` if available on your runtime
      **/
     instantiate: GenericRuntimeApiMethod<
       (
@@ -1286,28 +1240,25 @@ export interface RuntimeApis extends GenericRuntimeApis {
         value: bigint,
         gasLimit: SpWeightsWeightV2Weight | undefined,
         storageDepositLimit: bigint | undefined,
-        code: PalletReviveTypesRuntimeApiTypesContractCodeV1,
+        code: PalletRevivePrimitivesCode,
         data: BytesLike,
         salt?: FixedBytes<32> | undefined,
-      ) => Promise<PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1>
+      ) => Promise<PalletRevivePrimitivesContractResultInstantiateReturnValue>
     >;
 
     /**
      * Perform an Ethereum call.
      *
+     * Deprecated use `v2` version instead.
      * See [`crate::Pallet::dry_run_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact
-     * @param {PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1} tx
-     *
-     * @deprecated Use the versioned equivalent `eth_transact_versioned` if available on your runtime
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
      **/
     ethTransact: GenericRuntimeApiMethod<
       (
-        tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1,
-      ) => Promise<
-        Result<PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1, PalletRevivePrimitivesEthTransactError>
-      >
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+      ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**
@@ -1316,18 +1267,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * See [`crate::Pallet::dry_run_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact_with_config
-     * @param {PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1} tx
-     * @param {PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1} config
-     *
-     * @deprecated Use the versioned equivalent `eth_transact_versioned` if available on your runtime
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiRpcTypesDryRunConfig} config
      **/
     ethTransactWithConfig: GenericRuntimeApiMethod<
       (
-        tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1,
-        config: PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1,
-      ) => Promise<
-        Result<PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1, PalletRevivePrimitivesEthTransactError>
-      >
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiRpcTypesDryRunConfig,
+      ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**
@@ -1338,15 +1285,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * 1.5% so that the algorithm terminates early.
      *
      * @callname: ReviveApi_eth_estimate_gas
-     * @param {PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1} tx
-     * @param {PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1} config
-     *
-     * @deprecated Use the versioned equivalent `eth_estimate_gas_versioned` if available on your runtime
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiRpcTypesDryRunConfig} config
      **/
     ethEstimateGas: GenericRuntimeApiMethod<
       (
-        tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1,
-        config: PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1,
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiRpcTypesDryRunConfig,
       ) => Promise<Result<U256, PalletRevivePrimitivesEthTransactError>>
     >;
 
@@ -1355,8 +1300,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_eth_pre_dispatch_weight
      * @param {BytesLike} tx
-     *
-     * @deprecated Use the versioned equivalent `eth_pre_dispatch_weight_versioned` if available on your runtime
      **/
     ethPreDispatchWeight: GenericRuntimeApiMethod<
       (tx: BytesLike) => Promise<Result<SpWeightsWeightV2Weight, PalletRevivePrimitivesEthTransactError>>
@@ -1371,15 +1314,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {AccountId32Like} origin
      * @param {BytesLike} code
      * @param {bigint | undefined} storage_deposit_limit
-     *
-     * @deprecated Use the versioned equivalent `upload_code_versioned` if available on your runtime
      **/
     uploadCode: GenericRuntimeApiMethod<
       (
         origin: AccountId32Like,
         code: BytesLike,
         storageDepositLimit?: bigint | undefined,
-      ) => Promise<Result<PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1, DispatchError>>
+      ) => Promise<Result<PalletRevivePrimitivesCodeUploadReturnValue, DispatchError>>
     >;
 
     /**
@@ -1392,8 +1333,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ReviveApi_get_storage
      * @param {H160} address
      * @param {FixedBytes<32>} key
-     *
-     * @deprecated Use the versioned equivalent `get_storage_versioned` if available on your runtime
      **/
     getStorage: GenericRuntimeApiMethod<
       (
@@ -1412,8 +1351,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ReviveApi_get_storage_var_key
      * @param {H160} address
      * @param {BytesLike} key
-     *
-     * @deprecated Use the versioned equivalent `get_storage_versioned` if available on your runtime
      **/
     getStorageVarKey: GenericRuntimeApiMethod<
       (address: H160, key: BytesLike) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
@@ -1429,15 +1366,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_trace_block
      * @param {SpRuntimeBlock} block
-     * @param {PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1} config
-     *
-     * @deprecated Use the versioned equivalent `trace_block_versioned` if available on your runtime
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} config
      **/
     traceBlock: GenericRuntimeApiMethod<
       (
         block: SpRuntimeBlock,
-        config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1,
-      ) => Promise<Array<[number, PalletReviveTypesRuntimeApiTypesTracesTraceV1]>>
+        config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<Array<[number, PalletReviveEvmApiDebugRpcTypesTrace]>>
     >;
 
     /**
@@ -1451,16 +1386,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ReviveApi_trace_tx
      * @param {SpRuntimeBlock} block
      * @param {number} tx_index
-     * @param {PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1} config
-     *
-     * @deprecated Use the versioned equivalent `trace_tx_versioned` if available on your runtime
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} config
      **/
     traceTx: GenericRuntimeApiMethod<
       (
         block: SpRuntimeBlock,
         txIndex: number,
-        config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1,
-      ) => Promise<PalletReviveTypesRuntimeApiTypesTracesTraceV1 | undefined>
+        config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<PalletReviveEvmApiDebugRpcTypesTrace | undefined>
     >;
 
     /**
@@ -1469,45 +1402,40 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * See eth-rpc `debug_traceCall` for usage.
      *
      * @callname: ReviveApi_trace_call
-     * @param {PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1} tx
-     * @param {PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1} config
-     *
-     * @deprecated Use the versioned equivalent `trace_call_versioned` if available on your runtime
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} config
      **/
     traceCall: GenericRuntimeApiMethod<
       (
-        tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1,
-        config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1,
-      ) => Promise<Result<PalletReviveTypesRuntimeApiTypesTracesTraceV1, PalletRevivePrimitivesEthTransactError>>
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**
      * Dry run and return the trace of the given call with additional configuration.
      *
-     * Like [`Self::trace_call`], but accepts a [`TracingConfigV1`] that can carry state
-     * overrides. The config must be the **last argument** for backwards compatibility.
+     * Like [`Self::trace_call`], but accepts a [`TracingConfig`] that can carry state
+     * overrides and future extensibility. The config must be the **last argument** for
+     * backwards compatibility — see [`TracingConfig`] documentation.
      *
      * @callname: ReviveApi_trace_call_with_config
-     * @param {PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1} tx
-     * @param {PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1} tracer_type
-     * @param {PalletReviveTypesRuntimeApiTypesStateOverridesTracingConfigV1} config
-     *
-     * @deprecated Use the versioned equivalent `trace_call_versioned` if available on your runtime
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} tracer_type
+     * @param {PalletReviveEvmApiRpcTypesTracingConfig} config
      **/
     traceCallWithConfig: GenericRuntimeApiMethod<
       (
-        tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1,
-        tracerType: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1,
-        config: PalletReviveTypesRuntimeApiTypesStateOverridesTracingConfigV1,
-      ) => Promise<Result<PalletReviveTypesRuntimeApiTypesTracesTraceV1, PalletRevivePrimitivesEthTransactError>>
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        tracerType: PalletReviveEvmApiDebugRpcTypesTracerType,
+        config: PalletReviveEvmApiRpcTypesTracingConfig,
+      ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**
      * The address of the validator that produced the current block.
      *
      * @callname: ReviveApi_block_author
-     *
-     * @deprecated Use the versioned equivalent `block_author_versioned` if available on your runtime
      **/
     blockAuthor: GenericRuntimeApiMethod<() => Promise<H160>>;
 
@@ -1516,8 +1444,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_address
      * @param {AccountId32Like} account_id
-     *
-     * @deprecated Use the versioned equivalent `address_versioned` if available on your runtime
      **/
     address: GenericRuntimeApiMethod<(accountId: AccountId32Like) => Promise<H160>>;
 
@@ -1526,8 +1452,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_account_id
      * @param {H160} address
-     *
-     * @deprecated Use the versioned equivalent `account_id_versioned` if available on your runtime
      **/
     accountId: GenericRuntimeApiMethod<(address: H160) => Promise<AccountId32>>;
 
@@ -1535,8 +1459,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * The address used to call the runtime's pallets dispatchables
      *
      * @callname: ReviveApi_runtime_pallets_address
-     *
-     * @deprecated Use the versioned equivalent `runtime_pallets_address_versioned` if available on your runtime
      **/
     runtimePalletsAddress: GenericRuntimeApiMethod<() => Promise<H160>>;
 
@@ -1545,8 +1467,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_code
      * @param {H160} address
-     *
-     * @deprecated Use the versioned equivalent `code_versioned` if available on your runtime
      **/
     code: GenericRuntimeApiMethod<(address: H160) => Promise<Bytes>>;
 
@@ -1555,313 +1475,9 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_new_balance_with_dust
      * @param {U256} balance
-     *
-     * @deprecated Use the versioned equivalent `new_balance_with_dust_versioned` if available on your runtime
      **/
     newBalanceWithDust: GenericRuntimeApiMethod<
       (balance: U256) => Promise<Result<[bigint, number], PalletRevivePrimitivesBalanceConversionError>>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_version_declarations
-     **/
-    versionDeclarations: GenericRuntimeApiMethod<
-      () => Promise<PalletReviveTypesRuntimeApiDeclarationReviveRuntimeApiVersionDeclarations>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_eth_block_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedInputPayload} input
-     **/
-    ethBlockVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_eth_block_hash_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedInputPayload} input
-     **/
-    ethBlockHashVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_eth_receipt_data_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload} input
-     **/
-    ethReceiptDataVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_block_gas_limit_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedInputPayload} input
-     **/
-    blockGasLimitVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_max_extrinsic_weight_in_gas_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedInputPayload} input
-     **/
-    maxExtrinsicWeightInGasVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_balance_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedInputPayload} input
-     **/
-    balanceVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_gas_price_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedInputPayload} input
-     **/
-    gasPriceVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_nonce_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedInputPayload} input
-     **/
-    nonceVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_call_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsCallCallVersionedInputPayload} input
-     **/
-    callVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsCallCallVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsCallCallVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_instantiate_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedInputPayload} input
-     **/
-    instantiateVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_eth_transact_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedInputPayload} input
-     **/
-    ethTransactVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedInputPayload,
-      ) => Promise<
-        Result<
-          PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedOutputPayload,
-          PalletRevivePrimitivesEthTransactError
-        >
-      >
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_eth_estimate_gas_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedInputPayload} input
-     **/
-    ethEstimateGasVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedInputPayload,
-      ) => Promise<
-        Result<
-          PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedOutputPayload,
-          PalletRevivePrimitivesEthTransactError
-        >
-      >
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_eth_pre_dispatch_weight_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedInputPayload} input
-     **/
-    ethPreDispatchWeightVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedInputPayload,
-      ) => Promise<
-        Result<
-          PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedOutputPayload,
-          PalletRevivePrimitivesEthTransactError
-        >
-      >
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_upload_code_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedInputPayload} input
-     **/
-    uploadCodeVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedInputPayload,
-      ) => Promise<Result<PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedOutputPayload, DispatchError>>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_get_storage_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedInputPayload} input
-     **/
-    getStorageVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedInputPayload,
-      ) => Promise<
-        Result<
-          PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedOutputPayload,
-          PalletRevivePrimitivesContractAccessError
-        >
-      >
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_runtime_pallets_address_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedInputPayload} input
-     **/
-    runtimePalletsAddressVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_code_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedInputPayload} input
-     **/
-    codeVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_account_id_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedInputPayload} input
-     **/
-    accountIdVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_new_balance_with_dust_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedInputPayload} input
-     **/
-    newBalanceWithDustVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedInputPayload,
-      ) => Promise<
-        Result<
-          PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedOutputPayload,
-          PalletRevivePrimitivesBalanceConversionError
-        >
-      >
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_block_author_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedInputPayload} input
-     **/
-    blockAuthorVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_address_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedInputPayload} input
-     **/
-    addressVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_trace_block_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedInputPayload} input
-     **/
-    traceBlockVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_trace_tx_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedInputPayload} input
-     **/
-    traceTxVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedInputPayload,
-      ) => Promise<PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedOutputPayload>
-    >;
-
-    /**
-     *
-     * @callname: ReviveApi_trace_call_versioned
-     * @param {PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedInputPayload} input
-     **/
-    traceCallVersioned: GenericRuntimeApiMethod<
-      (
-        input: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedInputPayload,
-      ) => Promise<
-        Result<
-          PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedOutputPayload,
-          PalletRevivePrimitivesEthTransactError
-        >
-      >
     >;
 
     /**

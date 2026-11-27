@@ -2,9 +2,9 @@
 
 import type { GenericRuntimeApis, GenericRuntimeApiMethod } from 'dedot/types';
 import type {
-  AccountId32Like,
   H256,
   Result,
+  AccountId32Like,
   BytesLike,
   Bytes,
   RuntimeVersion,
@@ -14,12 +14,24 @@ import type {
   UncheckedExtrinsic,
 } from 'dedot/codecs';
 import type {
+  SpConsensusGrandpaAppPublic,
+  SpConsensusGrandpaEquivocationProof,
+  SpRuntimeOpaqueValue,
   SpConsensusBabeBabeConfiguration,
   SpConsensusSlotsSlot,
   SpConsensusBabeEpoch,
   SpConsensusBabeOpaqueKeyOwnershipProof,
   SpConsensusBabeAppPublic,
   SpConsensusSlotsEquivocationProof,
+  SpConsensusBeefyValidatorSet,
+  SpConsensusBeefyDoubleVotingProof,
+  SpConsensusBeefyForkVotingProofOpaqueValue,
+  SpConsensusBeefyFutureBlockVotingProof,
+  SpConsensusBeefyEcdsaCryptoPublic,
+  SpMmrPrimitivesError,
+  SpMmrPrimitivesEncodableOpaqueLeaf,
+  SpMmrPrimitivesLeafProof,
+  SpConsensusBeefyMmrBeefyAuthoritySet,
   SpAuthorityDiscoveryAppPublic,
   PalletTransactionPaymentRuntimeDispatchInfo,
   VaraRuntimeRuntimeCallLike,
@@ -35,16 +47,85 @@ import type {
   SpInherentsCheckInherentsResult,
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
+  SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
-  SpConsensusGrandpaAppPublic,
-  SpConsensusGrandpaEquivocationProof,
-  SpRuntimeOpaqueValue,
   GearCoreRpcReplyInfo,
+  GearCoreRpcCalculateReplyForHandleResult,
   GearCoreRpcGasInfo,
   PalletGearManagerHandleKind,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
+  /**
+   * @runtimeapi: GrandpaApi - 0xed99c5acb25eedf5
+   **/
+  grandpaApi: {
+    /**
+     * Get the current GRANDPA authorities and weights. This should not change except
+     * for when changes are scheduled and the corresponding delay has passed.
+     *
+     * When called at block B, it will return the set of authorities that should be
+     * used to finalize descendants of this block (B+1, B+2, ...). The block B itself
+     * is finalized by the authorities from block B-1.
+     *
+     * @callname: GrandpaApi_grandpa_authorities
+     **/
+    grandpaAuthorities: GenericRuntimeApiMethod<() => Promise<Array<[SpConsensusGrandpaAppPublic, bigint]>>>;
+
+    /**
+     * Submits an unsigned extrinsic to report an equivocation. The caller
+     * must provide the equivocation proof and a key ownership proof
+     * (should be obtained using `generate_key_ownership_proof`). The
+     * extrinsic will be unsigned and should only be accepted for local
+     * authorship (not to be broadcast to the network). This method returns
+     * `None` when creation of the extrinsic fails, e.g. if equivocation
+     * reporting is disabled for the given runtime (i.e. this method is
+     * hardcoded to return `None`). Only useful in an offchain context.
+     *
+     * @callname: GrandpaApi_submit_report_equivocation_unsigned_extrinsic
+     * @param {SpConsensusGrandpaEquivocationProof} equivocation_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
+     **/
+    submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
+      (
+        equivocationProof: SpConsensusGrandpaEquivocationProof,
+        keyOwnerProof: SpRuntimeOpaqueValue,
+      ) => Promise<[] | undefined>
+    >;
+
+    /**
+     * Generates a proof of key ownership for the given authority in the
+     * given set. An example usage of this module is coupled with the
+     * session historical module to prove that a given authority key is
+     * tied to a given staking identity during a specific session. Proofs
+     * of key ownership are necessary for submitting equivocation reports.
+     * NOTE: even though the API takes a `set_id` as parameter the current
+     * implementations ignore this parameter and instead rely on this
+     * method being called at the correct block height, i.e. any point at
+     * which the given set id is live on-chain. Future implementations will
+     * instead use indexed data through an offchain worker, not requiring
+     * older states to be available.
+     *
+     * @callname: GrandpaApi_generate_key_ownership_proof
+     * @param {bigint} set_id
+     * @param {SpConsensusGrandpaAppPublic} authority_id
+     **/
+    generateKeyOwnershipProof: GenericRuntimeApiMethod<
+      (setId: bigint, authorityId: SpConsensusGrandpaAppPublic) => Promise<SpRuntimeOpaqueValue | undefined>
+    >;
+
+    /**
+     * Get current GRANDPA authority set id.
+     *
+     * @callname: GrandpaApi_current_set_id
+     **/
+    currentSetId: GenericRuntimeApiMethod<() => Promise<bigint>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
   /**
    * @runtimeapi: BabeApi - 0xcbca25e39f142387
    **/
@@ -122,6 +203,226 @@ export interface RuntimeApis extends GenericRuntimeApis {
         keyOwnerProof: SpConsensusBabeOpaqueKeyOwnershipProof,
       ) => Promise<[] | undefined>
     >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: BeefyApi - 0x49eaaf1b548a0cb0
+   **/
+  beefyApi: {
+    /**
+     * Return the block number where BEEFY consensus is enabled/started
+     *
+     * @callname: BeefyApi_beefy_genesis
+     **/
+    beefyGenesis: GenericRuntimeApiMethod<() => Promise<number | undefined>>;
+
+    /**
+     * Return the current active BEEFY validator set
+     *
+     * @callname: BeefyApi_validator_set
+     **/
+    validatorSet: GenericRuntimeApiMethod<() => Promise<SpConsensusBeefyValidatorSet | undefined>>;
+
+    /**
+     * Submits an unsigned extrinsic to report a double voting equivocation. The caller
+     * must provide the double voting proof and a key ownership proof
+     * (should be obtained using `generate_key_ownership_proof`). The
+     * extrinsic will be unsigned and should only be accepted for local
+     * authorship (not to be broadcast to the network). This method returns
+     * `None` when creation of the extrinsic fails, e.g. if equivocation
+     * reporting is disabled for the given runtime (i.e. this method is
+     * hardcoded to return `None`). Only useful in an offchain context.
+     *
+     * @callname: BeefyApi_submit_report_double_voting_unsigned_extrinsic
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocation_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
+     **/
+    submitReportDoubleVotingUnsignedExtrinsic: GenericRuntimeApiMethod<
+      (
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
+        keyOwnerProof: SpRuntimeOpaqueValue,
+      ) => Promise<[] | undefined>
+    >;
+
+    /**
+     * Submits an unsigned extrinsic to report a fork voting equivocation. The caller
+     * must provide the fork voting proof (the ancestry proof should be obtained using
+     * `generate_ancestry_proof`) and a key ownership proof (should be obtained using
+     * `generate_key_ownership_proof`). The extrinsic will be unsigned and should only
+     * be accepted for local authorship (not to be broadcast to the network). This method
+     * returns `None` when creation of the extrinsic fails, e.g. if equivocation
+     * reporting is disabled for the given runtime (i.e. this method is
+     * hardcoded to return `None`). Only useful in an offchain context.
+     *
+     * @callname: BeefyApi_submit_report_fork_voting_unsigned_extrinsic
+     * @param {SpConsensusBeefyForkVotingProofOpaqueValue} equivocation_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
+     **/
+    submitReportForkVotingUnsignedExtrinsic: GenericRuntimeApiMethod<
+      (
+        equivocationProof: SpConsensusBeefyForkVotingProofOpaqueValue,
+        keyOwnerProof: SpRuntimeOpaqueValue,
+      ) => Promise<[] | undefined>
+    >;
+
+    /**
+     * Submits an unsigned extrinsic to report a future block voting equivocation. The caller
+     * must provide the future block voting proof and a key ownership proof
+     * (should be obtained using `generate_key_ownership_proof`).
+     * The extrinsic will be unsigned and should only be accepted for local
+     * authorship (not to be broadcast to the network). This method returns
+     * `None` when creation of the extrinsic fails, e.g. if equivocation
+     * reporting is disabled for the given runtime (i.e. this method is
+     * hardcoded to return `None`). Only useful in an offchain context.
+     *
+     * @callname: BeefyApi_submit_report_future_block_voting_unsigned_extrinsic
+     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocation_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
+     **/
+    submitReportFutureBlockVotingUnsignedExtrinsic: GenericRuntimeApiMethod<
+      (
+        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
+        keyOwnerProof: SpRuntimeOpaqueValue,
+      ) => Promise<[] | undefined>
+    >;
+
+    /**
+     * Generates a proof of key ownership for the given authority in the
+     * given set. An example usage of this module is coupled with the
+     * session historical module to prove that a given authority key is
+     * tied to a given staking identity during a specific session. Proofs
+     * of key ownership are necessary for submitting equivocation reports.
+     * NOTE: even though the API takes a `set_id` as parameter the current
+     * implementations ignores this parameter and instead relies on this
+     * method being called at the correct block height, i.e. any point at
+     * which the given set id is live on-chain. Future implementations will
+     * instead use indexed data through an offchain worker, not requiring
+     * older states to be available.
+     *
+     * @callname: BeefyApi_generate_key_ownership_proof
+     * @param {bigint} set_id
+     * @param {SpConsensusBeefyEcdsaCryptoPublic} authority_id
+     **/
+    generateKeyOwnershipProof: GenericRuntimeApiMethod<
+      (setId: bigint, authorityId: SpConsensusBeefyEcdsaCryptoPublic) => Promise<SpRuntimeOpaqueValue | undefined>
+    >;
+
+    /**
+     * Generates a proof that the `prev_block_number` is part of the canonical chain at
+     * `best_known_block_number`.
+     *
+     * @callname: BeefyApi_generate_ancestry_proof
+     * @param {number} prev_block_number
+     * @param {number | undefined} best_known_block_number
+     **/
+    generateAncestryProof: GenericRuntimeApiMethod<
+      (prevBlockNumber: number, bestKnownBlockNumber?: number | undefined) => Promise<SpRuntimeOpaqueValue | undefined>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: MmrApi - 0x91d5df18b0d2cf58
+   **/
+  mmrApi: {
+    /**
+     * Return the on-chain MMR root hash.
+     *
+     * @callname: MmrApi_mmr_root
+     **/
+    mmrRoot: GenericRuntimeApiMethod<() => Promise<Result<H256, SpMmrPrimitivesError>>>;
+
+    /**
+     * Return the number of MMR blocks in the chain.
+     *
+     * @callname: MmrApi_mmr_leaf_count
+     **/
+    mmrLeafCount: GenericRuntimeApiMethod<() => Promise<Result<bigint, SpMmrPrimitivesError>>>;
+
+    /**
+     * Generate MMR proof for a series of block numbers. If `best_known_block_number = Some(n)`,
+     * use historical MMR state at given block height `n`. Else, use current MMR state.
+     *
+     * @callname: MmrApi_generate_proof
+     * @param {Array<number>} block_numbers
+     * @param {number | undefined} best_known_block_number
+     **/
+    generateProof: GenericRuntimeApiMethod<
+      (
+        blockNumbers: Array<number>,
+        bestKnownBlockNumber?: number | undefined,
+      ) => Promise<Result<[Array<SpMmrPrimitivesEncodableOpaqueLeaf>, SpMmrPrimitivesLeafProof], SpMmrPrimitivesError>>
+    >;
+
+    /**
+     * Verify MMR proof against on-chain MMR for a batch of leaves.
+     *
+     * Note this function will use on-chain MMR root hash and check if the proof matches the hash.
+     * Note, the leaves should be sorted such that corresponding leaves and leaf indices have the
+     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [LeafProof]
+     *
+     * @callname: MmrApi_verify_proof
+     * @param {Array<SpMmrPrimitivesEncodableOpaqueLeaf>} leaves
+     * @param {SpMmrPrimitivesLeafProof} proof
+     **/
+    verifyProof: GenericRuntimeApiMethod<
+      (
+        leaves: Array<SpMmrPrimitivesEncodableOpaqueLeaf>,
+        proof: SpMmrPrimitivesLeafProof,
+      ) => Promise<Result<[], SpMmrPrimitivesError>>
+    >;
+
+    /**
+     * Verify MMR proof against given root hash for a batch of leaves.
+     *
+     * Note this function does not require any on-chain storage - the
+     * proof is verified against given MMR root hash.
+     *
+     * Note, the leaves should be sorted such that corresponding leaves and leaf indices have the
+     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [LeafProof]
+     *
+     * @callname: MmrApi_verify_proof_stateless
+     * @param {H256} root
+     * @param {Array<SpMmrPrimitivesEncodableOpaqueLeaf>} leaves
+     * @param {SpMmrPrimitivesLeafProof} proof
+     **/
+    verifyProofStateless: GenericRuntimeApiMethod<
+      (
+        root: H256,
+        leaves: Array<SpMmrPrimitivesEncodableOpaqueLeaf>,
+        proof: SpMmrPrimitivesLeafProof,
+      ) => Promise<Result<[], SpMmrPrimitivesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: BeefyMmrApi - 0x2a5e924655399e60
+   **/
+  beefyMmrApi: {
+    /**
+     * Return the currently active BEEFY authority set proof.
+     *
+     * @callname: BeefyMmrApi_authority_set_proof
+     **/
+    authoritySetProof: GenericRuntimeApiMethod<() => Promise<SpConsensusBeefyMmrBeefyAuthoritySet>>;
+
+    /**
+     * Return the next/queued BEEFY authority set proof.
+     *
+     * @callname: BeefyMmrApi_next_authority_set_proof
+     **/
+    nextAuthoritySetProof: GenericRuntimeApiMethod<() => Promise<SpConsensusBeefyMmrBeefyAuthoritySet>>;
 
     /**
      * Generic runtime api call
@@ -231,6 +532,9 @@ export interface RuntimeApis extends GenericRuntimeApis {
 
     /**
      * Returns the pending slash for a given pool member.
+     *
+     * If pending slash of the member exceeds `ExistentialDeposit`, it can be reported on
+     * chain.
      *
      * @callname: NominationPoolsApi_member_pending_slash
      * @param {AccountId32Like} member
@@ -614,9 +918,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the concatenated SCALE encoded public keys.
      *
      * @callname: SessionKeys_generate_session_keys
+     * @param {BytesLike} owner
      * @param {BytesLike | undefined} seed
      **/
-    generateSessionKeys: GenericRuntimeApiMethod<(seed?: BytesLike | undefined) => Promise<Bytes>>;
+    generateSessionKeys: GenericRuntimeApiMethod<
+      (owner: BytesLike, seed?: BytesLike | undefined) => Promise<SpSessionRuntimeApiOpaqueGeneratedSessionKeys>
+    >;
 
     /**
      * Decode the given public session keys.
@@ -629,76 +936,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
     decodeSessionKeys: GenericRuntimeApiMethod<
       (encoded: BytesLike) => Promise<Array<[Bytes, SpCoreCryptoKeyTypeId]> | undefined>
     >;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
-   * @runtimeapi: GrandpaApi - 0xed99c5acb25eedf5
-   **/
-  grandpaApi: {
-    /**
-     * Get the current GRANDPA authorities and weights. This should not change except
-     * for when changes are scheduled and the corresponding delay has passed.
-     *
-     * When called at block B, it will return the set of authorities that should be
-     * used to finalize descendants of this block (B+1, B+2, ...). The block B itself
-     * is finalized by the authorities from block B-1.
-     *
-     * @callname: GrandpaApi_grandpa_authorities
-     **/
-    grandpaAuthorities: GenericRuntimeApiMethod<() => Promise<Array<[SpConsensusGrandpaAppPublic, bigint]>>>;
-
-    /**
-     * Submits an unsigned extrinsic to report an equivocation. The caller
-     * must provide the equivocation proof and a key ownership proof
-     * (should be obtained using `generate_key_ownership_proof`). The
-     * extrinsic will be unsigned and should only be accepted for local
-     * authorship (not to be broadcast to the network). This method returns
-     * `None` when creation of the extrinsic fails, e.g. if equivocation
-     * reporting is disabled for the given runtime (i.e. this method is
-     * hardcoded to return `None`). Only useful in an offchain context.
-     *
-     * @callname: GrandpaApi_submit_report_equivocation_unsigned_extrinsic
-     * @param {SpConsensusGrandpaEquivocationProof} equivocation_proof
-     * @param {SpRuntimeOpaqueValue} key_owner_proof
-     **/
-    submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
-      (
-        equivocationProof: SpConsensusGrandpaEquivocationProof,
-        keyOwnerProof: SpRuntimeOpaqueValue,
-      ) => Promise<[] | undefined>
-    >;
-
-    /**
-     * Generates a proof of key ownership for the given authority in the
-     * given set. An example usage of this module is coupled with the
-     * session historical module to prove that a given authority key is
-     * tied to a given staking identity during a specific session. Proofs
-     * of key ownership are necessary for submitting equivocation reports.
-     * NOTE: even though the API takes a `set_id` as parameter the current
-     * implementations ignore this parameter and instead rely on this
-     * method being called at the correct block height, i.e. any point at
-     * which the given set id is live on-chain. Future implementations will
-     * instead use indexed data through an offchain worker, not requiring
-     * older states to be available.
-     *
-     * @callname: GrandpaApi_generate_key_ownership_proof
-     * @param {bigint} set_id
-     * @param {SpConsensusGrandpaAppPublic} authority_id
-     **/
-    generateKeyOwnershipProof: GenericRuntimeApiMethod<
-      (setId: bigint, authorityId: SpConsensusGrandpaAppPublic) => Promise<SpRuntimeOpaqueValue | undefined>
-    >;
-
-    /**
-     * Get current GRANDPA authority set id.
-     *
-     * @callname: GrandpaApi_current_set_id
-     **/
-    currentSetId: GenericRuntimeApiMethod<() => Promise<bigint>>;
 
     /**
      * Generic runtime api call
@@ -788,6 +1025,27 @@ export interface RuntimeApis extends GenericRuntimeApis {
         value: bigint,
         allowanceMultiplier: bigint,
       ) => Promise<Result<GearCoreRpcReplyInfo, Bytes>>
+    >;
+
+    /**
+     *
+     * @callname: GearApi_calculate_reply_for_handle_result
+     * @param {H256} origin
+     * @param {H256} destination
+     * @param {BytesLike} payload
+     * @param {bigint} gas_limit
+     * @param {bigint} value
+     * @param {bigint} allowance_multiplier
+     **/
+    calculateReplyForHandleResult: GenericRuntimeApiMethod<
+      (
+        origin: H256,
+        destination: H256,
+        payload: BytesLike,
+        gasLimit: bigint,
+        value: bigint,
+        allowanceMultiplier: bigint,
+      ) => Promise<Result<GearCoreRpcCalculateReplyForHandleResult, Bytes>>
     >;
 
     /**

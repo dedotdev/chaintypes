@@ -31,10 +31,6 @@ import type {
   SpWeightsWeightV2Weight,
   PalletIdentityLegacyIdentityInfo,
   PalletIdentityJudgement,
-  FrameSupportPreimagesBounded,
-  PalletDemocracyVoteAccountVote,
-  PalletDemocracyConviction,
-  PalletDemocracyMetadataOwner,
   HydradxRuntimeSystemProxyType,
   PalletMultisigTimepoint,
   PalletUniquesDestroyWitness,
@@ -43,6 +39,7 @@ import type {
   PalletStateTrieMigrationProgress,
   PalletConvictionVotingVoteAccountVote,
   PalletConvictionVotingConviction,
+  FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
   PalletAssetRegistryAssetType,
   HydradxRuntimeXcmAssetLocation,
@@ -62,9 +59,15 @@ import type {
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
   PalletHsmArbitrage,
+  PalletParametersAaveGasLimits,
   PalletSignetSignature,
   PalletSignetErrorResponse,
   PalletDispenserEvmTransactionParams,
+  PalletIntentIntentInput,
+  IceSupportSolution,
+  IceSupportSolverMode,
+  IceSupportRoutingTarget,
+  IceSupportRoutingState,
   OrmlVestingVestingSchedule,
   EthereumTransactionEip7702AuthorizationListItem,
   EthereumTransactionTransactionV3,
@@ -740,10 +743,14 @@ export interface ChainTx<
     >;
 
     /**
-     * Dispatch EVM permit.
-     * The main purpose of this function is to allow EVM accounts to pay for the transaction fee in non-native currency
-     * by allowing them to self-dispatch pre-signed permit.
-     * The EVM fee is paid in the currency set for the account.
+     * Dispatch a pre-signed EVM permit.
+     *
+     * Unsigned: the EVM account `from` pays for the dispatch via
+     * `withdraw_fee` in its chosen currency.
+     *
+     * Signed: the signer (paymaster) pays both the Substrate extrinsic
+     * fee and the EVM-side gas; `permit.from` is touched only by the
+     * inner call's effects. Root is rejected.
      *
      * @param {H160} from
      * @param {H160} to
@@ -2039,615 +2046,6 @@ export interface ChainTx<
           palletCall: {
             name: 'KillUsername';
             params: { username: BytesLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `Democracy`'s transaction calls
-   **/
-  democracy: {
-    /**
-     * Propose a sensitive action to be taken.
-     *
-     * The dispatch origin of this call must be _Signed_ and the sender must
-     * have funds to cover the deposit.
-     *
-     * - `proposal_hash`: The hash of the proposal preimage.
-     * - `value`: The amount of deposit (must be at least `MinimumDeposit`).
-     *
-     * Emits `Proposed`.
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     * @param {bigint} value
-     **/
-    propose: GenericTxCall<
-      (
-        proposal: FrameSupportPreimagesBounded,
-        value: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Propose';
-            params: { proposal: FrameSupportPreimagesBounded; value: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Signals agreement with a particular proposal.
-     *
-     * The dispatch origin of this call must be _Signed_ and the sender
-     * must have funds to cover the deposit, equal to the original deposit.
-     *
-     * - `proposal`: The index of the proposal to second.
-     *
-     * @param {number} proposal
-     **/
-    second: GenericTxCall<
-      (proposal: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Second';
-            params: { proposal: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Vote in a referendum. If `vote.is_aye()`, the vote is to enact the proposal;
-     * otherwise it is a vote to keep the status quo.
-     *
-     * The dispatch origin of this call must be _Signed_.
-     *
-     * - `ref_index`: The index of the referendum to vote for.
-     * - `vote`: The vote configuration.
-     *
-     * @param {number} refIndex
-     * @param {PalletDemocracyVoteAccountVote} vote
-     **/
-    vote: GenericTxCall<
-      (
-        refIndex: number,
-        vote: PalletDemocracyVoteAccountVote,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Vote';
-            params: { refIndex: number; vote: PalletDemocracyVoteAccountVote };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule an emergency cancellation of a referendum. Cannot happen twice to the same
-     * referendum.
-     *
-     * The dispatch origin of this call must be `CancellationOrigin`.
-     *
-     * -`ref_index`: The index of the referendum to cancel.
-     *
-     * Weight: `O(1)`.
-     *
-     * @param {number} refIndex
-     **/
-    emergencyCancel: GenericTxCall<
-      (refIndex: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'EmergencyCancel';
-            params: { refIndex: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule a referendum to be tabled once it is legal to schedule an external
-     * referendum.
-     *
-     * The dispatch origin of this call must be `ExternalOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal.
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     **/
-    externalPropose: GenericTxCall<
-      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ExternalPropose';
-            params: { proposal: FrameSupportPreimagesBounded };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule a majority-carries referendum to be tabled next once it is legal to schedule
-     * an external referendum.
-     *
-     * The dispatch of this call must be `ExternalMajorityOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal.
-     *
-     * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-     * pre-scheduled `external_propose` call.
-     *
-     * Weight: `O(1)`
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     **/
-    externalProposeMajority: GenericTxCall<
-      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ExternalProposeMajority';
-            params: { proposal: FrameSupportPreimagesBounded };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule a negative-turnout-bias referendum to be tabled next once it is legal to
-     * schedule an external referendum.
-     *
-     * The dispatch of this call must be `ExternalDefaultOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal.
-     *
-     * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-     * pre-scheduled `external_propose` call.
-     *
-     * Weight: `O(1)`
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     **/
-    externalProposeDefault: GenericTxCall<
-      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ExternalProposeDefault';
-            params: { proposal: FrameSupportPreimagesBounded };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule the currently externally-proposed majority-carries referendum to be tabled
-     * immediately. If there is no externally-proposed referendum currently, or if there is one
-     * but it is not a majority-carries referendum then it fails.
-     *
-     * The dispatch of this call must be `FastTrackOrigin`.
-     *
-     * - `proposal_hash`: The hash of the current external proposal.
-     * - `voting_period`: The period that is allowed for voting on this proposal. Increased to
-     * Must be always greater than zero.
-     * For `FastTrackOrigin` must be equal or greater than `FastTrackVotingPeriod`.
-     * - `delay`: The number of block after voting has ended in approval and this should be
-     * enacted. This doesn't have a minimum amount.
-     *
-     * Emits `Started`.
-     *
-     * Weight: `O(1)`
-     *
-     * @param {H256} proposalHash
-     * @param {number} votingPeriod
-     * @param {number} delay
-     **/
-    fastTrack: GenericTxCall<
-      (
-        proposalHash: H256,
-        votingPeriod: number,
-        delay: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'FastTrack';
-            params: { proposalHash: H256; votingPeriod: number; delay: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Veto and blacklist the external proposal hash.
-     *
-     * The dispatch origin of this call must be `VetoOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal to veto and blacklist.
-     *
-     * Emits `Vetoed`.
-     *
-     * Weight: `O(V + log(V))` where V is number of `existing vetoers`
-     *
-     * @param {H256} proposalHash
-     **/
-    vetoExternal: GenericTxCall<
-      (proposalHash: H256) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'VetoExternal';
-            params: { proposalHash: H256 };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a referendum.
-     *
-     * The dispatch origin of this call must be _Root_.
-     *
-     * - `ref_index`: The index of the referendum to cancel.
-     *
-     * # Weight: `O(1)`.
-     *
-     * @param {number} refIndex
-     **/
-    cancelReferendum: GenericTxCall<
-      (refIndex: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'CancelReferendum';
-            params: { refIndex: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Delegate the voting power (with some given conviction) of the sending account.
-     *
-     * The balance delegated is locked for as long as it's delegated, and thereafter for the
-     * time appropriate for the conviction's lock period.
-     *
-     * The dispatch origin of this call must be _Signed_, and the signing account must either:
-     * - be delegating already; or
-     * - have no voting activity (if there is, then it will need to be removed/consolidated
-     * through `reap_vote` or `unvote`).
-     *
-     * - `to`: The account whose voting the `target` account's voting power will follow.
-     * - `conviction`: The conviction that will be attached to the delegated votes. When the
-     * account is undelegated, the funds will be locked for the corresponding period.
-     * - `balance`: The amount of the account's balance to be used in delegating. This must not
-     * be more than the account's current balance.
-     *
-     * Emits `Delegated`.
-     *
-     * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-     * voted on. Weight is charged as if maximum votes.
-     *
-     * @param {AccountId32Like} to
-     * @param {PalletDemocracyConviction} conviction
-     * @param {bigint} balance
-     **/
-    delegate: GenericTxCall<
-      (
-        to: AccountId32Like,
-        conviction: PalletDemocracyConviction,
-        balance: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Delegate';
-            params: { to: AccountId32Like; conviction: PalletDemocracyConviction; balance: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Undelegate the voting power of the sending account.
-     *
-     * Tokens may be unlocked following once an amount of time consistent with the lock period
-     * of the conviction with which the delegation was issued.
-     *
-     * The dispatch origin of this call must be _Signed_ and the signing account must be
-     * currently delegating.
-     *
-     * Emits `Undelegated`.
-     *
-     * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-     * voted on. Weight is charged as if maximum votes.
-     *
-     **/
-    undelegate: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Undelegate';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Clears all public proposals.
-     *
-     * The dispatch origin of this call must be _Root_.
-     *
-     * Weight: `O(1)`.
-     *
-     **/
-    clearPublicProposals: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ClearPublicProposals';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Unlock tokens that have an expired lock.
-     *
-     * The dispatch origin of this call must be _Signed_.
-     *
-     * - `target`: The account to remove the lock on.
-     *
-     * Weight: `O(R)` with R number of vote of target.
-     *
-     * @param {AccountId32Like} target
-     **/
-    unlock: GenericTxCall<
-      (target: AccountId32Like) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Unlock';
-            params: { target: AccountId32Like };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a vote for a referendum.
-     *
-     * If:
-     * - the referendum was cancelled, or
-     * - the referendum is ongoing, or
-     * - the referendum has ended such that
-     * - the vote of the account was in opposition to the result; or
-     * - there was no conviction to the account's vote; or
-     * - the account made a split vote
-     * ...then the vote is removed cleanly and a following call to `unlock` may result in more
-     * funds being available.
-     *
-     * If, however, the referendum has ended and:
-     * - it finished corresponding to the vote of the account, and
-     * - the account made a standard vote with conviction, and
-     * - the lock period of the conviction is not over
-     * ...then the lock will be aggregated into the overall account's lock, which may involve
-     * *overlocking* (where the two locks are combined into a single lock that is the maximum
-     * of both the amount locked and the time is it locked for).
-     *
-     * The dispatch origin of this call must be _Signed_, and the signer must have a vote
-     * registered for referendum `index`.
-     *
-     * - `index`: The index of referendum of the vote to be removed.
-     *
-     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-     * Weight is calculated for the maximum number of vote.
-     *
-     * @param {number} index
-     **/
-    removeVote: GenericTxCall<
-      (index: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'RemoveVote';
-            params: { index: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a vote for a referendum.
-     *
-     * If the `target` is equal to the signer, then this function is exactly equivalent to
-     * `remove_vote`. If not equal to the signer, then the vote must have expired,
-     * either because the referendum was cancelled, because the voter lost the referendum or
-     * because the conviction period is over.
-     *
-     * The dispatch origin of this call must be _Signed_.
-     *
-     * - `target`: The account of the vote to be removed; this account must have voted for
-     * referendum `index`.
-     * - `index`: The index of referendum of the vote to be removed.
-     *
-     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-     * Weight is calculated for the maximum number of vote.
-     *
-     * @param {AccountId32Like} target
-     * @param {number} index
-     **/
-    removeOtherVote: GenericTxCall<
-      (
-        target: AccountId32Like,
-        index: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'RemoveOtherVote';
-            params: { target: AccountId32Like; index: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Permanently place a proposal into the blacklist. This prevents it from ever being
-     * proposed again.
-     *
-     * If called on a queued public or external proposal, then this will result in it being
-     * removed. If the `ref_index` supplied is an active referendum with the proposal hash,
-     * then it will be cancelled.
-     *
-     * The dispatch origin of this call must be `BlacklistOrigin`.
-     *
-     * - `proposal_hash`: The proposal hash to blacklist permanently.
-     * - `ref_index`: An ongoing referendum whose hash is `proposal_hash`, which will be
-     * cancelled.
-     *
-     * Weight: `O(p)` (though as this is an high-privilege dispatch, we assume it has a
-     * reasonable value).
-     *
-     * @param {H256} proposalHash
-     * @param {number | undefined} maybeRefIndex
-     **/
-    blacklist: GenericTxCall<
-      (
-        proposalHash: H256,
-        maybeRefIndex: number | undefined,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Blacklist';
-            params: { proposalHash: H256; maybeRefIndex: number | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a proposal.
-     *
-     * The dispatch origin of this call must be `CancelProposalOrigin`.
-     *
-     * - `prop_index`: The index of the proposal to cancel.
-     *
-     * Weight: `O(p)` where `p = PublicProps::<T>::decode_len()`
-     *
-     * @param {number} propIndex
-     **/
-    cancelProposal: GenericTxCall<
-      (propIndex: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'CancelProposal';
-            params: { propIndex: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set or clear a metadata of a proposal or a referendum.
-     *
-     * Parameters:
-     * - `origin`: Must correspond to the `MetadataOwner`.
-     * - `ExternalOrigin` for an external proposal with the `SuperMajorityApprove`
-     * threshold.
-     * - `ExternalDefaultOrigin` for an external proposal with the `SuperMajorityAgainst`
-     * threshold.
-     * - `ExternalMajorityOrigin` for an external proposal with the `SimpleMajority`
-     * threshold.
-     * - `Signed` by a creator for a public proposal.
-     * - `Signed` to clear a metadata for a finished referendum.
-     * - `Root` to set a metadata for an ongoing referendum.
-     * - `owner`: an identifier of a metadata owner.
-     * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
-     *
-     * @param {PalletDemocracyMetadataOwner} owner
-     * @param {H256 | undefined} maybeHash
-     **/
-    setMetadata: GenericTxCall<
-      (
-        owner: PalletDemocracyMetadataOwner,
-        maybeHash: H256 | undefined,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'SetMetadata';
-            params: { owner: PalletDemocracyMetadataOwner; maybeHash: H256 | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Allow to force remove a vote for a referendum.
-     *
-     * Same as `remove_other_vote`, except the scope is overriden by forced flag.
-     * The dispatch origin of this call must be `VoteRemovalOrigin`.
-     *
-     * Only allowed if the referendum is finished.
-     *
-     * The dispatch origin of this call must be _Signed_.
-     *
-     * - `target`: The account of the vote to be removed; this account must have voted for
-     * referendum `index`.
-     * - `index`: The index of referendum of the vote to be removed.
-     *
-     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-     * Weight is calculated for the maximum number of vote.
-     *
-     * @param {AccountId32Like} target
-     * @param {number} index
-     **/
-    forceRemoveVote: GenericTxCall<
-      (
-        target: AccountId32Like,
-        index: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ForceRemoveVote';
-            params: { target: AccountId32Like; index: number };
           };
         },
         ChainKnownTypes
@@ -5583,23 +4981,6 @@ export interface ChainTx<
               decimals: number | undefined;
               location: HydradxRuntimeXcmAssetLocation | undefined;
             };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {HydradxRuntimeXcmAssetLocation} location
-     **/
-    registerExternal: GenericTxCall<
-      (location: HydradxRuntimeXcmAssetLocation) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AssetRegistry';
-          palletCall: {
-            name: 'RegisterExternal';
-            params: { location: HydradxRuntimeXcmAssetLocation };
           };
         },
         ChainKnownTypes
@@ -9433,6 +8814,17 @@ export interface ChainTx<
      * Performs a flash loan to get funds to pay for the debt.
      * Received collateral is swapped and the profit is transferred to `FeeReceiver`.
      *
+     * Permissionless and caller-supplied `route` are intentional. This call exists
+     * only to keep the money market solvent: the goal is that the position is
+     * liquidated, not that the protocol captures the surplus. A caller can pick a
+     * `route` that prices the collateral so that little or no profit reaches
+     * `FeeReceiver` — that is acceptable. It is not an exploit: anyone can already
+     * liquidate the same position by calling Aave's `liquidationCall` directly and
+     * keep the entire bonus themselves. So reports framing the open origin or the
+     * attacker-chosen route as a fund-redirection vulnerability are out of scope by
+     * design; the only invariant that matters here is that unhealthy positions can
+     * always be closed.
+     *
      * Parameters:
      * - `origin`: Signed origin.
      * - `collateral_asset`: Asset ID used as collateral in the MM position.
@@ -9487,6 +8879,72 @@ export interface ChainTx<
           palletCall: {
             name: 'SetBorrowingContract';
             params: { contract: H160 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Liquidates an existing money market position, addressing the market's pool explicitly.
+     *
+     * Behaves exactly like `liquidate`; the extra `pool` parameter is a consistency
+     * assertion, not a router: it must equal the pool contract the liquidation path
+     * resolves on its own (the gigahdx pool for GIGAHDX-collateral positions, the
+     * borrowing contract otherwise), or the call fails with `PoolAddressMismatch`.
+     * This lets a multi-money-market worker state which market a decision was made
+     * against and guarantees the liquidation can never execute against a different one.
+     *
+     * Unlike `liquidate`, this call is not publicly dispatchable: the origin must be
+     * none, and `ValidateUnsigned` rejects externally received transactions, so only
+     * a collator's own liquidation worker can submit it. The public permissionless
+     * path remains `liquidate`.
+     *
+     * Parameters:
+     * - `origin`: Must be none (unsigned transaction).
+     * - `pool`: EVM address of the money-market pool this liquidation targets.
+     * - `collateral_asset`: Asset ID used as collateral in the MM position.
+     * - `debt_asset`: Asset ID used as debt in the MM position.
+     * - `user`: EVM address of the MM position that we want to liquidate.
+     * - `debt_to_cover`: Amount of debt we want to liquidate.
+     * - `route`: The route we trade against. Required for the fee calculation.
+     * - `unsigned_priority`: Optional priority added on top of `BASE_UNSIGNED_LIQUIDATION_PRIORITY` for
+     * unsigned liquidation extrinsics.
+     *
+     * Emits `Liquidated` event when successful.
+     *
+     *
+     * @param {H160} pool
+     * @param {number} collateralAsset
+     * @param {number} debtAsset
+     * @param {H160} user
+     * @param {bigint} debtToCover
+     * @param {Array<HydradxTraitsRouterTrade>} route
+     * @param {bigint | undefined} unsignedPriority
+     **/
+    liquidateWithPool: GenericTxCall<
+      (
+        pool: H160,
+        collateralAsset: number,
+        debtAsset: number,
+        user: H160,
+        debtToCover: bigint,
+        route: Array<HydradxTraitsRouterTrade>,
+        unsignedPriority: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Liquidation';
+          palletCall: {
+            name: 'LiquidateWithPool';
+            params: {
+              pool: H160;
+              collateralAsset: number;
+              debtAsset: number;
+              user: H160;
+              debtToCover: bigint;
+              route: Array<HydradxTraitsRouterTrade>;
+              unsignedPriority: bigint | undefined;
+            };
           };
         },
         ChainKnownTypes
@@ -9835,6 +9293,229 @@ export interface ChainTx<
           palletCall: {
             name: 'SetFlashMinter';
             params: { flashMinterAddr: H160 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Point the Uniswap v3 router venue at a deployment.
+     *
+     * These three addresses are the only link between the runtime and the
+     * Uniswap contracts: `UniswapV3TradeExecutor` resolves every pool through
+     * `factory`, quotes through `quoter`, and swaps through `swap_router`.
+     * Until they are set the venue is inert — every trade returns
+     * "factory not configured" rather than reaching the EVM.
+     *
+     * They cannot be constants. Each deployment lands its contracts at
+     * different addresses (plain CREATE, so one extra transaction shifts every
+     * one of them), and the chain id does not disambiguate — a fork reports the
+     * same id as the chain it forked. Off-chain consumers should read this
+     * storage rather than hardcode, for the same reason.
+     *
+     * Setting a wrong address is not loud: `getPool` against an address holding
+     * no code simply finds no pool, so the venue goes quiet instead of failing.
+     * Verify against the deployment artefacts after enactment.
+     *
+     * Weight: three unconditional storage writes, no reads, no iteration.
+     *
+     * @param {H160} factory
+     * @param {H160} swapRouter
+     * @param {H160} quoter
+     **/
+    setUniswapV3Addresses: GenericTxCall<
+      (
+        factory: H160,
+        swapRouter: H160,
+        quoter: H160,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetUniswapV3Addresses';
+            params: { factory: H160; swapRouter: H160; quoter: H160 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Override the EVM gas limits the Aave trade executor caps its calls with.
+     *
+     * `None` restores the built-in defaults. The limits are ceilings, but `trade`
+     * and `view` also feed the router's declared weight for every Aave trade, so a
+     * value large enough to exceed the block weight limit makes those trades
+     * unincludable rather than failing loudly.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`
+     * - `limits`: The gas limits to apply, or `None` to fall back to the defaults
+     *
+     * Emits `AaveGasLimitsSet` event when successful.
+     *
+     *
+     * @param {PalletParametersAaveGasLimits | undefined} limits
+     **/
+    setAaveGasLimits: GenericTxCall<
+      (limits: PalletParametersAaveGasLimits | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetAaveGasLimits';
+            params: { limits: PalletParametersAaveGasLimits | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Suspend all outbound XCM.
+     *
+     * The runtime's XCM router refuses every message while suspended, so user transfers fail
+     * and roll back, and sends made while executing inbound XCM fail with the assets
+     * left in the asset trap.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`
+     *
+     * Emits `XcmSendSuspended` event when successful.
+     *
+     *
+     **/
+    suspendXcmSend: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SuspendXcmSend';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Resume outbound XCM.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`
+     *
+     * Emits `XcmSendResumed` event when successful.
+     *
+     *
+     **/
+    resumeXcmSend: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'ResumeXcmSend';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Suspend execution of all inbound XCM, from the relay chain and from siblings.
+     *
+     * Messages are not dropped: they stay queued and execute once execution is resumed.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`
+     *
+     * Emits `XcmExecutionSuspended` event when successful.
+     *
+     *
+     **/
+    suspendXcmExecution: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SuspendXcmExecution';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Resume execution of inbound XCM, including messages queued while suspended.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`
+     *
+     * Emits `XcmExecutionResumed` event when successful.
+     *
+     *
+     **/
+    resumeXcmExecution: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'ResumeXcmExecution';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Emergency stop: suspend both outbound and inbound XCM.
+     *
+     * Succeeds even if either side is already suspended, so it can always be used in an emergency.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::EmergencyOrigin`
+     *
+     * Emits `XcmSuspended` event when successful.
+     *
+     *
+     **/
+    suspendXcm: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SuspendXcm';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Resume both outbound and inbound XCM.
+     *
+     * Succeeds even if either side is already resumed.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`
+     *
+     * Emits `XcmResumed` event when successful.
+     *
+     *
+     **/
+    resumeXcm: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'ResumeXcm';
           };
         },
         ChainKnownTypes
@@ -10224,6 +9905,556 @@ export interface ChainTx<
           pallet: 'EthDispenser';
           palletCall: {
             name: 'Unpause';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `GigaHdx`'s transaction calls
+   **/
+  gigaHdx: {
+    /**
+     * Lock HDX in the caller's account, mint stHDX, and supply it to the money market.
+     *
+     * The pallet locks `amount` HDX in the caller's account under `Config::LockId`
+     * (so it remains voteable via `LockableCurrency` semantics), mints stHDX at the
+     * current exchange rate, and supplies the stHDX to the money market. The money
+     * market mints GIGAHDX (aToken) to the caller's EVM-mapped address.
+     *
+     * `Stakes[caller].gigahdx` records the **actual** aToken amount returned by the
+     * money market (may differ from the requested mint amount by rounding).
+     *
+     * Fails with `BelowMinStake` if `amount < Config::MinStake`, with
+     * `BlockedByExternalLock` if `Config::ExternalClaims::on(caller) > 0`
+     * (the caller holds a non-allowed lock — strict policy rejects
+     * stake admission entirely), with `InsufficientFreeBalance` if
+     * `free_balance − own_gigahdx_commitment < amount`, with
+     * `StHdxMintFailed` if stHDX minting fails, or with
+     * `MoneyMarketSupplyFailed` if the AAVE `Pool.supply` call reverts.
+     *
+     * Parameters:
+     * - `amount`: HDX amount to stake. Must be at least `Config::MinStake`.
+     *
+     * Emits `Staked` event when successful.
+     *
+     *
+     * @param {bigint} amount
+     **/
+    gigaStake: GenericTxCall<
+      (amount: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdx';
+          palletCall: {
+            name: 'GigaStake';
+            params: { amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unstake the caller's GIGAHDX and open a pending-unstake position.
+     *
+     * Burns `gigahdx_amount` of the caller's GIGAHDX through the money market, which
+     * returns stHDX to the caller; the pallet then burns that stHDX. The HDX value
+     * (current rate × `gigahdx_amount`) is moved into a single pending-unstake
+     * position with a cooldown of `Config::CooldownPeriod`. Any portion of the payout
+     * that exceeds the user's active stake principal is paid as yield from the
+     * gigapot account.
+     *
+     * At most one pending position per account — the caller must `unlock` an existing
+     * position before calling again, otherwise `PendingUnstakeAlreadyExists` is
+     * returned.
+     *
+     * Implementation detail (must match `LockableAToken.sol`): the lock-manager
+     * precompile (`0x0806`) reads `Stakes[who].gigahdx` and treats it as the user's
+     * locked GIGAHDX. The aToken contract rejects burns where
+     * `amount > balance - locked`, so the pallet **pre-decrements `gigahdx` by
+     * `gigahdx_amount` before the money-market call**. The dispatchable runs in a
+     * storage layer so any failure rolls back the pre-decrement atomically.
+     *
+     * Fails with `NoStake` if the caller has no active stake, `ZeroAmount` if
+     * `gigahdx_amount == 0`, `InsufficientStake` if `gigahdx_amount` exceeds the
+     * caller's `Stakes.gigahdx`, or `MoneyMarketWithdrawFailed` if the AAVE
+     * `Pool.withdraw` call reverts.
+     *
+     * Parameters:
+     * - `gigahdx_amount`: GIGAHDX (aToken) amount to unstake. Must be greater than
+     * zero and not exceed the caller's `Stakes.gigahdx`.
+     *
+     * Emits `Unstaked` event when successful.
+     *
+     *
+     * @param {bigint} gigahdxAmount
+     **/
+    gigaUnstake: GenericTxCall<
+      (gigahdxAmount: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdx';
+          palletCall: {
+            name: 'GigaUnstake';
+            params: { gigahdxAmount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the AAVE V3 Pool contract address used by the money-market adapter.
+     *
+     * Refuses to swap the pool while gigahdx (aToken / stHDX) is still in
+     * circulation — a swap mid-flight would route subsequent `giga_unstake`
+     * calls to a pool that doesn't hold the user's atokens, reverting the
+     * burn and leaving HDX permanently locked. Returns `OutstandingStake`
+     * when total stHDX supply is non-zero.
+     *
+     * Note: it is not enough to check `TotalLocked == 0` (the sum of
+     * `Stakes.hdx`). When an unstake payout exceeds the user's active
+     * stake, the active stake is drained but `Stakes.gigahdx` (and the
+     * corresponding aToken balance) can stay non-zero — those tokens
+     * remain bound to the current pool.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`.
+     * - `contract`: H160 address of the new AAVE V3 Pool contract.
+     *
+     * Emits `PoolContractUpdated` event when successful.
+     *
+     *
+     * @param {H160} contract
+     **/
+    setPoolContract: GenericTxCall<
+      (contract: H160) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdx';
+          palletCall: {
+            name: 'SetPoolContract';
+            params: { contract: H160 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Release a single pending-unstake position whose cooldown has elapsed.
+     *
+     * Fails with `PendingUnstakeNotFound` if no position with `position_id`
+     * exists, or `CooldownNotElapsed` if the targeted position is still cooling.
+     *
+     * Parameters:
+     * - `position_id`: id of the position to release (as recorded in the
+     * `Unstaked` event for the originating unstake).
+     *
+     * Emits `Unlocked` event when successful.
+     *
+     *
+     * @param {number} positionId
+     **/
+    unlock: GenericTxCall<
+      (positionId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdx';
+          palletCall: {
+            name: 'Unlock';
+            params: { positionId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancel a single pending-unstake position, folding its `amount` HDX
+     * back into the active stake at the current exchange rate.
+     *
+     * The pending HDX is already locked in the caller's account; this
+     * extrinsic relabels it as active stake and mints fresh aTokens at
+     * today's rate. The number of aTokens minted may differ from the
+     * amount burned at unstake time if the exchange rate moved.
+     *
+     * Cooldown is not a gate — cancellation is valid throughout the
+     * pending window, until the caller invokes `unlock`.
+     *
+     * Fails with `PendingUnstakeNotFound` if `position_id` is not present.
+     *
+     * Parameters:
+     * - `position_id`: id of the position to cancel.
+     *
+     * Emits `UnstakeCancelled` event when successful.
+     *
+     *
+     * @param {number} positionId
+     **/
+    cancelUnstake: GenericTxCall<
+      (positionId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdx';
+          palletCall: {
+            name: 'CancelUnstake';
+            params: { positionId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Migrate the caller's legacy NFT staking position into gigahdx.
+     *
+     * Atomically: destroys the legacy position via `LegacyStaking::
+     * force_unstake` (paying out 100% of rewards — no sigmoid slash, no
+     * unclaimable-period penalty), then re-stakes the freed HDX under
+     * the same admission gate as `giga_stake`. Refuses partial migration
+     * — the legacy position is consumed whole or not at all.
+     *
+     * Admission runs *after* `force_unstake` so the legacy lock is no
+     * longer counted against `ExternalClaims`.
+     *
+     * Fails with `BelowMinStake` if the legacy position unlocks less
+     * than `Config::MinStake`, with `BlockedByExternalLock` if the
+     * caller still carries another non-overlap-whitelisted lock, with
+     * `InsufficientFreeBalance` if the post-unstake balance can't cover
+     * the new gigahdx claim, or with whatever error `force_unstake`
+     * raises (e.g. ongoing referendum vote, no legacy position).
+     *
+     * Emits `MigratedFromLegacy` event when successful.
+     *
+     **/
+    migrate: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdx';
+          palletCall: {
+            name: 'Migrate';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Realize the caller's accrued yield into their locked stake principal.
+     *
+     * Moves the HDX value the caller's GIGAHDX has gained since it was last
+     * reconciled (`rate × gigahdx − Stakes[who].hdx`) from the gigapot into
+     * the caller's account, folds it into `Stakes[who].hdx`, and refreshes
+     * the lock. GIGAHDX balance and the exchange rate are unchanged. A
+     * caller with no accrued yield (or no stake) is a successful no-op.
+     *
+     * Emits `YieldRealized` event when there was yield to realize.
+     *
+     *
+     **/
+    realizeYield: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdx';
+          palletCall: {
+            name: 'RealizeYield';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `GigaHdxRewards`'s transaction calls
+   **/
+  gigaHdxRewards: {
+    /**
+     * Convert the caller's accumulated HDX rewards into GIGAHDX by staking
+     * them on the caller's behalf.
+     *
+     * The full `PendingRewards[who]` sum is taken atomically. The HDX is
+     * transferred from the allocated-rewards pot to the caller's free
+     * balance, then `pallet_gigahdx::do_stake` is called to mint GIGAHDX
+     * into the caller's stake position.
+     *
+     * Parameters:
+     * - `origin`: signed by the user claiming.
+     *
+     * Emits `RewardsClaimed` event when successful.
+     *
+     **/
+    claimRewards: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GigaHdxRewards';
+          palletCall: 'ClaimRewards';
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `LazyExecutor`'s transaction calls
+   **/
+  lazyExecutor: {
+    /**
+     * Extrinsic executes the top forward from the queue.
+     *
+     * This is called from OCW.
+     *
+     * Emits:
+     * - `Executed` when successful
+     *
+     * @param {bigint} id
+     **/
+    dispatchTop: GenericTxCall<
+      (id: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'LazyExecutor';
+          palletCall: {
+            name: 'DispatchTop';
+            params: { id: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Intent`'s transaction calls
+   **/
+  intent: {
+    /**
+     * Submit an intent and reserve the funds for its execution.
+     *
+     * Parameters:
+     * - `intent`: the intent's data, deadline and optional `on_resolved` forward. A
+     * `MatchFirstSwap` is offered to the solver only against opposite flow until its
+     * `match_window` (ms) has elapsed, then behaves like a plain `Swap`.
+     *
+     * Emits `IntentSubmitted` event when successful.
+     *
+     *
+     * @param {PalletIntentIntentInput} intent
+     **/
+    submitIntent: GenericTxCall<
+      (intent: PalletIntentIntentInput) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Intent';
+          palletCall: {
+            name: 'SubmitIntent';
+            params: { intent: PalletIntentIntentInput };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Extrinsic unlocks reserved funds and removes intent.
+     *
+     * Only intent's owner can cancel intent.
+     *
+     * Parameters:
+     * - `id`: id of intent to be canceled.
+     *
+     * Emits:
+     * - `IntentCanceled` when successful
+     *
+     *
+     * @param {bigint} id
+     **/
+    removeIntent: GenericTxCall<
+      (id: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Intent';
+          palletCall: {
+            name: 'RemoveIntent';
+            params: { id: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Extrinsic removes expired intent, queue intent's on failure callback and unlocks funds.
+     *
+     * Failure to queue callback for future execution doesn't fail clean up function.
+     * This is called automatically from OCW to remove expired intents but it can be called also
+     * called by any users.
+     *
+     * Parameters:
+     * - `id`: id of intent to be cleaned up from storage.
+     *
+     * Emits:
+     * - `FailedToQueueCallback` when callback's queuing fails
+     * - `IntentExpired` when successful
+     *
+     * @param {bigint} id
+     **/
+    cleanupIntent: GenericTxCall<
+      (id: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Intent';
+          palletCall: {
+            name: 'CleanupIntent';
+            params: { id: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `ICE`'s transaction calls
+   **/
+  ice: {
+    /**
+     * Execute `solution` submitted by OCW.
+     *
+     * Under `SolverMode::V4` the solution is executed as a whole: claimed amounts are
+     * binding and any failure aborts the batch. Under `SolverMode::Passthrough` the
+     * claimed amounts and `score` are advisory — each intent is executed on its own,
+     * bound by the limit re-derived from its stored state, and a failing intent is
+     * skipped instead of failing the batch.
+     *
+     * Parameters:
+     * - `solution`: solution to execute
+     *
+     * Emits:
+     * - `SolutionExecuted`when `solution` was executed successfully
+     *
+     *
+     * @param {IceSupportSolution} solution
+     **/
+    submitSolution: GenericTxCall<
+      (solution: IceSupportSolution) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Ice';
+          palletCall: {
+            name: 'SubmitSolution';
+            params: { solution: IceSupportSolution };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the matched-volume protocol fee.
+     *
+     * If `fee` matches the default constant (`T::MatchedFee`), the storage
+     * override is removed — there is no need to store the default value.
+     *
+     * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+     *
+     * Emits `ProtocolFeeSet`.
+     *
+     * @param {Permill} fee
+     **/
+    setProtocolFee: GenericTxCall<
+      (fee: Permill) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Ice';
+          palletCall: {
+            name: 'SetProtocolFee';
+            params: { fee: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Select the active solver mode.
+     *
+     * If `mode` is the default variant, the storage override is removed — there is
+     * no need to store the default value.
+     *
+     * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+     *
+     * Parameters:
+     * - `mode`: solver mode to activate
+     *
+     * Emits `SolverModeSet` event when successful.
+     *
+     *
+     * @param {IceSupportSolverMode} mode
+     **/
+    setSolverMode: GenericTxCall<
+      (mode: IceSupportSolverMode) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Ice';
+          palletCall: {
+            name: 'SetSolverMode';
+            params: { mode: IceSupportSolverMode };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set, or clear, one routing rule.
+     *
+     * `Some(Included)` registers the target, `Some(Excluded)` vetoes it, and `None`
+     * removes the entry. Storage is exactly what is set here — a veto is only
+     * temporary if it is later cleared with `None`.
+     *
+     * A batch target registers every venue it names under one key. It is bounded
+     * per key, not in total: register another batch when one is full. Excluding one
+     * member of a batch is done with a single-target `Excluded` entry, which wins
+     * over any batch that lists it.
+     *
+     * Asset pairs and batches are normalised, so a target cannot end up under two
+     * keys.
+     *
+     * Can only be called by `AuthorityOrigin` (e.g. TechnicalCommittee or Root).
+     *
+     * Parameters:
+     * - `target`: the pool, pool asset, wrap or batch of them the rule applies to
+     * - `state`: `None` removes the rule
+     *
+     * Emits `RoutingUpdated` event when successful.
+     *
+     *
+     * @param {IceSupportRoutingTarget} target
+     * @param {IceSupportRoutingState | undefined} state
+     **/
+    updateRouting: GenericTxCall<
+      (
+        target: IceSupportRoutingTarget,
+        state: IceSupportRoutingState | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Ice';
+          palletCall: {
+            name: 'UpdateRouting';
+            params: { target: IceSupportRoutingTarget; state: IceSupportRoutingState | undefined };
           };
         },
         ChainKnownTypes
@@ -10982,6 +11213,61 @@ export interface ChainTx<
     >;
 
     /**
+     * Sets the NTT minter for an asset. The minter is the only EVM address allowed to
+     * mint/burn the asset via the MultiCurrency precompile.
+     *
+     * Parameters:
+     * - `origin`: Must be `ControllerOrigin`.
+     * - `asset_id`: Asset whose minter is set.
+     * - `minter`: EVM address of the NTT spoke manager.
+     *
+     * Emits `NttMinterSet` event when successful.
+     *
+     * @param {number} assetId
+     * @param {H160} minter
+     **/
+    setNttMinter: GenericTxCall<
+      (
+        assetId: number,
+        minter: H160,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EvmAccounts';
+          palletCall: {
+            name: 'SetNttMinter';
+            params: { assetId: number; minter: H160 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clears the NTT minter for an asset, stopping all mint/burn via the precompile.
+     * Acts as an emergency stop, therefore it is gated by the faster `NttEmergencyOrigin`.
+     *
+     * Parameters:
+     * - `origin`: Must be `NttEmergencyOrigin`.
+     * - `asset_id`: Asset whose minter is cleared.
+     *
+     * Emits `NttMinterCleared` event when successful.
+     *
+     * @param {number} assetId
+     **/
+    clearNttMinter: GenericTxCall<
+      (assetId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EvmAccounts';
+          palletCall: {
+            name: 'ClearNttMinter';
+            params: { assetId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -11635,6 +11921,10 @@ export interface ChainTx<
      * Creates a new DCA (Dollar-Cost Averaging) schedule and plans the next execution
      * for the specified block.
      *
+     * Only `Order::Sell` schedules can be created. Buy orders are rejected with
+     * `NoLongerSupported`; buy schedules already stored keep executing until they complete
+     * or are terminated.
+     *
      * If the block is not specified, the execution is planned for the next block.
      * If the given block is full, the execution will be planned in the subsequent block.
      *
@@ -11737,6 +12027,65 @@ export interface ChainTx<
           palletCall: {
             name: 'UnlockReserves';
             params: { who: AccountId32Like; assetId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Enables or disables the conversion of DCA schedules into DCA intents.
+     *
+     * While enabled, a schedule is converted - or cancelled and refunded when it cannot be
+     * converted - as soon as its execution slot arrives, instead of being traded. That
+     * execution is skipped: the resulting intent trades one period later. Creating new
+     * schedules is blocked for as long as the flag is set.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::TerminateOrigin`
+     * - `enabled`: whether schedules convert when their execution slot arrives
+     *
+     * Emits `MigrationEnabledSet` event when successful.
+     *
+     *
+     * @param {boolean} enabled
+     **/
+    setMigrationEnabled: GenericTxCall<
+      (enabled: boolean) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dca';
+          palletCall: {
+            name: 'SetMigrationEnabled';
+            params: { enabled: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancels the given schedules and refunds their reserves.
+     *
+     * Escape hatch for schedules the migration cannot reach - an entry left without a planned
+     * execution block never comes up in `on_initialize` and would otherwise keep the old
+     * pallet alive indefinitely. Unknown ids are skipped rather than rejected.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::TerminateOrigin`
+     * - `schedule_ids`: the schedules to cancel
+     *
+     * Emits `MigrationCancelled` event for each cancelled schedule.
+     *
+     *
+     * @param {Array<number>} scheduleIds
+     **/
+    forceCancelSchedules: GenericTxCall<
+      (scheduleIds: Array<number>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dca';
+          palletCall: {
+            name: 'ForceCancelSchedules';
+            params: { scheduleIds: Array<number> };
           };
         },
         ChainKnownTypes
@@ -13828,6 +14177,33 @@ export interface ChainTx<
    * Pallet `Broadcast`'s transaction calls
    **/
   broadcast: {
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `FeeProcessor`'s transaction calls
+   **/
+  feeProcessor: {
+    /**
+     * Manual conversion trigger. Permissionless.
+     *
+     * @param {number} assetId
+     **/
+    convert: GenericTxCall<
+      (assetId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'FeeProcessor';
+          palletCall: {
+            name: 'Convert';
+            params: { assetId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
     /**
      * Generic pallet tx call
      **/

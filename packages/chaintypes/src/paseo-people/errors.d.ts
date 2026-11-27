@@ -292,9 +292,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -348,6 +354,295 @@ export interface ChainErrors extends GenericChainErrors {
      * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
      **/
     TooManyHolds: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `OriginRestriction`'s errors
+   **/
+  originRestriction: {
+    /**
+     * The origin has no usage tracked.
+     **/
+    NoUsage: GenericPalletError;
+
+    /**
+     * The usage is not zero.
+     **/
+    NotZero: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetConversion`'s errors
+   **/
+  assetConversion: {
+    /**
+     * Provided asset pair is not supported for pool.
+     **/
+    InvalidAssetPair: GenericPalletError;
+
+    /**
+     * Pool already exists.
+     **/
+    PoolExists: GenericPalletError;
+
+    /**
+     * Desired amount can't be zero.
+     **/
+    WrongDesiredAmount: GenericPalletError;
+
+    /**
+     * Provided amount should be greater than or equal to the existential deposit/asset's
+     * minimal amount.
+     **/
+    AmountOneLessThanMinimal: GenericPalletError;
+
+    /**
+     * Provided amount should be greater than or equal to the existential deposit/asset's
+     * minimal amount.
+     **/
+    AmountTwoLessThanMinimal: GenericPalletError;
+
+    /**
+     * Reserve needs to always be greater than or equal to the existential deposit/asset's
+     * minimal amount.
+     **/
+    ReserveLeftLessThanMinimal: GenericPalletError;
+
+    /**
+     * Desired amount can't be equal to the pool reserve.
+     **/
+    AmountOutTooHigh: GenericPalletError;
+
+    /**
+     * The pool doesn't exist.
+     **/
+    PoolNotFound: GenericPalletError;
+
+    /**
+     * An overflow happened.
+     **/
+    Overflow: GenericPalletError;
+
+    /**
+     * The minimal amount requirement for the first token in the pair wasn't met.
+     **/
+    AssetOneDepositDidNotMeetMinimum: GenericPalletError;
+
+    /**
+     * The minimal amount requirement for the second token in the pair wasn't met.
+     **/
+    AssetTwoDepositDidNotMeetMinimum: GenericPalletError;
+
+    /**
+     * The minimal amount requirement for the first token in the pair wasn't met.
+     **/
+    AssetOneWithdrawalDidNotMeetMinimum: GenericPalletError;
+
+    /**
+     * The minimal amount requirement for the second token in the pair wasn't met.
+     **/
+    AssetTwoWithdrawalDidNotMeetMinimum: GenericPalletError;
+
+    /**
+     * Optimal calculated amount is less than desired.
+     **/
+    OptimalAmountLessThanDesired: GenericPalletError;
+
+    /**
+     * Insufficient liquidity minted.
+     **/
+    InsufficientLiquidityMinted: GenericPalletError;
+
+    /**
+     * Requested liquidity can't be zero.
+     **/
+    ZeroLiquidity: GenericPalletError;
+
+    /**
+     * Amount can't be zero.
+     **/
+    ZeroAmount: GenericPalletError;
+
+    /**
+     * Calculated amount out is less than provided minimum amount.
+     **/
+    ProvidedMinimumNotSufficientForSwap: GenericPalletError;
+
+    /**
+     * Provided maximum amount is not sufficient for swap.
+     **/
+    ProvidedMaximumNotSufficientForSwap: GenericPalletError;
+
+    /**
+     * The provided path must consists of 2 assets at least.
+     **/
+    InvalidPath: GenericPalletError;
+
+    /**
+     * The provided path must consists of unique assets.
+     **/
+    NonUniquePath: GenericPalletError;
+
+    /**
+     * It was not possible to get or increment the Id of the pool.
+     **/
+    IncorrectPoolAssetId: GenericPalletError;
+
+    /**
+     * The destination account cannot exist with the swapped funds.
+     **/
+    BelowMinimum: GenericPalletError;
+
+    /**
+     * The pool exists but has no liquidity (at least one of the reserves is zero).
+     **/
+    PoolEmpty: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `PoolAssets`'s errors
+   **/
+  poolAssets: {
+    /**
+     * Account balance must be greater than or equal to the transfer amount.
+     **/
+    BalanceLow: GenericPalletError;
+
+    /**
+     * The account to alter does not exist.
+     **/
+    NoAccount: GenericPalletError;
+
+    /**
+     * The signing account has no permission to do the operation.
+     **/
+    NoPermission: GenericPalletError;
+
+    /**
+     * The given asset ID is unknown.
+     **/
+    Unknown: GenericPalletError;
+
+    /**
+     * The origin account is frozen.
+     **/
+    Frozen: GenericPalletError;
+
+    /**
+     * The asset ID is already taken.
+     **/
+    InUse: GenericPalletError;
+
+    /**
+     * Invalid witness data given.
+     **/
+    BadWitness: GenericPalletError;
+
+    /**
+     * Minimum balance should be non-zero.
+     **/
+    MinBalanceZero: GenericPalletError;
+
+    /**
+     * Unable to increment the consumer reference counters on the account. Either no provider
+     * reference exists to allow a non-zero balance of a non-self-sufficient asset, or one
+     * fewer then the maximum number of consumers has been reached.
+     **/
+    UnavailableConsumer: GenericPalletError;
+
+    /**
+     * Invalid metadata given.
+     **/
+    BadMetadata: GenericPalletError;
+
+    /**
+     * No approval exists that would allow the transfer.
+     **/
+    Unapproved: GenericPalletError;
+
+    /**
+     * The source account would not survive the transfer and it needs to stay alive.
+     **/
+    WouldDie: GenericPalletError;
+
+    /**
+     * The asset-account already exists.
+     **/
+    AlreadyExists: GenericPalletError;
+
+    /**
+     * The asset-account doesn't have an associated deposit.
+     **/
+    NoDeposit: GenericPalletError;
+
+    /**
+     * The operation would result in funds being burned.
+     **/
+    WouldBurn: GenericPalletError;
+
+    /**
+     * The asset is a live asset and is actively being used. Usually emit for operations such
+     * as `start_destroy` which require the asset to be in a destroying state.
+     **/
+    LiveAsset: GenericPalletError;
+
+    /**
+     * The asset is not live, and likely being destroyed.
+     **/
+    AssetNotLive: GenericPalletError;
+
+    /**
+     * The asset status is not the expected status.
+     **/
+    IncorrectStatus: GenericPalletError;
+
+    /**
+     * The asset should be frozen before the given operation.
+     **/
+    NotFrozen: GenericPalletError;
+
+    /**
+     * Callback action resulted in error
+     **/
+    CallbackFailed: GenericPalletError;
+
+    /**
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
+     **/
+    BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain freezes.
+     **/
+    ContainsFreezes: GenericPalletError;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain holds.
+     **/
+    ContainsHolds: GenericPalletError;
+
+    /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1028,6 +1323,1693 @@ export interface ChainErrors extends GenericChainErrors {
      * trying to unbind a username provided by the system).
      **/
     InsufficientPrivileges: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `People`'s errors
+   **/
+  people: {
+    /**
+     * The supplied identifier does not represent a person.
+     **/
+    NotPerson: GenericPalletError;
+
+    /**
+     * The given person has no associated key.
+     **/
+    NoKey: GenericPalletError;
+
+    /**
+     * The context is not a member of those allowed to have account aliases held.
+     **/
+    InvalidContext: GenericPalletError;
+
+    /**
+     * The account is not known.
+     **/
+    InvalidAccount: GenericPalletError;
+
+    /**
+     * The account is already in use under another alias.
+     **/
+    AccountInUse: GenericPalletError;
+
+    /**
+     * The proof is invalid.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
+     * The signature is invalid.
+     **/
+    InvalidSignature: GenericPalletError;
+
+    /**
+     * There are not yet any members of our personhood set.
+     **/
+    NoMembers: GenericPalletError;
+
+    /**
+     * The root cannot be finalized as there are still unpushed members.
+     **/
+    Incomplete: GenericPalletError;
+
+    /**
+     * The root is still fresh.
+     **/
+    StillFresh: GenericPalletError;
+
+    /**
+     * Too many members have been pushed.
+     **/
+    TooManyMembers: GenericPalletError;
+
+    /**
+     * Key already in use by another person.
+     **/
+    KeyAlreadyInUse: GenericPalletError;
+
+    /**
+     * The old key was not found when expected.
+     **/
+    KeyNotFound: GenericPalletError;
+
+    /**
+     * Could not push member into the ring.
+     **/
+    CouldNotPush: GenericPalletError;
+
+    /**
+     * The record is already using this key.
+     **/
+    SameKey: GenericPalletError;
+
+    /**
+     * Personal Id was not reserved.
+     **/
+    PersonalIdNotReserved: GenericPalletError;
+
+    /**
+     * Personal Id has never been reserved.
+     **/
+    PersonalIdReservationCannotRenew: GenericPalletError;
+
+    /**
+     * Personal Id was not reserved or not already recognized.
+     **/
+    PersonalIdNotReservedOrNotRecognized: GenericPalletError;
+
+    /**
+     * Ring cannot be merged if it's the top ring.
+     **/
+    InvalidRing: GenericPalletError;
+
+    /**
+     * Ring cannot be built while there are suspensions pending.
+     **/
+    SuspensionsPending: GenericPalletError;
+
+    /**
+     * Ring cannot be merged if it's not below 1/2 capacity.
+     **/
+    RingAboveMergeThreshold: GenericPalletError;
+
+    /**
+     * Suspension indices provided are invalid.
+     **/
+    InvalidSuspensions: GenericPalletError;
+
+    /**
+     * An mutating action was queued when there was no mutation session in progress.
+     **/
+    NoMutationSession: GenericPalletError;
+
+    /**
+     * An mutating session could not be started.
+     **/
+    CouldNotStartMutationSession: GenericPalletError;
+
+    /**
+     * Cannot merge rings while a suspension session is in progress.
+     **/
+    SuspensionSessionInProgress: GenericPalletError;
+
+    /**
+     * The alias mapping is not stale.
+     **/
+    AliasNotStale: GenericPalletError;
+
+    /**
+     * Call is too late or too early.
+     **/
+    TimeOutOfRange: GenericPalletError;
+
+    /**
+     * Alias <-> Account is already set and up to date.
+     **/
+    AliasAccountAlreadySet: GenericPalletError;
+
+    /**
+     * Personhood cannot be resumed if it is not suspended.
+     **/
+    NotSuspended: GenericPalletError;
+
+    /**
+     * Personhood is suspended.
+     **/
+    Suspended: GenericPalletError;
+
+    /**
+     * Invalid state for attempted key migration.
+     **/
+    InvalidKeyMigration: GenericPalletError;
+
+    /**
+     * Invalid suspension of a key belonging to a person whose index in the ring has already
+     * been included in the pending suspensions list.
+     **/
+    KeyAlreadySuspended: GenericPalletError;
+
+    /**
+     * The onboarding size must not exceed the maximum ring size.
+     **/
+    InvalidOnboardingSize: GenericPalletError;
+
+    /**
+     * The member key is not valid for the crypto.
+     **/
+    InvalidMemberKey: GenericPalletError;
+
+    /**
+     * The people collection has already been created.
+     **/
+    PeopleCollectionAlreadyExists: GenericPalletError;
+
+    /**
+     * The provided alias does not match the account's current alias mapping.
+     **/
+    AliasMismatch: GenericPalletError;
+
+    /**
+     * None of the supplied aliases were stale.
+     **/
+    NoStaleAliases: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MobRule`'s errors
+   **/
+  mobRule: {
+    /**
+     * The case does not exist.
+     **/
+    NoSuchCase: GenericPalletError;
+
+    /**
+     * The vote does not exist.
+     **/
+    NoSuchVote: GenericPalletError;
+
+    /**
+     * The case is not open.
+     **/
+    NotOpen: GenericPalletError;
+
+    /**
+     * The case is not ripe.
+     **/
+    NotRipe: GenericPalletError;
+
+    /**
+     * The case is not yet done.
+     **/
+    NotDone: GenericPalletError;
+
+    /**
+     * The decode of the call failed. Maybe there was a breaking runtime upgrade in between?
+     **/
+    CodecError: GenericPalletError;
+
+    /**
+     * The call failed to dispatch. Maybe there was a breaking runtime upgrade in between?
+     **/
+    DispatchError: GenericPalletError;
+
+    /**
+     * The case is too recent to be reaped.
+     **/
+    Recent: GenericPalletError;
+
+    /**
+     * Not enough credit to payout the rewards.
+     **/
+    NoCredit: GenericPalletError;
+
+    /**
+     * No mob credit distribution in place to reward voters.
+     **/
+    NoReward: GenericPalletError;
+
+    /**
+     * No points to be converted to mob credit.
+     **/
+    NoPoints: GenericPalletError;
+
+    /**
+     * Too many vote claims.
+     **/
+    TooManyClaims: GenericPalletError;
+
+    /**
+     * No payout in progress.
+     **/
+    NoPayout: GenericPalletError;
+
+    /**
+     * The point and/or credit arithmetic overflows.
+     **/
+    ArithmeticOverflow: GenericPalletError;
+
+    /**
+     * Too many payout round schedules.
+     **/
+    TooManySchedules: GenericPalletError;
+
+    /**
+     * No payout round schedule found.
+     **/
+    NoSchedule: GenericPalletError;
+
+    /**
+     * No vote penalty found.
+     **/
+    NoPenalty: GenericPalletError;
+
+    /**
+     * The vote penalty has not expired yet.
+     **/
+    Early: GenericPalletError;
+
+    /**
+     * The vote cannot be cast due to a voting penalty in effect.
+     **/
+    UnderPenalty: GenericPalletError;
+
+    /**
+     * The open case expiration is disabled due to insufficient active voters.
+     **/
+    CaseExpirationDisabled: GenericPalletError;
+
+    /**
+     * The dispatched callback's weight exceeds the declared `max_callback_weight` upper
+     * bound.
+     **/
+    CallbackWeightTooLow: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `ProofOfInk`'s errors
+   **/
+  proofOfInk: {
+    /**
+     * Account is already applying to make a proof-of-ink.
+     **/
+    InProgress: GenericPalletError;
+
+    /**
+     * Account has not been referred.
+     **/
+    NoReferral: GenericPalletError;
+
+    /**
+     * The callback context is invalid; this should never happen.
+     **/
+    BadContext: GenericPalletError;
+
+    /**
+     * The incoming judgement ID is not what we were expecting for the account.
+     **/
+    UnexpectedJudgement: GenericPalletError;
+
+    /**
+     * No arguments were supplied with the judgement.
+     **/
+    NoArgs: GenericPalletError;
+
+    /**
+     * The account has not applied to make a proof-of-ink.
+     **/
+    NotApplied: GenericPalletError;
+
+    /**
+     * The candidate has not committed to a design.
+     **/
+    NotSelected: GenericPalletError;
+
+    /**
+     * The candidate did not prove themselves yet.
+     **/
+    NotProven: GenericPalletError;
+
+    /**
+     * The candidate has already started their judgement.
+     **/
+    AlreadyStarted: GenericPalletError;
+
+    /**
+     * The personal ID is not in range.
+     **/
+    OutOfRange: GenericPalletError;
+
+    /**
+     * The personal ID has already been taken.
+     **/
+    AlreadyTaken: GenericPalletError;
+
+    /**
+     * The person has no more referrals left to give.
+     **/
+    NoMoreReferrals: GenericPalletError;
+
+    /**
+     * The reroll is too early.
+     **/
+    TooEarly: GenericPalletError;
+
+    /**
+     * The referrer's design is not procedural.
+     **/
+    DesignInvalid: GenericPalletError;
+
+    /**
+     * The referrer's design is already taken.
+     **/
+    DesignTaken: GenericPalletError;
+
+    /**
+     * The referrer doesn't appear to be a person. This should never happen.
+     **/
+    BadParent: GenericPalletError;
+
+    /**
+     * The design family doesn't exist.
+     **/
+    BadFamily: GenericPalletError;
+
+    /**
+     * The design family is invalid for this choice.
+     **/
+    WrongFamily: GenericPalletError;
+
+    /**
+     * The index of the design or variant is beyond the allowed maximum for the family.
+     **/
+    IndexTooBig: GenericPalletError;
+
+    /**
+     * The system is busy with too many commitments; try again later.
+     **/
+    Busy: GenericPalletError;
+
+    /**
+     * The person has been banned from referring.
+     **/
+    Banned: GenericPalletError;
+
+    /**
+     * The candidate has not demonstrated probably through the initial evidence.
+     **/
+    Improbable: GenericPalletError;
+
+    /**
+     * The personal identity has already been reserved.
+     **/
+    IdReserved: GenericPalletError;
+
+    /**
+     * The personal identity is already taken by a proven person.
+     **/
+    IdUsed: GenericPalletError;
+
+    /**
+     * The ticket provided is invalid.
+     **/
+    InvalidTicket: GenericPalletError;
+
+    /**
+     * The caller has not provided a referral or invitation ticket.
+     **/
+    NoTicket: GenericPalletError;
+
+    /**
+     * The account is not authorized to do this.
+     **/
+    NotAuthorized: GenericPalletError;
+
+    /**
+     * The personal identity doesn't exist.
+     **/
+    NotPerson: GenericPalletError;
+
+    /**
+     * The candidate is referred. But the operation requires the candidate to not be referred.
+     **/
+    ReferredCandidate: GenericPalletError;
+
+    /**
+     * The candidate is not referred. But the operation requires the candidate to be referred.
+     **/
+    NotReferredCandidate: GenericPalletError;
+
+    /**
+     * There is no referral reward to register.
+     **/
+    NoRewardToRegister: GenericPalletError;
+
+    /**
+     * There is a pending referral reward that must be registered first.
+     **/
+    RewardToRegister: GenericPalletError;
+
+    /**
+     * No inviter found.
+     **/
+    NoInviter: GenericPalletError;
+
+    /**
+     * Invalid signature.
+     **/
+    InvalidSignature: GenericPalletError;
+
+    /**
+     * No invite available.
+     **/
+    NoInvites: GenericPalletError;
+
+    /**
+     * Invite is already set.
+     **/
+    AlreadyInvited: GenericPalletError;
+
+    /**
+     * The referrer is not a person.
+     **/
+    NoReferrer: GenericPalletError;
+
+    /**
+     * The individual is not a person recognized by proof of ink.
+     **/
+    NotPoiPerson: GenericPalletError;
+
+    /**
+     * The proof of ownership is invalid.
+     **/
+    InvalidProofOfOwnership: GenericPalletError;
+
+    /**
+     * The reimbursement values are invalid.
+     **/
+    InvalidReimbursementValues: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Game`'s errors
+   **/
+  game: {
+    /**
+     * Game ongoing.
+     **/
+    GameOngoing: GenericPalletError;
+
+    /**
+     * No registration phase ongoing.
+     **/
+    NoRegistration: GenericPalletError;
+
+    /**
+     * The setup is outdated.
+     **/
+    OutdatedGameSetup: GenericPalletError;
+
+    /**
+     * Invalid setup.
+     **/
+    InvalidGameSetup: GenericPalletError;
+
+    /**
+     * Invalid report.
+     **/
+    InvalidReport: GenericPalletError;
+
+    /**
+     * No game ongoing.
+     **/
+    NoGame: GenericPalletError;
+
+    /**
+     * No report phase ongoing.
+     **/
+    NoReporting: GenericPalletError;
+
+    /**
+     * Not registered.
+     **/
+    NotRegistered: GenericPalletError;
+
+    /**
+     * Player already registered.
+     **/
+    AlreadyRegistered: GenericPalletError;
+
+    /**
+     * Report already sent.
+     **/
+    ReportAlreadySent: GenericPalletError;
+
+    /**
+     * Operation is not valid yet.
+     **/
+    Early: GenericPalletError;
+
+    /**
+     * The operation expect a player account.
+     **/
+    NotKickablePlayer: GenericPalletError;
+
+    /**
+     * No archived player found.
+     **/
+    NoArchivedPlayer: GenericPalletError;
+
+    /**
+     * No ticket found.
+     **/
+    NoTicket: GenericPalletError;
+
+    /**
+     * No invite available.
+     **/
+    NoInvites: GenericPalletError;
+
+    /**
+     * Invite is already set.
+     **/
+    AlreadyInvited: GenericPalletError;
+
+    /**
+     * Not an account based player, expected an account based player.
+     **/
+    NotAccountPlayer: GenericPalletError;
+
+    /**
+     * The player can't use an invite if already playing.
+     **/
+    UseInviteButAlreadyPlaying: GenericPalletError;
+
+    /**
+     * The lite person already invited another account, and invites only one account ever.
+     **/
+    AnotherAccountInvited: GenericPalletError;
+
+    /**
+     * The number of existing schedules and new schedules exceeds the configured limit.
+     **/
+    TooManyGameSchedules: GenericPalletError;
+
+    /**
+     * The game that was supposed to be removed was not found in scheduled games.
+     **/
+    NoSuchGameScheduled: GenericPalletError;
+
+    /**
+     * The statement account signature is invalid.
+     **/
+    InvalidStatementAccountSignature: GenericPalletError;
+
+    /**
+     * The statement account is already in used by another player.
+     **/
+    StatementAccountAlreadyInUse: GenericPalletError;
+
+    /**
+     * Internal error invalid state.
+     **/
+    InternalErrorInvalidState: GenericPalletError;
+
+    /**
+     * The operation cannot be performed in the current game state.
+     **/
+    InvalidGameState: GenericPalletError;
+
+    /**
+     * No player found.
+     **/
+    NoPlayer: GenericPalletError;
+
+    /**
+     * The player cannot offboard while registered for a game.
+     **/
+    CannotOffboardWhileRegisteredForGame: GenericPalletError;
+
+    /**
+     * Invalid state
+     **/
+    InvalidState: GenericPalletError;
+
+    /**
+     * `set_play_deposit`: the supplied amount must be non-zero.
+     **/
+    InvalidPlayDeposit: GenericPalletError;
+    InvalidAirdropVrfVariantForAccount: GenericPalletError;
+    InvalidAirdropVrfVariantForRecognition: GenericPalletError;
+
+    /**
+     * The number of supplied airdrop VRF entries does not match the number of scheduled
+     * airdrop events.
+     **/
+    InvalidAirdropVrfCount: GenericPalletError;
+
+    /**
+     * `claim_airdrop`: the claimant is not recognized in pallet-score, or their most recent
+     * attended game does not match the `game_index` of the airdrop.
+     **/
+    NotEligibleForAirdrop: GenericPalletError;
+
+    /**
+     * `report`: fewer NFT claim credits can be recorded right now than the report may award.
+     * Submit it again once later blocks have committed the buffered credits.
+     **/
+    CreditCapacityExhausted: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Score`'s errors
+   **/
+  score: {
+    /**
+     * The calling origin is not a person.
+     **/
+    NotPerson: GenericPalletError;
+
+    /**
+     * The person didn't reach personhood.
+     **/
+    HasNotReachedPersonhood: GenericPalletError;
+
+    /**
+     * No reward available.
+     **/
+    NoReward: GenericPalletError;
+
+    /**
+     * The person has no associated score.
+     **/
+    NoScore: GenericPalletError;
+
+    /**
+     * No payout schedule available.
+     **/
+    NoSchedule: GenericPalletError;
+
+    /**
+     * Too many payout schedules already registered.
+     **/
+    TooManySchedules: GenericPalletError;
+
+    /**
+     * The participant is recognized or has been recognized as a person.
+     **/
+    Recognized: GenericPalletError;
+
+    /**
+     * The participant has already cashed out in this era.
+     **/
+    CashOutCooldown: GenericPalletError;
+
+    /**
+     * The round is on going or no schedule.
+     **/
+    RoundOnGoingOrNoSchedule: GenericPalletError;
+
+    /**
+     * The payout round has not started.
+     **/
+    NoRound: GenericPalletError;
+
+    /**
+     * The origin is neither a person nor a signed account.
+     **/
+    BadOriginNotPersonNotSigned: GenericPalletError;
+
+    /**
+     * The origin is neither a person nor a signed account nor an account participant.
+     **/
+    BadOriginNotPersonNotSignedNotAccountParticipant: GenericPalletError;
+
+    /**
+     * The origin is neither a signed account nor an account participant.
+     **/
+    BadOriginNotSignedNotAccountParticipant: GenericPalletError;
+
+    /**
+     * The participant is already participating.
+     **/
+    AlreadyParticipating: GenericPalletError;
+
+    /**
+     * The key must be provided.
+     **/
+    KeyMustBeProvided: GenericPalletError;
+
+    /**
+     * The key must not be provided.
+     **/
+    KeyMustNotBeProvided: GenericPalletError;
+
+    /**
+     * Has reached personhood in the past.
+     **/
+    HasReachedPersonhood: GenericPalletError;
+
+    /**
+     * The proof of ownership is invalid.
+     **/
+    InvalidProofOfOwnership: GenericPalletError;
+
+    /**
+     * An absence grace tier has a window exceeding the maximum trackable history (8).
+     **/
+    WindowTooLarge: GenericPalletError;
+
+    /**
+     * The allowed misses must be strictly less than the window (or both zero).
+     **/
+    AllowedMissesTooLarge: GenericPalletError;
+
+    /**
+     * Absence-grace tiers must be sorted by ascending `population_size_threshold`.
+     **/
+    AbsenceScheduleNotSorted: GenericPalletError;
+
+    /**
+     * The personhood-threshold schedule must contain at least one tier.
+     **/
+    PersonhoodScheduleEmpty: GenericPalletError;
+
+    /**
+     * A personhood-threshold tier has `score_threshold == 0`.
+     **/
+    PersonhoodScoreThresholdZero: GenericPalletError;
+
+    /**
+     * A personhood-threshold tier exceeds `MAX_PERSONHOOD_THRESHOLD`.
+     **/
+    PersonhoodScoreThresholdTooLarge: GenericPalletError;
+
+    /**
+     * Personhood-threshold tiers must be sorted by ascending
+     * `population_size_threshold`.
+     **/
+    PersonhoodScheduleNotSorted: GenericPalletError;
+
+    /**
+     * Personhood-threshold `score_threshold` values must be non-decreasing
+     * across tiers (a larger population must not have a lower bar).
+     **/
+    PersonhoodScheduleNotMonotonic: GenericPalletError;
+
+    /**
+     * The last personhood-threshold tier must cover all populations
+     * (`population_size_threshold == u32::MAX`).
+     **/
+    PersonhoodScheduleNotTotal: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `NftCredits`'s errors
+   **/
+  nftCredits: {
+    /**
+     * A credit tree replay was requested for an empty list of blocks.
+     **/
+    NoBlocksToReplay: GenericPalletError;
+
+    /**
+     * The blocks to replay are not in strictly ascending order.
+     **/
+    UnsortedReplayBlocks: GenericPalletError;
+
+    /**
+     * None of the blocks to replay has a credit tree.
+     **/
+    NoCreditTreeForBlock: GenericPalletError;
+
+    /**
+     * A credit tree replay ran within `ReplayCooldownSeconds` of the last one. The window is
+     * shared by every caller.
+     **/
+    ReplayCooldownActive: GenericPalletError;
+
+    /**
+     * The replay does not fit what the HRMP channel to the NFT claims chain can carry in
+     * one message.
+     **/
+    ExceedsClaimsChannelCapacity: GenericPalletError;
+
+    /**
+     * Sending the credit trees to the NFT claims chain over XCM failed.
+     **/
+    CreditTreeXcmFailed: GenericPalletError;
+
+    /**
+     * The round is not below `MaxRounds`, or the attester slot is not below `MaxGroupSize`,
+     * so the two name a credit slot no game can use.
+     **/
+    CreditSlotOutOfBounds: GenericPalletError;
+
+    /**
+     * No credit was awarded: the claimant already holds the slot's credit for that game, or
+     * no buffer has room for another award.
+     **/
+    CreditNotAwarded: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `DummyDim`'s errors
+   **/
+  dummyDim: {
+    /**
+     * The personal ID does not belong to a recognized person.
+     **/
+    NotPerson: GenericPalletError;
+
+    /**
+     * The personal ID does not belong to a suspended person.
+     **/
+    NotSuspended: GenericPalletError;
+
+    /**
+     * The personal ID is not reserved and awaiting recognition.
+     **/
+    NotReserved: GenericPalletError;
+
+    /**
+     * The operation does not support this many people.
+     **/
+    TooManyPeople: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `PeopleLite`'s errors
+   **/
+  peopleLite: {
+    /**
+     * No attestation allowance.
+     **/
+    NoAttestationAllowance: GenericPalletError;
+
+    /**
+     * The signature created by the candidate's account is invalid.
+     **/
+    InvalidAttestationSignature: GenericPalletError;
+
+    /**
+     * The signature created by the candidate's ring vrf key is invalid.
+     **/
+    InvalidProofOfOwnership: GenericPalletError;
+
+    /**
+     * The candidate is already registered.
+     **/
+    AlreadyRegistered: GenericPalletError;
+
+    /**
+     * The ring VRF key is already enrolled by another lite person.
+     **/
+    KeyAlreadyInUse: GenericPalletError;
+
+    /**
+     * The account is already in use.
+     **/
+    AccountInUse: GenericPalletError;
+
+    /**
+     * The alias <-> account mapping is already set and current.
+     **/
+    AliasAccountAlreadySet: GenericPalletError;
+
+    /**
+     * The alias <-> account mapping is not set.
+     **/
+    AliasAccountNotSet: GenericPalletError;
+
+    /**
+     * The requested alias setup block window is invalid for the current block.
+     **/
+    CallBlockOutOfRange: GenericPalletError;
+
+    /**
+     * The alias context is invalid.
+     **/
+    InvalidAliasContext: GenericPalletError;
+
+    /**
+     * The lite people member collection has not been initialized yet.
+     **/
+    LitePeopleCollectionNotCreated: GenericPalletError;
+
+    /**
+     * The consumer registration account does not match the candidate.
+     **/
+    InvalidConsumerRegistrationAccount: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Resources`'s errors
+   **/
+  resources: {
+    /**
+     * Username does not fit the requirements.
+     **/
+    InvalidUsername: GenericPalletError;
+
+    /**
+     * Username is already taken.
+     **/
+    UsernameTaken: GenericPalletError;
+
+    /**
+     * Consumer is already registered.
+     **/
+    AlreadyRegistered: GenericPalletError;
+
+    /**
+     * Provided proof of ownership is invalid.
+     **/
+    InvalidProofOfOwnership: GenericPalletError;
+
+    /**
+     * Person is not registered as a consumer.
+     **/
+    NotRegistered: GenericPalletError;
+
+    /**
+     * Consumer is not a full person.
+     **/
+    NotFullPerson: GenericPalletError;
+
+    /**
+     * Attempted to update person authorization too early.
+     **/
+    TouchNotReady: GenericPalletError;
+
+    /**
+     * Reservation is not active.
+     **/
+    NoReservation: GenericPalletError;
+
+    /**
+     * The linked lite identity is not the active holder of the reservation.
+     **/
+    NotReservationHolder: GenericPalletError;
+
+    /**
+     * The username in the reservation request is already taken.
+     **/
+    UsernameReservationTaken: GenericPalletError;
+
+    /**
+     * The reservation has not expired.
+     **/
+    ReservationFresh: GenericPalletError;
+
+    /**
+     * There is no lite consumer to be linked.
+     **/
+    NoLinkedIdentity: GenericPalletError;
+
+    /**
+     * The lite consumer is already linked to a full person consumer.
+     **/
+    AlreadyLinked: GenericPalletError;
+
+    /**
+     * The person's authorization has not expired yet.
+     **/
+    PersonAuthNotExpired: GenericPalletError;
+
+    /**
+     * The person has already been demoted.
+     **/
+    AlreadyDemoted: GenericPalletError;
+
+    /**
+     * Queue for this username is full.
+     **/
+    QueueFull: GenericPalletError;
+
+    /**
+     * Account is not in the queue for this username.
+     **/
+    NotInQueue: GenericPalletError;
+
+    /**
+     * Account already has a reservation for another username.
+     **/
+    AlreadyHasReservation: GenericPalletError;
+
+    /**
+     * Notification sequence is invalid for the consumer.
+     **/
+    InvalidNotificationSequence: GenericPalletError;
+
+    /**
+     * Notification period is outside the accepted claim window.
+     **/
+    InvalidNotificationPeriod: GenericPalletError;
+
+    /**
+     * Notification registration is not expired yet.
+     **/
+    NotificationRegistrationNotExpired: GenericPalletError;
+
+    /**
+     * Notification registration already exists for the alias/context.
+     **/
+    NotificationRegistrationAlreadyExists: GenericPalletError;
+
+    /**
+     * The replacement cooldown has not elapsed since the entry was last set.
+     **/
+    StmtStoreReplacementTooEarly: GenericPalletError;
+
+    /**
+     * The provided `limit` exceeds `LongTermStorageCleanupLimit`.
+     **/
+    LongTermStorageCleanupLimitExceeded: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `ChunksManager`'s errors
+   **/
+  chunksManager: {
+    /**
+     * The requested chunk index doesn't exist.
+     **/
+    ChunkNotFound: GenericPalletError;
+
+    /**
+     * The provided chunk data couldn't be decoded.
+     **/
+    InvalidChunks: GenericPalletError;
+
+    /**
+     * The start index isn't strictly less than the end index.
+     **/
+    InvalidChunkRange: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Members`'s errors
+   **/
+  members: {
+    /**
+     * The supplied identifier does not represent a member.
+     **/
+    NotMember: GenericPalletError;
+
+    /**
+     * Ring has no root.
+     **/
+    NoRoot: GenericPalletError;
+
+    /**
+     * The proof is invalid.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
+     * The root cannot be finalized as there are still unpushed members.
+     **/
+    Incomplete: GenericPalletError;
+
+    /**
+     * Too many members have been pushed.
+     **/
+    TooManyMembers: GenericPalletError;
+
+    /**
+     * Key already in use by another member.
+     **/
+    KeyAlreadyInUse: GenericPalletError;
+
+    /**
+     * The old key was not found when expected.
+     **/
+    KeyNotFound: GenericPalletError;
+
+    /**
+     * Could not push member into the ring.
+     **/
+    CouldNotPush: GenericPalletError;
+
+    /**
+     * The ring index is not valid for the requested operation: it is the top ring used for
+     * onboarding or it refers to an empty ring.
+     **/
+    InvalidRing: GenericPalletError;
+
+    /**
+     * Ring cannot be built while there are suspensions pending.
+     **/
+    SuspensionsPending: GenericPalletError;
+
+    /**
+     * Ring cannot be merged if it's not below 1/2 capacity.
+     **/
+    RingAboveMergeThreshold: GenericPalletError;
+
+    /**
+     * Suspension indices provided are invalid.
+     **/
+    InvalidSuspensions: GenericPalletError;
+
+    /**
+     * A mutating action was queued when there was no removal session in progress.
+     **/
+    NoRemovalSession: GenericPalletError;
+
+    /**
+     * A removal session could not be started.
+     **/
+    CouldNotStartRemovalSession: GenericPalletError;
+
+    /**
+     * Cannot merge rings while a removal session is in progress.
+     **/
+    RemovalSessionInProgress: GenericPalletError;
+
+    /**
+     * Invalid suspension of a key belonging to a member whose index in the ring has already
+     * been included in the pending suspensions list.
+     **/
+    KeyAlreadySuspended: GenericPalletError;
+
+    /**
+     * The onboarding size must not exceed the maximum ring size.
+     **/
+    InvalidOnboardingSize: GenericPalletError;
+
+    /**
+     * The member key is not valid for the crypto.
+     **/
+    InvalidMemberKey: GenericPalletError;
+
+    /**
+     * The collection does not exist.
+     **/
+    CollectionNotFound: GenericPalletError;
+
+    /**
+     * The collection already exists.
+     **/
+    CollectionAlreadyExists: GenericPalletError;
+
+    /**
+     * The identifier belonged to a deleted collection and cannot be reused.
+     **/
+    IdentifierRetired: GenericPalletError;
+
+    /**
+     * Too many collections for this owner.
+     **/
+    TooManyCollections: GenericPalletError;
+
+    /**
+     * Flexible collections must use the MaxFlexibleRingExponent ring size.
+     **/
+    InvalidRingSizeForFlexible: GenericPalletError;
+
+    /**
+     * The ring exponent is not supported.
+     **/
+    InvalidRingExponent: GenericPalletError;
+
+    /**
+     * Insufficient members in the queue to onboard.
+     **/
+    PrematureOnboarding: GenericPalletError;
+
+    /**
+     * The collection is marked for deletion and cannot be modified.
+     **/
+    CollectionMarkedForDeletion: GenericPalletError;
+
+    /**
+     * The caller is not the owner of the collection.
+     **/
+    NotCollectionOwner: GenericPalletError;
+
+    /**
+     * The member is not in the onboarding queue.
+     **/
+    NotOnboarding: GenericPalletError;
+
+    /**
+     * There is no ring root to build.
+     **/
+    NothingToBuild: GenericPalletError;
+
+    /**
+     * Only the rings of a flexible collection can be merged.
+     **/
+    CollectionNotFlexible: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Coinage`'s errors
+   **/
+  coinage: {
+    MemberKeyAlreadyUsed: GenericPalletError;
+    InvalidMemberKey: GenericPalletError;
+    InternalError: GenericPalletError;
+    RecyclerAlreadyUnloaded: GenericPalletError;
+    InvalidConsolidation: GenericPalletError;
+    ConsolidationTooBig: GenericPalletError;
+    DenominationTooBig: GenericPalletError;
+    DenominationTooSmall: GenericPalletError;
+    CoinAmountBelowFee: GenericPalletError;
+    DenominationOutOfBound: GenericPalletError;
+
+    /**
+     * The denomination cannot be losslessly converted to an asset amount because the
+     * instance's `asset_unit` is not evenly divisible by `2^|value|`.
+     **/
+    LossyDenominationConversion: GenericPalletError;
+    InvalidAliasProof: GenericPalletError;
+    NoUnloadingRecycler: GenericPalletError;
+    ProofAndAliasMismatch: GenericPalletError;
+    NothingToBuild: GenericPalletError;
+    TooManyRings: GenericPalletError;
+    AddressAlreadyHasCoin: GenericPalletError;
+    InvalidProofOfOwnership: GenericPalletError;
+    EmptyInputs: GenericPalletError;
+
+    /**
+     * The fee recycler in the origin does not match the call's recycler.
+     **/
+    RecyclerMismatch: GenericPalletError;
+
+    /**
+     * The total unloaded amount is less than the fee.
+     **/
+    InsufficientUnloadForFee: GenericPalletError;
+
+    /**
+     * The first alias was not pre-marked by extension (required for FromOutput fee).
+     **/
+    AliasNotPremarked: GenericPalletError;
+
+    /**
+     * The recycler revision does not match (recycler may not exist or has been rebuilt).
+     **/
+    InvalidRecyclerRevision: GenericPalletError;
+    InvalidSplit: GenericPalletError;
+
+    /**
+     * The asset cannot be converted into the native currency to pay the fee.
+     **/
+    CannotConvertAssetToNative: GenericPalletError;
+    AliasTemporarilyLocked: GenericPalletError;
+
+    /**
+     * [`Call::unload_recycler_into_coins`] with [`UnloadFee::Prepaid`] requires `max_fee` to
+     * be 0.
+     **/
+    MaxFeeNotAllowedForPrepaid: GenericPalletError;
+
+    /**
+     * The max_fee exceeds the total input value.
+     **/
+    MaxFeeExceedsInput: GenericPalletError;
+
+    /**
+     * The max fee argument doesn't satisfy the requirements.
+     **/
+    InvalidMaxFee: GenericPalletError;
+
+    /**
+     * The underlying asset id does not exist in [`Config::Fungibles`].
+     **/
+    UnknownAsset: GenericPalletError;
+
+    /**
+     * No coinage instance exists for the given [`InstanceId`].
+     **/
+    InstanceNotFound: GenericPalletError;
+
+    /**
+     * The asset unit is zero, or cannot represent every denomination in
+     * `[MinimumExponent, MaximumExponent]` without truncation.
+     **/
+    InvalidAssetUnit: GenericPalletError;
+
+    /**
+     * No archived recycler exists for the given `(instance, denomination, ring index)`.
+     **/
+    ArchivedRecyclerNotFound: GenericPalletError;
+
+    /**
+     * The supplied `recycler_root`/`unloaded_root` do not match the stored archival
+     * commitment.
+     **/
+    InvalidArchivedRoots: GenericPalletError;
+
+    /**
+     * The recycler ring exponent could not be converted to the crypto config.
+     **/
+    InvalidRingExponent: GenericPalletError;
+
+    /**
+     * The alias was already unloaded, or the supplied non-inclusion proof is invalid.
+     **/
+    AliasWasUnloadedOrInvalidProof: GenericPalletError;
+
+    /**
+     * A `fund_pot` or `withdraw_pot_funds` amount of zero.
+     **/
+    ZeroAmount: GenericPalletError;
+
+    /**
+     * The instance is not sponsored, so it has no pot.
+     **/
+    InstanceNotSponsored: GenericPalletError;
+
+    /**
+     * The withdrawal exceeds the caller's recorded pot contribution in that currency.
+     **/
+    WithdrawExceedsContribution: GenericPalletError;
+
+    /**
+     * The sponsored instance's pot cannot fund this load's deposit.
+     **/
+    PotCannotCoverLoadDeposit: GenericPalletError;
+
+    /**
+     * The load deposit changed while the sponsored instance's old tier still holds deposits,
+     * so the instance needs [`Pallet::collapse_load_deposits`] before it can load again.
+     **/
+    LoadDepositOldTierOccupied: GenericPalletError;
+
+    /**
+     * The ledger is already a single tier at the current [`Config::LoadDeposit`], so there is
+     * nothing to collapse.
+     **/
+    NothingToCollapse: GenericPalletError;
+
+    /**
+     * The instance is already sponsored.
+     **/
+    InstanceAlreadySponsored: GenericPalletError;
+
+    /**
+     * [`Config::EnablePermissionless`] is false, so no sponsored instance can be created.
+     **/
+    SponsoredInstancesDisabled: GenericPalletError;
+
+    /**
+     * The pallet account cannot receive the underlying asset because it has not been
+     * touched for it, which [`Pallet::create_sufficient_instance`] expects to have happened
+     * already.
+     **/
+    PalletAccountNotTouched: GenericPalletError;
+
+    /**
+     * The pallet account holds less than the underlying asset's minimum balance, which
+     * [`Pallet::create_sufficient_instance`] expects as a buffer against the account being
+     * dusted.
+     **/
+    PalletAccountBelowMinimumBalance: GenericPalletError;
+
+    /**
+     * A `fund_pot` amount below the currency's minimum balance, which the transfer could
+     * dust right away.
+     **/
+    FundingBelowMinimumBalance: GenericPalletError;
+
+    /**
+     * Paying the fee would cost more than the caller's `max_fee`, in the currency paying it.
+     **/
+    FeeExceedsMaxFee: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MembersNotifier`'s errors
+   **/
+  membersNotifier: {
+    /**
+     * Subscriber not found.
+     **/
+    SubscriberNotFound: GenericPalletError;
+
+    /**
+     * Subscriber already exists.
+     **/
+    AlreadySubscribed: GenericPalletError;
+
+    /**
+     * Maximum subscribers reached.
+     **/
+    TooManySubscribers: GenericPalletError;
+
+    /**
+     * Collections list must be sorted in strictly ascending order with no duplicates.
+     **/
+    InvalidCollectionsList: GenericPalletError;
+
+    /**
+     * Too many ring root updates to fit in a single batch.
+     **/
+    TooManyUpdates: GenericPalletError;
+
+    /**
+     * XCM send failed.
+     **/
+    XcmSendFailed: GenericPalletError;
+
+    /**
+     * Subscriber is not subscribed to the requested collection.
+     **/
+    NotSubscribedToCollection: GenericPalletError;
+
+    /**
+     * Ring root index is out of range.
+     **/
+    InvalidRingIndex: GenericPalletError;
+
+    /**
+     * Requested updates exceed the subscriber's HRMP channel capacity.
+     **/
+    ExceedsChannelCapacity: GenericPalletError;
+
+    /**
+     * No active batch exists.
+     **/
+    NoBatchActive: GenericPalletError;
+
+    /**
+     * No pending initialization for this subscriber.
+     **/
+    NoPendingInit: GenericPalletError;
+
+    /**
+     * Replay cooldown has not elapsed for this subscriber and collection.
+     **/
+    ReplayCooldownActive: GenericPalletError;
+
+    /**
+     * Replay requested with an empty list of ring root indices.
+     **/
+    EmptyRingIndices: GenericPalletError;
+
+    /**
+     * Parachain has no whitelisted subscription left to activate.
+     **/
+    NotWhitelisted: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Airdrop`'s errors
+   **/
+  airdrop: {
+    PrizeBelowMinBalance: GenericPalletError;
+    NoWinnersConfigured: GenericPalletError;
+    TooManyWinners: GenericPalletError;
+    InvalidEventTimes: GenericPalletError;
+    DuplicateEventId: GenericPalletError;
+    NoScheduledEvent: GenericPalletError;
+    UnknownEvent: GenericPalletError;
+
+    /**
+     * Operation requires a specific status the event isn't in.
+     **/
+    WrongStatus: GenericPalletError;
+    NotAcceptingRegistrations: GenericPalletError;
+    NotClaiming: GenericPalletError;
+
+    /**
+     * Claim attempted after the event's `end_time`.
+     **/
+    ClaimingWindowClosed: GenericPalletError;
+    EntropySlotTaken: GenericPalletError;
+    InvalidVrfProof: GenericPalletError;
+
+    /**
+     * Supplied account id does not correspond to any sr25519 public key.
+     **/
+    UnsupportedAccountKey: GenericPalletError;
+    InvalidMembershipProof: GenericPalletError;
+    NoSuchWinner: GenericPalletError;
+    ParticipantOverflow: GenericPalletError;
+    PrizeAllocationOverflow: GenericPalletError;
+
+    /**
+     * The prize asset has not been enabled via `enable_asset`.
+     **/
+    AssetNotEnabled: GenericPalletError;
+
+    /**
+     * `enable_asset` was called for an asset that is already enabled.
+     **/
+    AssetAlreadyEnabled: GenericPalletError;
+
+    /**
+     * No randomness produced after registration closed is available yet.
+     **/
+    EntropyNotReady: GenericPalletError;
+
+    /**
+     * The event's product name is not a bare dotNS label (see [`ProductName`]).
+     **/
+    InvalidProductName: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Honour`'s errors
+   **/
+  honour: {
+    /**
+     * Arithmetic error like over/underflow, division by zero or similar.
+     **/
+    Arithmetic: GenericPalletError;
+
+    /**
+     * There is already a vote by the same voter for the same subject.
+     **/
+    SubjectAlreadyVoted: GenericPalletError;
+
+    /**
+     * The provided ring proof failed verification.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `PeopleAirdrops`'s errors
+   **/
+  peopleAirdrops: {
+    /**
+     * The randomness source has no value to salt the scheduled draws with.
+     **/
+    RandomnessUnavailable: GenericPalletError;
+
+    /**
+     * No draw with this event id was scheduled by this pallet.
+     **/
+    UnknownDraw: GenericPalletError;
+
+    /**
+     * `register` was called with an empty batch.
+     **/
+    EmptyRegistration: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `NetworkSuffix`'s errors
+   **/
+  networkSuffix: {
+    /**
+     * A network suffix cannot be empty.
+     **/
+    EmptySuffix: GenericPalletError;
 
     /**
      * Generic pallet error

@@ -16,6 +16,7 @@ import type {
   Data,
   Perquintill,
   U256,
+  H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemAccountInfo,
@@ -89,6 +90,8 @@ import type {
   PalletNominationPoolsRewardPool,
   PalletNominationPoolsSubPools,
   PalletNominationPoolsClaimPermission,
+  SpConsensusBeefyEcdsaCryptoPublic,
+  SpConsensusBeefyMmrBeefyAuthoritySet,
   GearCoreCodeInstrumentedInstrumentedCode,
   GprimitivesCodeId,
   GearCoreCodeMetadataCodeMetadata,
@@ -2279,6 +2282,121 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Beefy`'s storage queries
+   **/
+  beefy: {
+    /**
+     * The current authorities set
+     *
+     * @param {Callback<Array<SpConsensusBeefyEcdsaCryptoPublic>> =} callback
+     **/
+    authorities: GenericStorageQuery<() => Array<SpConsensusBeefyEcdsaCryptoPublic>>;
+
+    /**
+     * The current validator set id
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    validatorSetId: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Authorities set scheduled to be used with the next session
+     *
+     * @param {Callback<Array<SpConsensusBeefyEcdsaCryptoPublic>> =} callback
+     **/
+    nextAuthorities: GenericStorageQuery<() => Array<SpConsensusBeefyEcdsaCryptoPublic>>;
+
+    /**
+     * A mapping from BEEFY set ID to the index of the *most recent* session for which its
+     * members were responsible.
+     *
+     * This is only used for validating equivocation proofs. An equivocation proof must
+     * contains a key-ownership proof for a given session, therefore we need a way to tie
+     * together sessions and BEEFY set ids, i.e. we need to validate that a validator
+     * was the owner of a given key on a given session, and what the active set ID was
+     * during that session.
+     *
+     * TWOX-NOTE: `ValidatorSetId` is not under user control.
+     *
+     * @param {bigint} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    setIdSession: GenericStorageQuery<(arg: bigint) => number | undefined, bigint>;
+
+    /**
+     * Block number where BEEFY consensus is enabled/started.
+     * By changing this (through privileged `set_new_genesis()`), BEEFY consensus is effectively
+     * restarted from the newly set block number.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    genesisBlock: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Mmr`'s storage queries
+   **/
+  mmr: {
+    /**
+     * Latest MMR Root hash.
+     *
+     * @param {Callback<H256> =} callback
+     **/
+    rootHash: GenericStorageQuery<() => H256>;
+
+    /**
+     * Current size of the MMR (number of leaves).
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    numberOfLeaves: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Hashes of the nodes in the MMR.
+     *
+     * Note this collection only contains MMR peaks, the inner nodes (and leaves)
+     * are pruned and only stored in the Offchain DB.
+     *
+     * @param {bigint} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    nodes: GenericStorageQuery<(arg: bigint) => H256 | undefined, bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MmrLeaf`'s storage queries
+   **/
+  mmrLeaf: {
+    /**
+     * Details of current BEEFY authority set.
+     *
+     * @param {Callback<SpConsensusBeefyMmrBeefyAuthoritySet> =} callback
+     **/
+    beefyAuthorities: GenericStorageQuery<() => SpConsensusBeefyMmrBeefyAuthoritySet>;
+
+    /**
+     * Details of next BEEFY authority set.
+     *
+     * This storage entry is used as cache for calls to `update_beefy_next_authority_set`.
+     *
+     * @param {Callback<SpConsensusBeefyMmrBeefyAuthoritySet> =} callback
+     **/
+    beefyNextAuthorities: GenericStorageQuery<() => SpConsensusBeefyMmrBeefyAuthoritySet>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `GearProgram`'s storage queries
    **/
   gearProgram: {
@@ -2766,6 +2884,20 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<bigint> =} callback
      **/
     transportFee: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Destination-bound BEEFY lane digest, fixed once while the bridge is paused.
+     *
+     * @param {Callback<H256> =} callback
+     **/
+    bridgeDomain: GenericStorageQuery<() => H256>;
+
+    /**
+     * Actual source genesis, destination chain ID (big endian), and original queue.
+     *
+     * @param {Callback<[H256, H256, H160] | undefined> =} callback
+     **/
+    destinationBinding: GenericStorageQuery<() => [H256, H256, H160] | undefined>;
 
     /**
      * Generic pallet storage query

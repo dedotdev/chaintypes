@@ -5,21 +5,20 @@ import type {
   DispatchError,
   AccountId32,
   H256,
-  Result,
+  H160,
+  U256,
   Bytes,
+  Result,
   FixedBytes,
   FixedU128,
   Permill,
   Perquintill,
   Perbill,
-  H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemDispatchEventInfo,
   FrameSupportTokensMiscBalanceStatus,
-  PalletDemocracyVoteThreshold,
-  PalletDemocracyVoteAccountVote,
-  PalletDemocracyMetadataOwner,
+  EvmCoreErrorExitReason,
   HydradxRuntimeSystemProxyType,
   PalletProxyDepositKind,
   PalletMultisigTimepoint,
@@ -47,12 +46,18 @@ import type {
   PalletReferralsAssetAmount,
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
+  PalletParametersAaveGasLimits,
   PalletSignetSignature,
+  HydradxTraitsLazyExecutorSource,
+  PalletIntentIntent,
+  IceSupportSolverMode,
+  IceSupportRoutingTarget,
+  IceSupportRoutingState,
   OrmlVestingVestingSchedule,
   EthereumLog,
-  EvmCoreErrorExitReason,
   PalletXykAssetPair,
   PalletDcaOrder,
+  PalletDcaCancelReason,
   SpWeightsWeightV2Weight,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
@@ -317,6 +322,20 @@ export interface ChainEvents extends GenericChainEvents {
         nonNativeFeeAmount: bigint;
         destinationAccountId: AccountId32;
       }
+    >;
+
+    /**
+     * Signed-branch dispatch permit fee payer
+     **/
+    FeeSponsored: GenericPalletEvent<'MultiTransactionPayment', 'FeeSponsored', { from: H160; feePayer: AccountId32 }>;
+
+    /**
+     * The EVM call dispatched by a permit did not succeed; the permit nonce is spent either way.
+     **/
+    EvmPermitCallFailed: GenericPalletEvent<
+      'MultiTransactionPayment',
+      'EvmPermitCallFailed',
+      { from: H160; to: H160; nonce: U256; reason: EvmCoreErrorExitReason; output: Bytes }
     >;
 
     /**
@@ -623,151 +642,6 @@ export interface ChainEvents extends GenericChainEvents {
      * A username has been killed.
      **/
     UsernameKilled: GenericPalletEvent<'Identity', 'UsernameKilled', { username: Bytes }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `Democracy`'s events
-   **/
-  democracy: {
-    /**
-     * A motion has been proposed by a public account.
-     **/
-    Proposed: GenericPalletEvent<'Democracy', 'Proposed', { proposalIndex: number; deposit: bigint }>;
-
-    /**
-     * A public proposal has been tabled for referendum vote.
-     **/
-    Tabled: GenericPalletEvent<'Democracy', 'Tabled', { proposalIndex: number; deposit: bigint }>;
-
-    /**
-     * An external proposal has been tabled.
-     **/
-    ExternalTabled: GenericPalletEvent<'Democracy', 'ExternalTabled', null>;
-
-    /**
-     * A referendum has begun.
-     **/
-    Started: GenericPalletEvent<'Democracy', 'Started', { refIndex: number; threshold: PalletDemocracyVoteThreshold }>;
-
-    /**
-     * A proposal has been approved by referendum.
-     **/
-    Passed: GenericPalletEvent<'Democracy', 'Passed', { refIndex: number }>;
-
-    /**
-     * A proposal has been rejected by referendum.
-     **/
-    NotPassed: GenericPalletEvent<'Democracy', 'NotPassed', { refIndex: number }>;
-
-    /**
-     * A referendum has been cancelled.
-     **/
-    Cancelled: GenericPalletEvent<'Democracy', 'Cancelled', { refIndex: number }>;
-
-    /**
-     * An account has delegated their vote to another account.
-     **/
-    Delegated: GenericPalletEvent<'Democracy', 'Delegated', { who: AccountId32; target: AccountId32 }>;
-
-    /**
-     * An account has cancelled a previous delegation operation.
-     **/
-    Undelegated: GenericPalletEvent<'Democracy', 'Undelegated', { account: AccountId32 }>;
-
-    /**
-     * An external proposal has been vetoed.
-     **/
-    Vetoed: GenericPalletEvent<'Democracy', 'Vetoed', { who: AccountId32; proposalHash: H256; until: number }>;
-
-    /**
-     * A proposal_hash has been blacklisted permanently.
-     **/
-    Blacklisted: GenericPalletEvent<'Democracy', 'Blacklisted', { proposalHash: H256 }>;
-
-    /**
-     * An account has voted in a referendum
-     **/
-    Voted: GenericPalletEvent<
-      'Democracy',
-      'Voted',
-      { voter: AccountId32; refIndex: number; vote: PalletDemocracyVoteAccountVote }
-    >;
-
-    /**
-     * An account has secconded a proposal
-     **/
-    Seconded: GenericPalletEvent<'Democracy', 'Seconded', { seconder: AccountId32; propIndex: number }>;
-
-    /**
-     * A proposal got canceled.
-     **/
-    ProposalCanceled: GenericPalletEvent<'Democracy', 'ProposalCanceled', { propIndex: number }>;
-
-    /**
-     * Metadata for a proposal or a referendum has been set.
-     **/
-    MetadataSet: GenericPalletEvent<
-      'Democracy',
-      'MetadataSet',
-      {
-        /**
-         * Metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      }
-    >;
-
-    /**
-     * Metadata for a proposal or a referendum has been cleared.
-     **/
-    MetadataCleared: GenericPalletEvent<
-      'Democracy',
-      'MetadataCleared',
-      {
-        /**
-         * Metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      }
-    >;
-
-    /**
-     * Metadata has been transferred to new owner.
-     **/
-    MetadataTransferred: GenericPalletEvent<
-      'Democracy',
-      'MetadataTransferred',
-      {
-        /**
-         * Previous metadata owner.
-         **/
-        prevOwner: PalletDemocracyMetadataOwner;
-
-        /**
-         * New metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      }
-    >;
 
     /**
      * Generic pallet event
@@ -1621,16 +1495,6 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   assetRegistry: {
     /**
-     * Existential deposit for insufficinet asset was paid.
-     * `SufficiencyCheck` triggers this event.
-     **/
-    ExistentialDepositPaid: GenericPalletEvent<
-      'AssetRegistry',
-      'ExistentialDepositPaid',
-      { who: AccountId32; feeAsset: number; amount: bigint }
-    >;
-
-    /**
      * Asset was registered.
      **/
     Registered: GenericPalletEvent<
@@ -2389,6 +2253,16 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Position was force-unstaked through the GIGAHDX migration helper.
+     * Distinct from `Unstaked` because no rewards were forfeited.
+     **/
+    ForceUnstaked: GenericPalletEvent<
+      'Staking',
+      'ForceUnstaked',
+      { who: AccountId32; positionId: bigint; stake: bigint; lockedRewards: bigint; paidRewards: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2762,6 +2636,11 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A pending asset could not be converted; skipped, not blocking.
+     **/
+    ConversionFailed: GenericPalletEvent<'Referrals', 'ConversionFailed', { assetId: number; reason: DispatchError }>;
+
+    /**
      * Rewards claimed.
      **/
     Claimed: GenericPalletEvent<
@@ -2800,6 +2679,18 @@ export interface ChainEvents extends GenericChainEvents {
       'Liquidation',
       'Liquidated',
       { user: H160; collateralAsset: number; debtAsset: number; profit: bigint }
+    >;
+
+    /**
+     * A gigahdx Money Market position was liquidated by the protocol.
+     * `hdx_seized` is the matching HDX moved from the borrower to
+     * the gigahdx liquidation account; `gigahdx_seized` is the aToken
+     * amount transferred out of the borrower's gigahdx position.
+     **/
+    GigaHdxLiquidated: GenericPalletEvent<
+      'Liquidation',
+      'GigaHdxLiquidated',
+      { user: H160; debtRepaid: bigint; hdxSeized: bigint; gigahdxSeized: bigint }
     >;
 
     /**
@@ -2887,6 +2778,47 @@ export interface ChainEvents extends GenericChainEvents {
      * - `flash_minter`: The EVM address of the flash minter contract
      **/
     FlashMinterSet: GenericPalletEvent<'HSM', 'FlashMinterSet', { flashMinter: H160 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * The Uniswap v3 contract addresses the router venue resolves through were set.
+     **/
+    UniswapV3AddressesSet: GenericPalletEvent<
+      'Parameters',
+      'UniswapV3AddressesSet',
+      { factory: H160; swapRouter: H160; quoter: H160 }
+    >;
+
+    /**
+     * The Aave trade executor gas limits were set, or cleared back to the built-in defaults.
+     **/
+    AaveGasLimitsSet: GenericPalletEvent<
+      'Parameters',
+      'AaveGasLimitsSet',
+      { limits?: PalletParametersAaveGasLimits | undefined }
+    >;
+    XcmSendSuspended: GenericPalletEvent<'Parameters', 'XcmSendSuspended', null>;
+    XcmSendResumed: GenericPalletEvent<'Parameters', 'XcmSendResumed', null>;
+    XcmExecutionSuspended: GenericPalletEvent<'Parameters', 'XcmExecutionSuspended', null>;
+    XcmExecutionResumed: GenericPalletEvent<'Parameters', 'XcmExecutionResumed', null>;
+
+    /**
+     * Both outbound and inbound XCM were suspended.
+     **/
+    XcmSuspended: GenericPalletEvent<'Parameters', 'XcmSuspended', null>;
+
+    /**
+     * Both outbound and inbound XCM were resumed.
+     **/
+    XcmResumed: GenericPalletEvent<'Parameters', 'XcmResumed', null>;
 
     /**
      * Generic pallet event
@@ -3053,6 +2985,226 @@ export interface ChainEvents extends GenericChainEvents {
          **/
         amount: bigint;
       }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `GigaHdx`'s events
+   **/
+  gigaHdx: {
+    Staked: GenericPalletEvent<'GigaHdx', 'Staked', { who: AccountId32; amount: bigint; gigahdx: bigint }>;
+    Unstaked: GenericPalletEvent<
+      'GigaHdx',
+      'Unstaked',
+      {
+        who: AccountId32;
+        positionId: number;
+        gigahdxAmount: bigint;
+        payout: bigint;
+        yieldShare: bigint;
+        expiresAt: number;
+      }
+    >;
+    Unlocked: GenericPalletEvent<'GigaHdx', 'Unlocked', { who: AccountId32; positionId: number; amount: bigint }>;
+    UnstakeCancelled: GenericPalletEvent<
+      'GigaHdx',
+      'UnstakeCancelled',
+      { who: AccountId32; positionId: number; amount: bigint; gigahdx: bigint }
+    >;
+    PoolContractUpdated: GenericPalletEvent<'GigaHdx', 'PoolContractUpdated', { contract: H160 }>;
+
+    /**
+     * Caller migrated their legacy NFT staking position into gigahdx.
+     * `hdx_unlocked` is the sum of legacy stake + previously locked
+     * rewards + freshly paid rewards; `gigahdx_received` is the aToken
+     * amount actually credited by the money market.
+     **/
+    MigratedFromLegacy: GenericPalletEvent<
+      'GigaHdx',
+      'MigratedFromLegacy',
+      { who: AccountId32; hdxUnlocked: bigint; gigahdxReceived: bigint }
+    >;
+
+    /**
+     * Accrued yield was moved from the gigapot into the caller's locked
+     * stake principal. `amount` is the HDX transferred and added to
+     * `Stakes[who].hdx`; `gigahdx` and the exchange rate are unchanged.
+     **/
+    YieldRealized: GenericPalletEvent<'GigaHdx', 'YieldRealized', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `GigaHdxRewards`'s events
+   **/
+  gigaHdxRewards: {
+    /**
+     * Rewards for a completed referendum have been allocated from the
+     * accumulator pot.
+     **/
+    RewardPoolAllocated: GenericPalletEvent<
+      'GigaHdxRewards',
+      'RewardPoolAllocated',
+      { refIndex: number; trackId: number; totalReward: bigint; totalWeightedVotes: bigint; votersRemaining: number }
+    >;
+
+    /**
+     * A user's share of a referendum's reward pool was added to their
+     * `PendingRewards`.
+     **/
+    UserRewardRecorded: GenericPalletEvent<
+      'GigaHdxRewards',
+      'UserRewardRecorded',
+      { who: AccountId32; refIndex: number; rewardAmount: bigint }
+    >;
+
+    /**
+     * A user converted their accumulated HDX rewards into GIGAHDX via
+     * `claim_rewards`.
+     **/
+    RewardsClaimed: GenericPalletEvent<
+      'GigaHdxRewards',
+      'RewardsClaimed',
+      { who: AccountId32; totalHdx: bigint; gigahdxReceived: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `LazyExecutor`'s events
+   **/
+  lazyExecutor: {
+    /**
+     * Forward was queued for execution.
+     **/
+    Queued: GenericPalletEvent<
+      'LazyExecutor',
+      'Queued',
+      { id: bigint; src: HydradxTraitsLazyExecutorSource; who: AccountId32; fees: bigint }
+    >;
+
+    /**
+     * Forward was executed. `result` is `Ok` only on EVM success with the correct ack.
+     **/
+    Executed: GenericPalletEvent<'LazyExecutor', 'Executed', { id: bigint; result: Result<[], DispatchError> }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Intent`'s events
+   **/
+  intent: {
+    /**
+     * New intent was submitted.
+     **/
+    IntentSubmitted: GenericPalletEvent<
+      'Intent',
+      'IntentSubmitted',
+      { id: bigint; owner: AccountId32; intent: PalletIntentIntent }
+    >;
+
+    /**
+     * Intent was resolved as part of ICE solution execution.
+     **/
+    IntentResolved: GenericPalletEvent<'Intent', 'IntentResolved', { id: bigint; amountIn: bigint; amountOut: bigint }>;
+
+    /**
+     * Portion of intent was resolved as part of ICE solution execution.
+     **/
+    IntentResovedPartially: GenericPalletEvent<
+      'Intent',
+      'IntentResovedPartially',
+      { id: bigint; amountIn: bigint; amountOut: bigint }
+    >;
+
+    /**
+     * Intent was canceled.
+     **/
+    IntentCanceled: GenericPalletEvent<'Intent', 'IntentCanceled', { id: bigint }>;
+
+    /**
+     * Intent expired.
+     **/
+    IntentExpired: GenericPalletEvent<'Intent', 'IntentExpired', { id: bigint }>;
+
+    /**
+     * Failed to add intent's callback to queue for execution.
+     **/
+    FailedToQueueCallback: GenericPalletEvent<'Intent', 'FailedToQueueCallback', { id: bigint; error: DispatchError }>;
+
+    /**
+     * A single DCA trade was executed; intent stays in storage for the next period.
+     **/
+    DcaTradeExecuted: GenericPalletEvent<
+      'Intent',
+      'DcaTradeExecuted',
+      { id: bigint; amountIn: bigint; amountOut: bigint; remainingBudget: bigint }
+    >;
+
+    /**
+     * DCA intent completed (budget exhausted). Intent removed from storage.
+     **/
+    DcaCompleted: GenericPalletEvent<'Intent', 'DcaCompleted', { id: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `ICE`'s events
+   **/
+  ice: {
+    /**
+     * Solution has been executed.
+     **/
+    SolutionExecuted: GenericPalletEvent<
+      'ICE',
+      'SolutionExecuted',
+      {
+        intentsExecuted: bigint;
+        tradesExecuted: bigint;
+        score: bigint;
+
+        /**
+         * Block the solution was built against — subtract from the block
+         * carrying this event to get submit-to-execution drift.
+         **/
+        builtAt: number;
+      }
+    >;
+
+    /**
+     * Protocol fee has been updated.
+     **/
+    ProtocolFeeSet: GenericPalletEvent<'ICE', 'ProtocolFeeSet', { fee: Permill }>;
+
+    /**
+     * Active solver mode has been updated.
+     **/
+    SolverModeSet: GenericPalletEvent<'ICE', 'SolverModeSet', { mode: IceSupportSolverMode }>;
+
+    /**
+     * A routing rule has been updated. `None` means the entry was removed and
+     * the target went back to its default.
+     **/
+    RoutingUpdated: GenericPalletEvent<
+      'ICE',
+      'RoutingUpdated',
+      { target: IceSupportRoutingTarget; state?: IceSupportRoutingState | undefined }
     >;
 
     /**
@@ -3328,6 +3480,16 @@ export interface ChainEvents extends GenericChainEvents {
      * Account was claimed.
      **/
     AccountClaimed: GenericPalletEvent<'EVMAccounts', 'AccountClaimed', { account: AccountId32; assetId: number }>;
+
+    /**
+     * NTT minter was set for an asset.
+     **/
+    NttMinterSet: GenericPalletEvent<'EVMAccounts', 'NttMinterSet', { assetId: number; minter: H160 }>;
+
+    /**
+     * NTT minter was cleared for an asset.
+     **/
+    NttMinterCleared: GenericPalletEvent<'EVMAccounts', 'NttMinterCleared', { assetId: number }>;
 
     /**
      * Generic pallet event
@@ -3629,6 +3791,25 @@ export interface ChainEvents extends GenericChainEvents {
      * DCA reserve for the given asset have been unlocked for a user
      **/
     ReserveUnlocked: GenericPalletEvent<'DCA', 'ReserveUnlocked', { who: AccountId32; assetId: number }>;
+
+    /**
+     * The DCA schedule has been converted into a DCA intent
+     **/
+    Migrated: GenericPalletEvent<'DCA', 'Migrated', { id: number; who: AccountId32; intentId: bigint }>;
+
+    /**
+     * The DCA schedule has been cancelled by the migration and its reserve refunded
+     **/
+    MigrationCancelled: GenericPalletEvent<
+      'DCA',
+      'MigrationCancelled',
+      { id: number; who: AccountId32; asset: number; refunded: bigint; reason: PalletDcaCancelReason }
+    >;
+
+    /**
+     * The migration switch has been flipped
+     **/
+    MigrationEnabledSet: GenericPalletEvent<'DCA', 'MigrationEnabledSet', { enabled: boolean }>;
 
     /**
      * Generic pallet event
@@ -4643,6 +4824,38 @@ export interface ChainEvents extends GenericChainEvents {
         fees: Array<PalletBroadcastFee>;
         operationStack: Array<PalletBroadcastExecutionType>;
       }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `FeeProcessor`'s events
+   **/
+  feeProcessor: {
+    /**
+     * Fee received from trade.
+     **/
+    FeeReceived: GenericPalletEvent<
+      'FeeProcessor',
+      'FeeReceived',
+      { asset: number; amount: bigint; trader?: AccountId32 | undefined }
+    >;
+
+    /**
+     * Asset converted to HDX and distributed to pots.
+     **/
+    Converted: GenericPalletEvent<'FeeProcessor', 'Converted', { assetId: number; amountIn: bigint; hdxOut: bigint }>;
+
+    /**
+     * Conversion failed (logged but not blocking).
+     **/
+    ConversionFailed: GenericPalletEvent<
+      'FeeProcessor',
+      'ConversionFailed',
+      { assetId: number; reason: DispatchError }
     >;
 
     /**

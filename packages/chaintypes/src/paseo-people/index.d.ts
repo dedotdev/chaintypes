@@ -16,6 +16,17 @@ import type {
   FrameSystemExtensionsCheckWeight,
   PalletAssetTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
+  PalletVerifySignatureExtensionVerifySignature,
+  IndivPalletPeopleExtensionAsPerson,
+  IndivPalletProofOfInkExtensionAsProofOfInkParticipant,
+  IndivPalletScoreExtensionScoreAsParticipant,
+  IndivPalletGameExtensionGameAsInvited,
+  IndivPalletPeopleLiteExtensionPeopleLiteAuth,
+  IndivPalletMembersExtensionAsMember,
+  IndivPalletCoinageExtensionAsCoinage,
+  IndivPalletResourcesExtensionAsResources,
+  IndivPalletHonourExtensionVoterAuth,
+  IndivPalletOriginRestrictionRestrictOrigin,
   StagingXcmV5Location,
 } from './types.js';
 import { ChainConsts } from './consts.js';
@@ -45,6 +56,18 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     PalletAssetTxPaymentChargeAssetTxPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
     [],
+    [],
+    PalletVerifySignatureExtensionVerifySignature,
+    IndivPalletPeopleExtensionAsPerson,
+    IndivPalletProofOfInkExtensionAsProofOfInkParticipant,
+    IndivPalletScoreExtensionScoreAsParticipant,
+    IndivPalletGameExtensionGameAsInvited,
+    IndivPalletPeopleLiteExtensionPeopleLiteAuth,
+    IndivPalletMembersExtensionAsMember,
+    IndivPalletCoinageExtensionAsCoinage,
+    IndivPalletResourcesExtensionAsResources,
+    IndivPalletHonourExtensionVoterAuth,
+    IndivPalletOriginRestrictionRestrictOrigin,
   ];
   AssetId: StagingXcmV5Location;
   EventRecord: FrameSystemEventRecord;
@@ -52,7 +75,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoPeopleApi
- * @specVersion: 2002002
+ * @specVersion: 2005005
  **/
 export interface PaseoPeopleApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

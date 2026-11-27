@@ -6,8 +6,8 @@ import type {
   PalletMigrationsMbmIsOngoing,
   PalletMigrationsMbmProgress,
   PalletMigrationsMbmStatus,
-  AssetHubPolkadotRuntimeRuntimeCallLike,
-  AssetHubPolkadotRuntimeProxyType,
+  AssetHubPaseoRuntimeRuntimeCallLike,
+  AssetHubPaseoRuntimeProxyType,
   PalletAssetsAssetDetails,
   PalletAssetsAssetMetadata,
   StagingXcmV5Location,
@@ -83,21 +83,21 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
     /**
      * Check if a `RuntimeCall` is allowed for a given `ProxyType`.
      *
-     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
-     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPaseoRuntimeProxyType} proxyType
      **/
     checkPermissions: GenericViewFunction<
-      (call: AssetHubPolkadotRuntimeRuntimeCallLike, proxyType: AssetHubPolkadotRuntimeProxyType) => Promise<boolean>
+      (call: AssetHubPaseoRuntimeRuntimeCallLike, proxyType: AssetHubPaseoRuntimeProxyType) => Promise<boolean>
     >;
 
     /**
      * Check if one `ProxyType` is a subset of another `ProxyType`.
      *
-     * @param {AssetHubPolkadotRuntimeProxyType} toCheck
-     * @param {AssetHubPolkadotRuntimeProxyType} against
+     * @param {AssetHubPaseoRuntimeProxyType} toCheck
+     * @param {AssetHubPaseoRuntimeProxyType} against
      **/
     isSuperset: GenericViewFunction<
-      (toCheck: AssetHubPolkadotRuntimeProxyType, against: AssetHubPolkadotRuntimeProxyType) => Promise<boolean>
+      (toCheck: AssetHubPaseoRuntimeProxyType, against: AssetHubPaseoRuntimeProxyType) => Promise<boolean>
     >;
 
     /**
@@ -291,22 +291,6 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
     [name: string]: GenericViewFunction;
   };
   /**
-   * Pallet `Psm`'s view functions
-   **/
-  psm: {
-    /**
-     * The reserve account of the PSM instance for `internal_asset`.
-     *
-     * @param {StagingXcmV5Location} internalAsset
-     **/
-    reserveAccount: GenericViewFunction<(internalAsset: StagingXcmV5Location) => Promise<AccountId32>>;
-
-    /**
-     * Generic pallet view function
-     **/
-    [name: string]: GenericViewFunction;
-  };
-  /**
    * Pallet `VoterList`'s view functions
    **/
   voterList: {
@@ -332,14 +316,11 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
    **/
   multiBlockElectionSigned: {
     /**
-     * Get the deposit `who` would hold if it registered now and then submitted `pages` pages.
+     * Get the deposit amount that will be held for a solution of `pages`.
      *
-     * The base part is priced from the number of submitters currently registered, so the
-     * result only matches what `who` would pay if it has not registered in this round yet. A
-     * submitter that already registered holds the base charged at its registration, plus the
-     * per-page deposit of the pages it has stored.
-     *
-     * It also takes into account whether `who` is in [`Invulnerables`].
+     * This allows an offchain application to know what [`Config::DepositPerPage`] and
+     * [`Config::DepositBase`] are doing under the hood. It also takes into account if `who` is
+     * [`Invulnerables`] or not.
      *
      * @param {AccountId32Like} who
      * @param {number} pages

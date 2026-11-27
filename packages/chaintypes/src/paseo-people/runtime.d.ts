@@ -13,6 +13,7 @@ import type {
   Bytes,
   AccountId32Like,
   AccountId32,
+  FixedBytes,
 } from 'dedot/codecs';
 import type {
   SpConsensusSlotsSlotDuration,
@@ -44,10 +45,15 @@ import type {
   PeoplePaseoRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
-  XcmRuntimeApisTrustedQueryError,
-  XcmVersionedAsset,
   XcmRuntimeApisAuthorizedAliasesOriginAliaser,
   XcmRuntimeApisAuthorizedAliasesError,
+  XcmRuntimeApisTrustedQueryError,
+  XcmVersionedAsset,
+  IndivSupportCreditTreesNftClaimCreditTree,
+  IndivSupportIdentityAccountOrPerson,
+  IndivPalletNftCreditsNftClaimCreditProof,
+  IndivPalletNftCreditsNftClaimCreditProofError,
+  IndivPalletNftCreditsNftClaimCreditAward,
   CumulusPrimitivesCoreCollationInfo,
   PolkadotParachainPrimitivesPrimitivesId,
 } from './types.js';
@@ -83,11 +89,53 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   relayParentOffsetApi: {
     /**
-     * Fetch the slot offset that is expected from the relay chain.
+     * Fetch the relay parent offset that is expected from the relay chain.
+     *
+     * This determines how many blocks behind the relay chain tip the relay parent should be.
      *
      * @callname: RelayParentOffsetApi_relay_parent_offset
      **/
     relayParentOffset: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Maximum claim queue offset for async backing flexibility.
+     *
+     * Bounds how far "into the future" a candidate may look in the claim queue when
+     * selecting a core. The effective claim queue depth depends on the candidate version:
+     *
+     * - **V1/V2 candidates**: the claim queue is looked up at the candidate's `relay_parent`,
+     * which is `relay_parent_offset` blocks behind the relay-chain tip. The effective
+     * depth is `relay_parent_offset + max_claim_queue_offset`.
+     *
+     * - **V3 candidates**: the claim queue is looked up at the candidate's
+     * `scheduling_parent` — the relay-chain block of the *last finished* slot, decoupled
+     * from the execution-context `relay_parent`. The effective depth is just
+     * `max_claim_queue_offset`.
+     *
+     * Collators select a core via an offset in `[0, max_claim_queue_offset]`.
+     *
+     * - **V2 candidates**: `max_claim_queue_offset = 1` is sufficient. The claim queue is
+     * looked up at `relay_parent`, which sits behind the tip. Offset 0 covers synchronous
+     * backing in the next relay block; offset 1 covers asynchronous backing in the relay
+     * block after that.
+     *
+     * - **V3 candidates**: offset 0 is not reachable — the `scheduling_parent`
+     * is usually the leaf when picked, but its child is already being built, so there is
+     * no opportunity to land in the next relay block. Offset 1 is reachable under
+     * synchronous-backing semantics. For elastic scaling the last block in the bundle is
+     * built near the end of the current slot, which makes offset 1 too tight —
+     * `max_claim_queue_offset = 2` is the minimum cap that keeps elastic scaling viable.
+     *
+     * Note: this method was added in `api_version = 2`. Collators calling on runtimes that
+     * only implement `api_version = 1` of [`RelayParentOffsetApi`] will receive an error
+     * and should fall back to a sensible default (current collator defaults: `1` on the
+     * V3 path, `0` on the V1/V2 path).
+     *
+     * See: <https://github.com/paritytech/polkadot-sdk/issues/8893>
+     *
+     * @callname: RelayParentOffsetApi_max_claim_queue_offset
+     **/
+    maxClaimQueueOffset: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -598,6 +646,41 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
+   * @runtimeapi: AuthorizedAliasersApi - 0x12c8e3d4d7e06de0
+   **/
+  authorizedAliasersApi: {
+    /**
+     * Returns locations allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_authorized_aliasers
+     * @param {XcmVersionedLocation} target
+     **/
+    authorizedAliasers: GenericRuntimeApiMethod<
+      (
+        target: XcmVersionedLocation,
+      ) => Promise<Result<Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Returns whether `origin` is allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_is_authorized_alias
+     * @param {XcmVersionedLocation} origin
+     * @param {XcmVersionedLocation} target
+     **/
+    isAuthorizedAlias: GenericRuntimeApiMethod<
+      (
+        origin: XcmVersionedLocation,
+        target: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
    * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
    **/
   trustedQueryApi: {
@@ -643,33 +726,79 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
-   * @runtimeapi: AuthorizedAliasersApi - 0x12c8e3d4d7e06de0
+   * @runtimeapi: NftCreditsApi - 0x5f4d07c7630fd6b9
    **/
-  authorizedAliasersApi: {
+  nftCreditsApi: {
     /**
-     * Returns locations allowed to alias into and act as `target`.
+     * Returns the NFT claim credit roots `claimant` has at least one credit under, keyed by
+     * the block that committed those credits, in ascending block order.
      *
-     * @callname: AuthorizedAliasersApi_authorized_aliasers
-     * @param {XcmVersionedLocation} target
+     * A wallet starts here and asks `nft_claim_credit_proofs` about each block returned. A
+     * block gets its root only in the block after it, so the newest one a claimant's credit
+     * landed in is left out until then, and a credit that spilled into a later buffer waits
+     * for that buffer's tree.
+     *
+     * @callname: NftCreditsApi_nft_claim_credit_roots
+     * @param {IndivSupportIdentityAccountOrPerson} claimant
      **/
-    authorizedAliasers: GenericRuntimeApiMethod<
+    nftClaimCreditRoots: GenericRuntimeApiMethod<
       (
-        target: XcmVersionedLocation,
-      ) => Promise<Result<Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>, XcmRuntimeApisAuthorizedAliasesError>>
+        claimant: IndivSupportIdentityAccountOrPerson,
+      ) => Promise<Array<[number, IndivSupportCreditTreesNftClaimCreditTree]>>
     >;
 
     /**
-     * Returns whether `origin` is allowed to alias into and act as `target`.
+     * Returns the inclusion proof of each credit of `claimant` that `tree_block` committed,
+     * which is what Asset Hub verifies a mint against.
      *
-     * @callname: AuthorizedAliasersApi_is_authorized_alias
-     * @param {XcmVersionedLocation} origin
-     * @param {XcmVersionedLocation} target
+     * Everything comes from chain state, so a caller needs no event history: the proofs carry
+     * the credit, its leaf index and the sibling hashes. Empty if the block committed nothing
+     * of `claimant`'s.
+     *
+     * Only blocks whose awards are still retained can be served. An older one gives
+     * `NftClaimCreditProofError::AwardsPruned`, and has to go through
+     * `nft_claim_credit_proof_from_awards`.
+     *
+     * One call rebuilds the block's tree once, however many proofs it returns, so the cost is
+     * bounded by the pallet's `AWARDS_PER_TREE`. A node serves this unmetered, so an operator
+     * exposing it publicly must rate-limit RPC as for any runtime API.
+     *
+     * @callname: NftCreditsApi_nft_claim_credit_proofs
+     * @param {number} tree_block
+     * @param {IndivSupportIdentityAccountOrPerson} claimant
      **/
-    isAuthorizedAlias: GenericRuntimeApiMethod<
+    nftClaimCreditProofs: GenericRuntimeApiMethod<
       (
-        origin: XcmVersionedLocation,
-        target: XcmVersionedLocation,
-      ) => Promise<Result<boolean, XcmRuntimeApisAuthorizedAliasesError>>
+        treeBlock: number,
+        claimant: IndivSupportIdentityAccountOrPerson,
+      ) => Promise<
+        Result<Array<IndivPalletNftCreditsNftClaimCreditProof>, IndivPalletNftCreditsNftClaimCreditProofError>
+      >
+    >;
+
+    /**
+     * Returns the inclusion proof of the credit at `leaf_index` of `tree_block`, from
+     * `awards` supplied by the caller.
+     *
+     * The fallback for a block whose awards are no longer retained: `awards` are every credit
+     * the block committed, in leaf order, rebuilt from the `NftClaimCreditAwarded` events
+     * naming that block, which are emitted in it or in an earlier one. Leaf hashing and the
+     * tree layout stay in the runtime, and the recomputed root
+     * is checked against the recorded one, so awards that are incomplete or out of order
+     * fail with `NftClaimCreditProofError::RootMismatch` rather than yielding a proof Asset
+     * Hub rejects.
+     *
+     * @callname: NftCreditsApi_nft_claim_credit_proof_from_awards
+     * @param {number} tree_block
+     * @param {Array<IndivPalletNftCreditsNftClaimCreditAward>} awards
+     * @param {number} leaf_index
+     **/
+    nftClaimCreditProofFromAwards: GenericRuntimeApiMethod<
+      (
+        treeBlock: number,
+        awards: Array<IndivPalletNftCreditsNftClaimCreditAward>,
+        leafIndex: number,
+      ) => Promise<Result<IndivPalletNftCreditsNftClaimCreditProof, IndivPalletNftCreditsNftClaimCreditProofError>>
     >;
 
     /**
@@ -707,6 +836,58 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: GetParachainInfo_parachain_id
      **/
     parachainId: GenericRuntimeApiMethod<() => Promise<PolkadotParachainPrimitivesPrimitivesId>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: MobRuleApi - 0xd0bac7be4a6b0920
+   **/
+  mobRuleApi: {
+    /**
+     * Returns a list of cases where the user has a vote stored on chain. If the `done_only`
+     * flag is set, only cases that are done and ready to be claimed will be returned. This
+     * function does not take the correctness of the vote into account.
+     *
+     * @callname: MobRuleApi_voted_on
+     * @param {FixedBytes<32>} voter
+     * @param {boolean} done_only
+     **/
+    votedOn: GenericRuntimeApiMethod<(voter: FixedBytes<32>, doneOnly: boolean) => Promise<Array<number>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: ProofOfInkApi - 0x9287fb0e021bc854
+   **/
+  proofOfInkApi: {
+    /**
+     * Returns the deposit necessary to become a candidate.
+     *
+     * @callname: ProofOfInkApi_candidacy_deposit
+     **/
+    candidacyDeposit: GenericRuntimeApiMethod<() => Promise<bigint>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: PalletGameApi - 0x843b6f8cec8098c7
+   **/
+  palletGameApi: {
+    /**
+     * Returns the deposit necessary to play a game.
+     *
+     * @callname: PalletGameApi_play_deposit
+     **/
+    playDeposit: GenericRuntimeApiMethod<() => Promise<bigint>>;
 
     /**
      * Generic runtime api call

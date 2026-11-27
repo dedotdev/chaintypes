@@ -16,12 +16,12 @@ import type {
 } from 'dedot/codecs';
 import type {
   FrameSystemDispatchEventInfo,
-  AssetHubPolkadotRuntimeRuntimeTask,
+  AssetHubPaseoRuntimeRuntimeTask,
   SpWeightsWeightV2Weight,
-  AssetHubPolkadotRuntimeRuntimeParametersKey,
-  AssetHubPolkadotRuntimeRuntimeParametersValue,
+  AssetHubPaseoRuntimeRuntimeParametersKey,
+  AssetHubPaseoRuntimeRuntimeParametersValue,
   FrameSupportTokensMiscBalanceStatus,
-  AssetHubPolkadotRuntimeRuntimeHoldReason,
+  AssetHubPaseoRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
   StagingXcmV5Location,
   PalletDapUnexpectedKind,
@@ -37,14 +37,14 @@ import type {
   FrameSupportMessagesProcessMessageError,
   SnowbridgeCoreOperatingModeBasicOperatingMode,
   PalletMultisigTimepoint,
-  AssetHubPolkadotRuntimeProxyType,
+  AssetHubPaseoRuntimeProxyType,
   PalletProxyDepositKind,
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletPsmCircuitBreakerLevel,
-  AssetHubPolkadotRuntimeOriginCaller,
+  AssetHubPaseoRuntimeOriginCaller,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   ParachainsCommonPayVersionedLocatableAccount,
   PalletConvictionVotingVoteAccountVote,
@@ -52,6 +52,8 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
+  PalletStateTrieMigrationMigrationCompute,
+  PalletStateTrieMigrationError,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -64,11 +66,13 @@ import type {
   PalletStakingAsyncValidatorPrefs,
   PalletStakingAsyncForcing,
   PalletStakingAsyncPalletUnexpectedKind,
+  IndivSupportCreditTreesNftClaimCreditLeaf,
+  IndivPalletNftClaimsItemSelection,
   IndivPalletPgasExtensionPgasCollection,
   IndivPalletDotnsGatewayBaseLabel,
   IndivPalletDotnsGatewayChatKey,
   IndivPalletDotnsGatewayLink,
-  AssetHubPolkadotRuntimeIndividualityRestrictedEntity,
+  AssetHubPaseoRuntimeRestrictedEntity,
   PolkadotParachainPrimitivesPrimitivesId,
 } from './types.js';
 
@@ -114,12 +118,12 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * A [`Task`] has started executing
      **/
-    TaskStarted: GenericPalletEvent<'System', 'TaskStarted', { task: AssetHubPolkadotRuntimeRuntimeTask }>;
+    TaskStarted: GenericPalletEvent<'System', 'TaskStarted', { task: AssetHubPaseoRuntimeRuntimeTask }>;
 
     /**
      * A [`Task`] has finished executing.
      **/
-    TaskCompleted: GenericPalletEvent<'System', 'TaskCompleted', { task: AssetHubPolkadotRuntimeRuntimeTask }>;
+    TaskCompleted: GenericPalletEvent<'System', 'TaskCompleted', { task: AssetHubPaseoRuntimeRuntimeTask }>;
 
     /**
      * A [`Task`] failed during execution.
@@ -127,7 +131,7 @@ export interface ChainEvents extends GenericChainEvents {
     TaskFailed: GenericPalletEvent<
       'System',
       'TaskFailed',
-      { task: AssetHubPolkadotRuntimeRuntimeTask; err: DispatchError }
+      { task: AssetHubPaseoRuntimeRuntimeTask; err: DispatchError }
     >;
 
     /**
@@ -328,17 +332,17 @@ export interface ChainEvents extends GenericChainEvents {
         /**
          * The key that was updated.
          **/
-        key: AssetHubPolkadotRuntimeRuntimeParametersKey;
+        key: AssetHubPaseoRuntimeRuntimeParametersKey;
 
         /**
          * The old value before this call.
          **/
-        oldValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
+        oldValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
 
         /**
          * The new value after this call.
          **/
-        newValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
+        newValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
       }
     >;
 
@@ -612,7 +616,7 @@ export interface ChainEvents extends GenericChainEvents {
     Held: GenericPalletEvent<
       'Balances',
       'Held',
-      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+      { reason: AssetHubPaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
     >;
 
     /**
@@ -621,7 +625,7 @@ export interface ChainEvents extends GenericChainEvents {
     BurnedHeld: GenericPalletEvent<
       'Balances',
       'BurnedHeld',
-      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+      { reason: AssetHubPaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
     >;
 
     /**
@@ -630,7 +634,7 @@ export interface ChainEvents extends GenericChainEvents {
     TransferOnHold: GenericPalletEvent<
       'Balances',
       'TransferOnHold',
-      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+      { reason: AssetHubPaseoRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
     >;
 
     /**
@@ -639,7 +643,7 @@ export interface ChainEvents extends GenericChainEvents {
     TransferAndHold: GenericPalletEvent<
       'Balances',
       'TransferAndHold',
-      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+      { reason: AssetHubPaseoRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
     >;
 
     /**
@@ -648,7 +652,7 @@ export interface ChainEvents extends GenericChainEvents {
     Released: GenericPalletEvent<
       'Balances',
       'Released',
-      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+      { reason: AssetHubPaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
     >;
 
     /**
@@ -1592,7 +1596,7 @@ export interface ChainEvents extends GenericChainEvents {
       {
         pure: AccountId32;
         who: AccountId32;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
+        proxyType: AssetHubPaseoRuntimeProxyType;
         disambiguationIndex: number;
         at: number;
         extrinsicIndex: number;
@@ -1605,12 +1609,7 @@ export interface ChainEvents extends GenericChainEvents {
     PureKilled: GenericPalletEvent<
       'Proxy',
       'PureKilled',
-      {
-        pure: AccountId32;
-        spawner: AccountId32;
-        proxyType: AssetHubPolkadotRuntimeProxyType;
-        disambiguationIndex: number;
-      }
+      { pure: AccountId32; spawner: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; disambiguationIndex: number }
     >;
 
     /**
@@ -1624,7 +1623,7 @@ export interface ChainEvents extends GenericChainEvents {
     ProxyAdded: GenericPalletEvent<
       'Proxy',
       'ProxyAdded',
-      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number }
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number }
     >;
 
     /**
@@ -1633,7 +1632,7 @@ export interface ChainEvents extends GenericChainEvents {
     ProxyRemoved: GenericPalletEvent<
       'Proxy',
       'ProxyRemoved',
-      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number }
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number }
     >;
 
     /**
@@ -2901,26 +2900,6 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
-     * or afterwards via [`Pallet::set_pool_fee`].
-     **/
-    PoolFeeSet: GenericPalletEvent<
-      'AssetConversion',
-      'PoolFeeSet',
-      {
-        /**
-         * The pool whose fee was set.
-         **/
-        poolId: [StagingXcmV5Location, StagingXcmV5Location];
-
-        /**
-         * The swap fee now applied to the pool.
-         **/
-        fee: Permill;
-      }
-    >;
-
-    /**
      * A successful call of the `AddLiquidity` extrinsic will create this event.
      **/
     LiquidityAdded: GenericPalletEvent<
@@ -3099,6 +3078,179 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `AssetsFreezer`'s events
+   **/
+  assetsFreezer: {
+    Frozen: GenericPalletEvent<'AssetsFreezer', 'Frozen', { who: AccountId32; assetId: number; amount: bigint }>;
+    Thawed: GenericPalletEvent<'AssetsFreezer', 'Thawed', { who: AccountId32; assetId: number; amount: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `AssetsHolder`'s events
+   **/
+  assetsHolder: {
+    /**
+     * `who`s balance on hold was increased by `amount`.
+     **/
+    Held: GenericPalletEvent<
+      'AssetsHolder',
+      'Held',
+      { who: AccountId32; assetId: number; reason: AssetHubPaseoRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * `who`s balance on hold was decreased by `amount`.
+     **/
+    Released: GenericPalletEvent<
+      'AssetsHolder',
+      'Released',
+      { who: AccountId32; assetId: number; reason: AssetHubPaseoRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * `who`s balance on hold was burned by `amount`.
+     **/
+    Burned: GenericPalletEvent<
+      'AssetsHolder',
+      'Burned',
+      { who: AccountId32; assetId: number; reason: AssetHubPaseoRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Scarcity`'s events
+   **/
+  scarcity: {
+    /**
+     * A collection was created and assigned to its initial owner.
+     **/
+    CollectionCreated: GenericPalletEvent<'Scarcity', 'CollectionCreated', { collection: number; owner: AccountId32 }>;
+
+    /**
+     * The collection owner nominated or cleared a prospective owner.
+     **/
+    CollectionOwnerNominated: GenericPalletEvent<
+      'Scarcity',
+      'CollectionOwnerNominated',
+      { collection: number; pendingOwner?: AccountId32 | undefined }
+    >;
+
+    /**
+     * A nominated account claimed the collection and assumed its aggregate storage deposit.
+     **/
+    CollectionOwnerChanged: GenericPalletEvent<
+      'Scarcity',
+      'CollectionOwnerChanged',
+      { collection: number; oldOwner: AccountId32; newOwner: AccountId32 }
+    >;
+
+    /**
+     * An empty collection was deleted and its remaining deposit released.
+     **/
+    CollectionDeleted: GenericPalletEvent<'Scarcity', 'CollectionDeleted', { collection: number }>;
+
+    /**
+     * An immutable item definition was assigned within a collection.
+     **/
+    ItemDefined: GenericPalletEvent<'Scarcity', 'ItemDefined', { collection: number; item: number }>;
+
+    /**
+     * An unused item definition was deleted and its deposit released.
+     **/
+    ItemDeleted: GenericPalletEvent<'Scarcity', 'ItemDeleted', { collection: number; item: number }>;
+
+    /**
+     * An instance was minted into an empty purse key.
+     **/
+    Minted: GenericPalletEvent<
+      'Scarcity',
+      'Minted',
+      { instance: bigint; collection: number; item: number; owner: AccountId32 }
+    >;
+
+    /**
+     * A holder moved an instance from one purse key to another.
+     **/
+    Transferred: GenericPalletEvent<
+      'Scarcity',
+      'Transferred',
+      { instance: bigint; collection: number; from: AccountId32; to: AccountId32 }
+    >;
+
+    /**
+     * A collection owner forced an instance from one purse key to another.
+     **/
+    ForceTransferred: GenericPalletEvent<
+      'Scarcity',
+      'ForceTransferred',
+      { instance: bigint; collection: number; from: AccountId32; to: AccountId32 }
+    >;
+
+    /**
+     * An instance was permanently removed from the purse key that held it.
+     **/
+    Burned: GenericPalletEvent<'Scarcity', 'Burned', { instance: bigint; collection: number; owner: AccountId32 }>;
+
+    /**
+     * A collection-level metadata default was inserted or overwritten.
+     **/
+    CollectionMetadataSet: GenericPalletEvent<'Scarcity', 'CollectionMetadataSet', { collection: number; key: Bytes }>;
+
+    /**
+     * A collection-level metadata default was removed.
+     **/
+    CollectionMetadataRemoved: GenericPalletEvent<
+      'Scarcity',
+      'CollectionMetadataRemoved',
+      { collection: number; key: Bytes }
+    >;
+
+    /**
+     * An item-level metadata override was inserted or overwritten.
+     **/
+    ItemMetadataSet: GenericPalletEvent<
+      'Scarcity',
+      'ItemMetadataSet',
+      { collection: number; item: number; key: Bytes }
+    >;
+
+    /**
+     * An item-level metadata override was removed.
+     **/
+    ItemMetadataRemoved: GenericPalletEvent<
+      'Scarcity',
+      'ItemMetadataRemoved',
+      { collection: number; item: number; key: Bytes }
+    >;
+
+    /**
+     * An instance-level metadata override was inserted or overwritten.
+     **/
+    InstanceMetadataSet: GenericPalletEvent<'Scarcity', 'InstanceMetadataSet', { instance: bigint; key: Bytes }>;
+
+    /**
+     * An instance-level metadata override was removed.
+     **/
+    InstanceMetadataRemoved: GenericPalletEvent<
+      'Scarcity',
+      'InstanceMetadataRemoved',
+      { instance: bigint; key: Bytes }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `Psm`'s events
    **/
   psm: {
@@ -3205,8 +3357,8 @@ export interface ChainEvents extends GenericChainEvents {
       'PsmCreated',
       {
         internalAsset: StagingXcmV5Location;
-        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        fullAdmin: AssetHubPaseoRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPaseoRuntimeOriginCaller;
         feeDestination: AccountId32;
         maxDebt: bigint;
       }
@@ -3225,8 +3377,8 @@ export interface ChainEvents extends GenericChainEvents {
       'FullAdminChanged',
       {
         internalAsset: StagingXcmV5Location;
-        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        oldAdmin: AssetHubPaseoRuntimeOriginCaller;
+        newAdmin: AssetHubPaseoRuntimeOriginCaller;
       }
     >;
 
@@ -3238,57 +3390,9 @@ export interface ChainEvents extends GenericChainEvents {
       'EmergencyAdminChanged',
       {
         internalAsset: StagingXcmV5Location;
-        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
-        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        oldAdmin: AssetHubPaseoRuntimeOriginCaller;
+        newAdmin: AssetHubPaseoRuntimeOriginCaller;
       }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `AssetsFreezer`'s events
-   **/
-  assetsFreezer: {
-    Frozen: GenericPalletEvent<'AssetsFreezer', 'Frozen', { who: AccountId32; assetId: number; amount: bigint }>;
-    Thawed: GenericPalletEvent<'AssetsFreezer', 'Thawed', { who: AccountId32; assetId: number; amount: bigint }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `AssetsHolder`'s events
-   **/
-  assetsHolder: {
-    /**
-     * `who`s balance on hold was increased by `amount`.
-     **/
-    Held: GenericPalletEvent<
-      'AssetsHolder',
-      'Held',
-      { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint }
-    >;
-
-    /**
-     * `who`s balance on hold was decreased by `amount`.
-     **/
-    Released: GenericPalletEvent<
-      'AssetsHolder',
-      'Released',
-      { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint }
-    >;
-
-    /**
-     * `who`s balance on hold was burned by `amount`.
-     **/
-    Burned: GenericPalletEvent<
-      'AssetsHolder',
-      'Burned',
-      { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint }
     >;
 
     /**
@@ -3756,29 +3860,6 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * A call dispatch has been deferred to a future provided block.
-     **/
-    DispatchDeferred: GenericPalletEvent<'Whitelist', 'DispatchDeferred', { callHash: H256 }>;
-
-    /**
-     * A deferred dispatch entry has been removed after expiration.
-     **/
-    DeferredDispatchRemoved: GenericPalletEvent<'Whitelist', 'DeferredDispatchRemoved', { callHash: H256 }>;
-
-    /**
-     * A relayer (signed origin) executed a deferred dispatch.
-     *
-     * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
-     * inner call itself succeeded; the inner call's outcome is reported separately by
-     * [`Event::WhitelistedCallDispatched`].
-     **/
-    DeferredDispatchExecuted: GenericPalletEvent<
-      'Whitelist',
-      'DeferredDispatchExecuted',
-      { callHash: H256; who: AccountId32 }
-    >;
-
-    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -3854,11 +3935,6 @@ export interface ChainEvents extends GenericChainEvents {
       'DepositPoked',
       { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint }
     >;
-
-    /**
-     * Stranded funds left in a closed bounty's account were reclaimed to the treasury.
-     **/
-    BountyFundsReclaimed: GenericPalletEvent<'Bounties', 'BountyFundsReclaimed', { bountyId: number }>;
 
     /**
      * Generic pallet event
@@ -4049,6 +4125,40 @@ export interface ChainEvents extends GenericChainEvents {
       'BountyValueIncreased',
       { index: number; oldValue: bigint; newValue: bigint }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s events
+   **/
+  stateTrieMigration: {
+    /**
+     * Given number of `(top, child)` keys were migrated respectively, with the given
+     * `compute`.
+     **/
+    Migrated: GenericPalletEvent<
+      'StateTrieMigration',
+      'Migrated',
+      { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute }
+    >;
+
+    /**
+     * Some account got slashed by the given amount.
+     **/
+    Slashed: GenericPalletEvent<'StateTrieMigration', 'Slashed', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * The auto migration task finished.
+     **/
+    AutoMigrationFinished: GenericPalletEvent<'StateTrieMigration', 'AutoMigrationFinished', null>;
+
+    /**
+     * Migration got halted due to an error or miss-configuration.
+     **/
+    Halted: GenericPalletEvent<'StateTrieMigration', 'Halted', { error: PalletStateTrieMigrationError }>;
 
     /**
      * Generic pallet event
@@ -4510,31 +4620,6 @@ export interface ChainEvents extends GenericChainEvents {
     Rewarded: GenericPalletEvent<'MultiBlockElectionSigned', 'Rewarded', [number, AccountId32, bigint]>;
 
     /**
-     * A reward payout failed and has been queued in [`UnpaidRewards`]; claimable via
-     * [`Pallet::claim_unpaid_reward`] once the pot is refilled.
-     **/
-    RewardPaymentDeferred: GenericPalletEvent<
-      'MultiBlockElectionSigned',
-      'RewardPaymentDeferred',
-      [number, AccountId32, bigint]
-    >;
-
-    /**
-     * [`UnpaidRewards`] was full, so this (the oldest) entry was evicted to make room for a
-     * new deferral; no funds moved, the reward is now unrecoverable.
-     **/
-    UnpaidRewardEvicted: GenericPalletEvent<
-      'MultiBlockElectionSigned',
-      'UnpaidRewardEvicted',
-      [number, AccountId32, bigint]
-    >;
-
-    /**
-     * An invulnerable's transaction fee refund failed; no funds moved, no recovery.
-     **/
-    FeeRefundFailed: GenericPalletEvent<'MultiBlockElectionSigned', 'FeeRefundFailed', [number, AccountId32, bigint]>;
-
-    /**
      * The given account has been slashed with the given amount.
      **/
     Slashed: GenericPalletEvent<'MultiBlockElectionSigned', 'Slashed', [number, AccountId32, bigint]>;
@@ -4603,19 +4688,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An account has unbonded this amount.
      **/
-    Unbonded: GenericPalletEvent<
-      'Staking',
-      'Unbonded',
-      {
-        stash: AccountId32;
-        amount: bigint;
-
-        /**
-         * The era at which `amount` becomes withdrawable.
-         **/
-        era: number;
-      }
-    >;
+    Unbonded: GenericPalletEvent<'Staking', 'Unbonded', { stash: AccountId32; amount: bigint }>;
 
     /**
      * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
@@ -4776,49 +4849,113 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
-   * Pallet `Revive`'s events
+   * Pallet `NftClaims`'s events
    **/
-  revive: {
+  nftClaims: {
     /**
-     * A custom event emitted by the contract.
+     * Credit trees were received and stored.
      **/
-    ContractEmitted: GenericPalletEvent<
-      'Revive',
-      'ContractEmitted',
+    CreditTreesReceived: GenericPalletEvent<'NftClaims', 'CreditTreesReceived', { count: number; stored: number }>;
+
+    /**
+     * Trees of the live stream never arrived. The game pallet's `CreditTreesSent` events
+     * resolve these sequences to the tree blocks they were delivered under, and a
+     * `replay_credit_trees` naming those blocks recovers the trees.
+     *
+     * A sequence that resolves to no block is one the game pallet spent on a tree it had
+     * already dropped the root of, and no replay brings it back.
+     **/
+    CreditTreesMissing: GenericPalletEvent<
+      'NftClaims',
+      'CreditTreesMissing',
+      { fromSequence: bigint; toSequence: bigint }
+    >;
+
+    /**
+     * A tree was received for a block that already holds a different root. The stored
+     * root is kept, so the proofs built against it stay valid.
+     **/
+    CreditTreeConflict: GenericPalletEvent<'NftClaims', 'CreditTreeConflict', { block: number }>;
+
+    /**
+     * A tree with a zero root or no leaves was received for `block` and not stored. Its
+     * sequence stays unconsumed, so the gap check reports it and a replay can deliver the
+     * genuine tree.
+     **/
+    CreditTreeRejected: GenericPalletEvent<'NftClaims', 'CreditTreeRejected', { block: number }>;
+
+    /**
+     * A credit `block` committed was claimed, minting `instance` of `collection`'s `item`
+     * to the purse key `owner`.
+     **/
+    CreditClaimed: GenericPalletEvent<
+      'NftClaims',
+      'CreditClaimed',
       {
-        /**
-         * The contract that emitted the event.
-         **/
-        contract: H160;
-
-        /**
-         * Data supplied by the contract. Metadata generated during contract compilation
-         * is needed to decode it.
-         **/
-        data: Bytes;
-
-        /**
-         * A list of topics used to index the event.
-         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
-         **/
-        topics: Array<H256>;
+        block: number;
+        leaf: IndivSupportCreditTreesNftClaimCreditLeaf;
+        collection: number;
+        item: number;
+        owner: AccountId32;
+        instance: bigint;
       }
     >;
 
     /**
-     * Contract deployed by deployer at the specified address.
+     * Every credit committed to by `block`'s tree has been claimed. This chain removed the
+     * tree and queued its deletion for the game chain.
      **/
-    Instantiated: GenericPalletEvent<'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
+    TreeFullyClaimed: GenericPalletEvent<'NftClaims', 'TreeFullyClaimed', { block: number }>;
 
     /**
-     * Emitted when an Ethereum transaction reverts.
-     *
-     * Ethereum transactions always complete successfully at the extrinsic level,
-     * as even reverted calls must store their `ReceiptInfo`.
-     * To distinguish reverted calls from successful ones, this event is emitted
-     * for failed Ethereum transactions.
+     * `collection`'s owner registered it for claims with `selection`, or withdrew it with
+     * `None`.
      **/
-    EthExtrinsicRevert: GenericPalletEvent<'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
+    CollectionMinterSet: GenericPalletEvent<
+      'NftClaims',
+      'CollectionMinterSet',
+      { collection: number; selection?: IndivPalletNftClaimsItemSelection | undefined }
+    >;
+
+    /**
+     * `count` trees outlived [`Config::TreeTtl`], and this chain removed them with credits
+     * left unclaimed. Nothing can mint those credits again, on this chain or any other.
+     *
+     * The blocks are not named here. The same trees travel in a deletion message, and the
+     * [`Event::TreeDeletionsSent`] carrying them names every one.
+     **/
+    CreditTreesExpired: GenericPalletEvent<'NftClaims', 'CreditTreesExpired', { count: number }>;
+
+    /**
+     * A tree arrived for `block` past its deadline, so this chain did not store it. Its
+     * credits were already unmintable when the delivery arrived.
+     **/
+    CreditTreeStale: GenericPalletEvent<'NftClaims', 'CreditTreeStale', { block: number }>;
+
+    /**
+     * Tree blocks whose deletion was handed to the XCM router for the game chain.
+     **/
+    TreeDeletionsSent: GenericPalletEvent<'NftClaims', 'TreeDeletionsSent', { blocks: Array<number> }>;
+
+    /**
+     * Delivery of the deletions to the game chain failed. The blocks stay queued, and the
+     * next offchain worker cycle retries them.
+     **/
+    TreeDeletionSendFailed: GenericPalletEvent<'NftClaims', 'TreeDeletionSendFailed', null>;
+
+    /**
+     * [`PendingTreeDeletions`] is full, so this chain dropped the deletions of `blocks`.
+     * Delivery has failed for [`Config::MaxQueuedTreeDeletions`] trees. The game chain
+     * removes its own copies when its TTL runs out.
+     **/
+    TreeDeletionsDropped: GenericPalletEvent<'NftClaims', 'TreeDeletionsDropped', { blocks: Array<number> }>;
+
+    /**
+     * A tree arrived for `block` committing to more leaves than
+     * [`Config::MaxCreditsPerTree`], so this chain did not store it. None of its
+     * credits can be claimed here until that bound covers the game chain's own.
+     **/
+    CreditTreeOversized: GenericPalletEvent<'NftClaims', 'CreditTreeOversized', { block: number }>;
 
     /**
      * Generic pallet event
@@ -5099,6 +5236,56 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `Revive`'s events
+   **/
+  revive: {
+    /**
+     * A custom event emitted by the contract.
+     **/
+    ContractEmitted: GenericPalletEvent<
+      'Revive',
+      'ContractEmitted',
+      {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
+
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
+
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      }
+    >;
+
+    /**
+     * Contract deployed by deployer at the specified address.
+     **/
+    Instantiated: GenericPalletEvent<'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
+
+    /**
+     * Emitted when an Ethereum transaction reverts.
+     *
+     * Ethereum transactions always complete successfully at the extrinsic level,
+     * as even reverted calls must store their `ReceiptInfo`.
+     * To distinguish reverted calls from successful ones, this event is emitted
+     * for failed Ethereum transactions.
+     **/
+    EthExtrinsicRevert: GenericPalletEvent<'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `DotnsGateway`'s events
    **/
   dotnsGateway: {
@@ -5227,7 +5414,7 @@ export interface ChainEvents extends GenericChainEvents {
     UsageCleaned: GenericPalletEvent<
       'OriginRestriction',
       'UsageCleaned',
-      { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity }
+      { entity: AssetHubPaseoRuntimeRestrictedEntity }
     >;
 
     /**
@@ -5243,6 +5430,67 @@ export interface ChainEvents extends GenericChainEvents {
      * The network suffix changed.
      **/
     NetworkSuffixSet: GenericPalletEvent<'NetworkSuffix', 'NetworkSuffixSet', { old: Bytes; new: Bytes }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Sudo`'s events
+   **/
+  sudo: {
+    /**
+     * A sudo call just took place.
+     **/
+    Sudid: GenericPalletEvent<
+      'Sudo',
+      'Sudid',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
+    >;
+
+    /**
+     * The sudo key has been updated.
+     **/
+    KeyChanged: GenericPalletEvent<
+      'Sudo',
+      'KeyChanged',
+      {
+        /**
+         * The old sudo key (if one was previously set).
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new sudo key (if one was set).
+         **/
+        new: AccountId32;
+      }
+    >;
+
+    /**
+     * The key was permanently removed.
+     **/
+    KeyRemoved: GenericPalletEvent<'Sudo', 'KeyRemoved', null>;
+
+    /**
+     * A [sudo_as](Pallet::sudo_as) call just took place.
+     **/
+    SudoAsDone: GenericPalletEvent<
+      'Sudo',
+      'SudoAsDone',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
+    >;
 
     /**
      * Generic pallet event

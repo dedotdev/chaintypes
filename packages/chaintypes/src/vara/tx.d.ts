@@ -63,6 +63,9 @@ import type {
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
+  SpConsensusBeefyDoubleVotingProof,
+  SpConsensusBeefyForkVotingProof,
+  SpConsensusBeefyFutureBlockVotingProof,
   GprimitivesCodeId,
   GprimitivesActorId,
   GprimitivesMessageId,
@@ -809,6 +812,7 @@ export interface ChainTx<
      * This doesn't take effect until the next session.
      *
      * The dispatch origin of this function must be signed.
+     * `proof` must prove possession of every key for the SCALE-encoded signed account.
      *
      * ## Complexity
      * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
@@ -2272,6 +2276,29 @@ export interface ChainTx<
               maybeTotal: bigint | undefined;
               maybeUnlocking: Array<PalletStakingUnlockChunk> | undefined;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Adjusts the staking ledger by withdrawing any excess staked amount.
+     *
+     * This function corrects cases where a user's recorded stake in the ledger
+     * exceeds their actual staked funds. This situation can arise due to cases such as
+     * external slashing by another pallet, leading to an inconsistency between the ledger
+     * and the actual stake.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    withdrawOverstake: GenericTxCall<
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'WithdrawOverstake';
+            params: { stash: AccountId32Like };
           };
         },
         ChainKnownTypes
@@ -6529,8 +6556,10 @@ export interface ChainTx<
      * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
      * [`adapter::StakeStrategyType::Delegate`].
      *
-     * This call can be dispatched permissionlessly (i.e. by any account). If the member has
-     * slash to be applied, caller may be rewarded with the part of the slash.
+     * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
+     * This call can be dispatched permissionlessly (i.e. by any account). If the execution
+     * is successful, fee is refunded and caller may be rewarded with a part of the slash
+     * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
      *
      * @param {MultiAddressLike} memberAccount
      **/
@@ -6593,6 +6622,203 @@ export interface ChainTx<
           palletCall: {
             name: 'MigratePoolToDelegateStake';
             params: { poolId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Beefy`'s transaction calls
+   **/
+  beefy: {
+    /**
+     * Report voter equivocation/misbehavior. This method will verify the
+     * equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence
+     * will be reported.
+     *
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportDoubleVoting: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportDoubleVoting';
+            params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report voter equivocation/misbehavior. This method will verify the
+     * equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence
+     * will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportDoubleVotingUnsigned: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportDoubleVotingUnsigned';
+            params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reset BEEFY consensus by setting a new BEEFY genesis at `delay_in_blocks` blocks in the
+     * future.
+     *
+     * Note: `delay_in_blocks` has to be at least 1.
+     *
+     * @param {number} delayInBlocks
+     **/
+    setNewGenesis: GenericTxCall<
+      (delayInBlocks: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'SetNewGenesis';
+            params: { delayInBlocks: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report fork voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportForkVoting: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyForkVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportForkVoting';
+            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report fork voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportForkVotingUnsigned: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyForkVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportForkVotingUnsigned';
+            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report future block voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportFutureBlockVoting: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportFutureBlockVoting';
+            params: {
+              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
+              keyOwnerProof: SpSessionMembershipProof;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report future block voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportFutureBlockVotingUnsigned: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportFutureBlockVotingUnsigned';
+            params: {
+              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
+              keyOwnerProof: SpSessionMembershipProof;
+            };
           };
         },
         ChainKnownTypes
@@ -6734,6 +6960,8 @@ export interface ChainTx<
      * - `init_payload`: encoded parameters of the wasm module `init` function.
      * - `gas_limit`: maximum amount of gas the program can spend before it is halted.
      * - `value`: balance to be transferred to the program once it's been created.
+     * - `keep_alive`: whether to ensure that the original account balance will stay above
+     * the existential deposit.
      *
      * Emits the following events:
      * - `InitMessageEnqueued(MessageInfo)` when init message is placed in the queue.
@@ -7395,6 +7623,28 @@ export interface ChainTx<
           palletCall: {
             name: 'ResetOverflowedQueue';
             params: { encodedFinalityProof: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Bind the original destination once while paused, independently of BEEFY activation.
+     *
+     * @param {H256} chainId
+     * @param {H160} queue
+     **/
+    bindDestination: GenericTxCall<
+      (
+        chainId: H256,
+        queue: H160,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'GearEthBridge';
+          palletCall: {
+            name: 'BindDestination';
+            params: { chainId: H256; queue: H160 };
           };
         },
         ChainKnownTypes

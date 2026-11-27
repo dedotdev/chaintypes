@@ -1581,6 +1581,11 @@ export interface ChainErrors extends GenericChainErrors {
     NothingToSlash: GenericPalletError;
 
     /**
+     * The slash amount is too low to be applied.
+     **/
+    SlashTooLow: GenericPalletError;
+
+    /**
      * The pool or member delegation has already migrated to delegate stake.
      **/
     AlreadyMigrated: GenericPalletError;
@@ -1594,6 +1599,50 @@ export interface ChainErrors extends GenericChainErrors {
      * This call is not allowed in the current state of the pallet.
      **/
     NotSupported: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Beefy`'s errors
+   **/
+  beefy: {
+    /**
+     * A key ownership proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidKeyOwnershipProof: GenericPalletError;
+
+    /**
+     * A double voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidDoubleVotingProof: GenericPalletError;
+
+    /**
+     * A fork voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidForkVotingProof: GenericPalletError;
+
+    /**
+     * A future block voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidFutureBlockVotingProof: GenericPalletError;
+
+    /**
+     * The session of the equivocation proof is invalid
+     **/
+    InvalidEquivocationProofSession: GenericPalletError;
+
+    /**
+     * A given equivocation report is valid but already previously reported.
+     **/
+    DuplicateOffenceReport: GenericPalletError;
+
+    /**
+     * Submitted configuration is invalid.
+     **/
+    InvalidConfiguration: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2047,6 +2096,16 @@ export interface ChainErrors extends GenericChainErrors {
      * queue isn't overflowed or incorrect finality proof provided.
      **/
     InvalidQueueReset: GenericPalletError;
+
+    /**
+     * A lane is already bound, is not paused, or an identity is zero.
+     **/
+    InvalidDestinationBinding: GenericPalletError;
+
+    /**
+     * The lane or its source consensus state is not ready.
+     **/
+    BridgeNotReady: GenericPalletError;
 
     /**
      * Generic pallet error

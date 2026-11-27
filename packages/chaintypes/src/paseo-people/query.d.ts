@@ -35,6 +35,7 @@ import type {
   PolkadotCorePrimitivesOutboundHrmpMessage,
   CumulusPalletParachainSystemPoVMessages,
   PalletMigrationsMigrationCursor,
+  IndivPalletRelayRandomnessRandomnessValues,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
@@ -47,6 +48,10 @@ import type {
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
   PalletAssetsAssetMetadata,
+  AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
+  IndivPalletOriginRestrictionUsage,
+  PeoplePaseoRuntimePeopleRestrictedEntity,
+  PalletAssetConversionPoolInfo,
   PalletCollatorSelectionCandidateInfo,
   PeoplePaseoRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
@@ -73,6 +78,72 @@ import type {
   PalletIdentityAuthorityProperties,
   PalletIdentityUsernameInformation,
   PalletIdentityProvider,
+  IndivPalletPeoplePersonRecord,
+  IndivSupportRealityContextualAlias,
+  IndivSupportRealityRevisedContextualAlias,
+  IndivPalletMobRuleMobCredit,
+  IndivSupportRealityJudgement,
+  IndivPalletMobRuleOpenCase,
+  IndivPalletMobRuleRipeCase,
+  IndivPalletMobRuleDoneCase,
+  IndivPalletMobRuleCreditDistribution,
+  IndivPalletMobRulePayoutSchedule,
+  IndivPalletProofOfInkCandidate,
+  IndivPalletProofOfInkPerson,
+  IndivPalletProofOfInkReferralTicket,
+  IndivPalletProofOfInkFamily,
+  IndivPalletProofOfInkDesignStatus,
+  IndivPalletProofOfInkConfigRecord,
+  IndivPalletGamePhaseDurationValues,
+  IndivPalletGameArchivedPlayer,
+  IndivSupportIdentityAccountOrPerson,
+  IndivPalletGamePlayer,
+  IndivPalletGameGameInfo,
+  IndivPalletGameGameSchedule,
+  IndivPalletScoreParticipant,
+  IndivPalletScorePersonhoodThresholdTier,
+  IndivPalletScoreAbsenceGraceTier,
+  IndivPalletScoreRoundPayout,
+  IndivPalletScoreRoundInfo,
+  IndivPalletScorePayoutSchedule,
+  IndivPalletNftCreditsAwardedCredits,
+  IndivPalletNftCreditsNftClaimCreditAward,
+  IndivSupportUtilsBigEndianU32,
+  IndivPalletNftCreditsCreditBuffer,
+  IndivSupportCreditTreesNftClaimCreditTree,
+  IndivPalletDummyDimRecord,
+  IndivPalletStorageInitializationOnPollState,
+  IndivPalletPeopleLiteLitePersonInfo,
+  IndivPalletResourcesConsumerInfo,
+  IndivPalletResourcesStmtStoreAllowanceEntry,
+  IndivPalletResourcesNotificationRegistration,
+  IndivPalletResourcesReservationQueueEntry,
+  IndivPalletChunksManagerUncheckedChunk,
+  IndivSupportRealityRingExponent,
+  IndivPalletMembersCollectionInfo,
+  IndivPalletMembersCollectionOwner,
+  IndivPalletMembersRingRoot,
+  IndivPalletMembersOldRoot,
+  IndivSupportRealityRingStatus,
+  IndivSupportRealityRingPosition,
+  IndivSupportRealityRingMembersState,
+  IndivPalletCoinageCoin,
+  IndivPalletCoinageLockInfo,
+  IndivPalletCoinageAliasState,
+  IndivPalletCoinageArchivedRecycler,
+  IndivPalletCoinageInstanceRecord,
+  IndivPalletMembersNotifierSubscriberInfo,
+  IndivPalletMembersNotifierWhitelistedSubscription,
+  IndivPalletMembersNotifierPagingState,
+  IndivPalletMembersNotifierPendingInitState,
+  IndivPalletMembersNotifierBatchDistributionState,
+  IndivPalletAirdropActiveEvent,
+  IndivSupportUtilsBigEndianU64,
+  IndivPalletAirdropRegistrationEntry,
+  IndivSupportUtilsBigEndianU256,
+  IndivPalletHonourPointInfo,
+  PeoplePaseoRuntimeParametersRuntimeParametersValue,
+  PeoplePaseoRuntimeParametersRuntimeParametersKey,
 } from './types.js';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -507,6 +578,13 @@ export interface ChainStorage extends GenericChainStorage {
     pendingUpwardSignals: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
+     * The approved peer id to be sent as a UMP signal on the last block of the PoV.
+     *
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pendingApprovedPeer: GenericStorageQuery<() => Bytes | undefined>;
+
+    /**
      * The factor to multiply the base delivery fee by for UMP.
      *
      * @param {Callback<FixedU128> =} callback
@@ -624,6 +702,27 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     historic: GenericStorageQuery<(arg: BytesLike) => [] | undefined, Bytes>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `RelayRandomness`'s storage queries
+   **/
+  relayRandomness: {
+    /**
+     * The last distinct relay chain randomness values, refreshed from the relay chain
+     * state proof.
+     *
+     * The values persist between blocks: they reflect the relay parent of the last
+     * block whose inherent ran. Code running before the inherent (e.g. `on_initialize`)
+     * sees the previous block's values.
+     *
+     * @param {Callback<IndivPalletRelayRandomnessRandomnessValues> =} callback
+     **/
+    randomness: GenericStorageQuery<() => IndivPalletRelayRandomnessRandomnessValues>;
 
     /**
      * Generic pallet storage query
@@ -802,17 +901,19 @@ export interface ChainStorage extends GenericChainStorage {
      * Maps an asset to a list of its configured reserve information.
      *
      * @param {StagingXcmV5Location} arg
-     * @param {Callback<Array<[]>> =} callback
+     * @param {Callback<Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>> =} callback
      **/
-    reserves: GenericStorageQuery<(arg: StagingXcmV5Location) => Array<[]>, StagingXcmV5Location>;
+    reserves: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>,
+      StagingXcmV5Location
+    >;
 
     /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -873,6 +974,126 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [StagingXcmV5Location, AccountId32Like]) => bigint | undefined,
       [StagingXcmV5Location, AccountId32]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `OriginRestriction`'s storage queries
+   **/
+  originRestriction: {
+    /**
+     * The current usage for each entity.
+     *
+     * @param {PeoplePaseoRuntimePeopleRestrictedEntity} arg
+     * @param {Callback<IndivPalletOriginRestrictionUsage | undefined> =} callback
+     **/
+    usages: GenericStorageQuery<
+      (arg: PeoplePaseoRuntimePeopleRestrictedEntity) => IndivPalletOriginRestrictionUsage | undefined,
+      PeoplePaseoRuntimePeopleRestrictedEntity
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetConversion`'s storage queries
+   **/
+  assetConversion: {
+    /**
+     * Map from `PoolAssetId` to `PoolInfo`. This establishes whether a pool has been officially
+     * created rather than people sending tokens directly to a pool's public account.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<PalletAssetConversionPoolInfo | undefined> =} callback
+     **/
+    pools: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletAssetConversionPoolInfo | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
+     * Stores the `PoolAssetId` that is going to be used for the next lp token.
+     * This gets incremented whenever a new lp pool is created.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextPoolAssetId: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `PoolAssets`'s storage queries
+   **/
+  poolAssets: {
+    /**
+     * Details of an asset.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
+     **/
+    asset: GenericStorageQuery<(arg: number) => PalletAssetsAssetDetails | undefined, number>;
+
+    /**
+     * The holdings of a specific account for a specific asset.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
+     **/
+    account: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * Approved balance transfers. First balance is the amount approved for transfer. Second
+     * is the amount of `T::Currency` reserved for storing this.
+     * First key is the asset ID, second key is the owner and third key is the delegate.
+     *
+     * @param {[number, AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<PalletAssetsApproval | undefined> =} callback
+     **/
+    approvals: GenericStorageQuery<
+      (arg: [number, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
+      [number, AccountId32, AccountId32]
+    >;
+
+    /**
+     * Metadata of an asset.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletAssetsAssetMetadata> =} callback
+     **/
+    metadata: GenericStorageQuery<(arg: number) => PalletAssetsAssetMetadata, number>;
+
+    /**
+     * Maps an asset to a list of its configured reserve information.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[]>> =} callback
+     **/
+    reserves: GenericStorageQuery<(arg: number) => Array<[]>, number>;
+
+    /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1510,6 +1731,2127 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     unbindingUsernames: GenericStorageQuery<(arg: BytesLike) => number | undefined, Bytes>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `People`'s storage queries
+   **/
+  people: {
+    /**
+     * The current individuals we recognise, but not necessarily yet included in a ring.
+     *
+     * Look-up from the crypto (public) key to the immutable ID of the individual (`PersonalId`). A
+     * person can have two different entries in this map if they queued a key migration which
+     * hasn't been enacted yet.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    keys: GenericStorageQuery<(arg: FixedBytes<32>) => bigint | undefined, FixedBytes<32>>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForKeys: GenericStorageQuery<() => number>;
+
+    /**
+     * The current individuals we recognise, but not necessarily yet included in a ring.
+     *
+     * Immutable ID of the individual (`PersonalId`) to information about their key and status.
+     *
+     * @param {bigint} arg
+     * @param {Callback<IndivPalletPeoplePersonRecord | undefined> =} callback
+     **/
+    people: GenericStorageQuery<(arg: bigint) => IndivPalletPeoplePersonRecord | undefined, bigint>;
+
+    /**
+     * Conversion of a contextual alias to an account ID.
+     *
+     * @param {IndivSupportRealityContextualAlias} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    aliasToAccount: GenericStorageQuery<
+      (arg: IndivSupportRealityContextualAlias) => AccountId32 | undefined,
+      IndivSupportRealityContextualAlias
+    >;
+
+    /**
+     * Conversion of an account ID to a contextual alias.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivSupportRealityRevisedContextualAlias | undefined> =} callback
+     **/
+    accountToAlias: GenericStorageQuery<
+      (arg: AccountId32Like) => IndivSupportRealityRevisedContextualAlias | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Association of an account ID to a personal ID.
+     *
+     * Managed with `set_personal_id_account` and `unset_personal_id_account`.
+     * Reverse lookup is inside `People` storage, inside the record.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    accountToPersonalId: GenericStorageQuery<(arg: AccountId32Like) => bigint | undefined, AccountId32>;
+
+    /**
+     * The next free and never reserved personal ID.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    nextPersonalId: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Whether the people collection has been created.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    peopleCollectionCreated: GenericStorageQuery<() => boolean>;
+
+    /**
+     * Candidates' reserved identities which we track.
+     *
+     * @param {bigint} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    reservedPersonalId: GenericStorageQuery<(arg: bigint) => [] | undefined, bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MobRule`'s storage queries
+   **/
+  mobRule: {
+    /**
+     * The voting records of all aliases.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletMobRuleMobCredit> =} callback
+     **/
+    credits: GenericStorageQuery<(arg: FixedBytes<32>) => IndivPalletMobRuleMobCredit, FixedBytes<32>>;
+
+    /**
+     * The vote penalties of users and their starting moment. Voters with penalties cannot vote in
+     * contempt until the penalty expires and is removed.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    votingPenalties: GenericStorageQuery<(arg: FixedBytes<32>) => number | undefined, FixedBytes<32>>;
+
+    /**
+     * The accumulated points of all aliases, during each funding round. The points accumulated
+     * during round `N` can be redeemed for rewards only during round `N + 1`.
+     *
+     * @param {[number, FixedBytes<32>]} arg
+     * @param {Callback<number> =} callback
+     **/
+    votingPoints: GenericStorageQuery<(arg: [number, FixedBytes<32>]) => number, [number, FixedBytes<32>]>;
+
+    /**
+     * All votes cast, segregated by case and voter.
+     *
+     * @param {[number, FixedBytes<32>]} arg
+     * @param {Callback<IndivSupportRealityJudgement | undefined> =} callback
+     **/
+    votes: GenericStorageQuery<
+      (arg: [number, FixedBytes<32>]) => IndivSupportRealityJudgement | undefined,
+      [number, FixedBytes<32>]
+    >;
+
+    /**
+     * The number of cases, open or recently closed, stored in the pallet.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    caseCount: GenericStorageQuery<() => number>;
+
+    /**
+     * The open cases recorded in the pallet. These cases can still be voted on.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletMobRuleOpenCase | undefined> =} callback
+     **/
+    openCases: GenericStorageQuery<(arg: number) => IndivPalletMobRuleOpenCase | undefined, number>;
+
+    /**
+     * The ripe cases recorded in the pallet. The voting has concluded on these cases and a verdict
+     * has been reached, but they cannot be removed yet in order to allow people to claim their
+     * votes.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletMobRuleRipeCase | undefined> =} callback
+     **/
+    ripeCases: GenericStorageQuery<(arg: number) => IndivPalletMobRuleRipeCase | undefined, number>;
+
+    /**
+     * The done cases recorded in the pallet. These cases are obsolete and can be removed from
+     * storage.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletMobRuleDoneCase | undefined> =} callback
+     **/
+    doneCases: GenericStorageQuery<(arg: number) => IndivPalletMobRuleDoneCase | undefined, number>;
+
+    /**
+     * The number of points accumulated through correct votes during the current payout round. This
+     * amount is going to determine the point/reward exchange rate of the next reward payout round.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    accumulatedPoints: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Describes the parameters of the current payout round.
+     *
+     * @param {Callback<IndivPalletMobRuleCreditDistribution | undefined> =} callback
+     **/
+    payoutDistribution: GenericStorageQuery<() => IndivPalletMobRuleCreditDistribution | undefined>;
+
+    /**
+     * Describes the schedules of the payout rounds.
+     *
+     * @param {Callback<Array<IndivPalletMobRulePayoutSchedule>> =} callback
+     **/
+    roundSchedules: GenericStorageQuery<() => Array<IndivPalletMobRulePayoutSchedule>>;
+
+    /**
+     * The timestamp, in seconds, of the moment enough active voters were detected and voting was
+     * enabled. This value will not be present if there are too few active voters.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    activeSince: GenericStorageQuery<() => bigint | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `ProofOfInk`'s storage queries
+   **/
+  proofOfInk: {
+    /**
+     * The current personal identities which are going through the proof-of-ink process.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletProofOfInkCandidate | undefined> =} callback
+     **/
+    candidates: GenericStorageQuery<(arg: AccountId32Like) => IndivPalletProofOfInkCandidate | undefined, AccountId32>;
+
+    /**
+     * The personal identities which we track; all which have been recognized through proof-of-ink
+     * are in here.
+     *
+     * @param {bigint} arg
+     * @param {Callback<IndivPalletProofOfInkPerson | undefined> =} callback
+     **/
+    people: GenericStorageQuery<(arg: bigint) => IndivPalletProofOfInkPerson | undefined, bigint>;
+
+    /**
+     * The tickets stored on-chain ready to be used to refer candidates.
+     *
+     * @param {bigint} arg
+     * @param {Callback<Array<IndivPalletProofOfInkReferralTicket> | undefined> =} callback
+     **/
+    referralTickets: GenericStorageQuery<
+      (arg: bigint) => Array<IndivPalletProofOfInkReferralTicket> | undefined,
+      bigint
+    >;
+
+    /**
+     * The current design families we recognise.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletProofOfInkFamily | undefined> =} callback
+     **/
+    designFamilies: GenericStorageQuery<(arg: number) => IndivPalletProofOfInkFamily | undefined, number>;
+
+    /**
+     * The committed designs which are no longer available.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<IndivPalletProofOfInkDesignStatus | undefined> =} callback
+     **/
+    committedDesigns: GenericStorageQuery<
+      (arg: [number, number]) => IndivPalletProofOfInkDesignStatus | undefined,
+      [number, number]
+    >;
+
+    /**
+     * The number of judgements currently ongoing.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    allocationCount: GenericStorageQuery<() => number>;
+
+    /**
+     * The configuration.
+     *
+     * @param {Callback<IndivPalletProofOfInkConfigRecord> =} callback
+     **/
+    configuration: GenericStorageQuery<() => IndivPalletProofOfInkConfigRecord>;
+
+    /**
+     * Number of invitations available to distribute for an account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    availableInvites: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Pending invitations for each inviter (an account that invites others).
+     *
+     * If the key `(inviter, ticket)` exists, then the ticket is currently a pending invite.
+     *
+     * @param {[AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    pendingInvites: GenericStorageQuery<
+      (arg: [AccountId32Like, AccountId32Like]) => [] | undefined,
+      [AccountId32, AccountId32]
+    >;
+
+    /**
+     * The values of the reimbursement awarded to referrers, along with how many of each value
+     * should be awarded. These values are stored in reverse order of their priority, so the last
+     * value in the list will be the first one to be used by the reimbursement system.
+     *
+     * Storage item name keeps the legacy prefix for storage readability compatibility.
+     *
+     * @param {Callback<Array<[bigint, number]> | undefined> =} callback
+     **/
+    referrerReimbursementValues: GenericStorageQuery<() => Array<[bigint, number]> | undefined>;
+
+    /**
+     * The values of the reimbursement awarded to referred people, along with how many of each
+     * value should be awarded. These values are stored in reverse order of their priority, so the
+     * last value in the list will be the first one to be used by the reimbursement system.
+     *
+     * Storage item name keeps the legacy prefix for storage readability compatibility.
+     *
+     * @param {Callback<Array<[bigint, number]> | undefined> =} callback
+     **/
+    referredReimbursementValues: GenericStorageQuery<() => Array<[bigint, number]> | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Game`'s storage queries
+   **/
+  game: {
+    /**
+     * Phase-duration override set by [`Config::ManagerOrigin`] via
+     * `set_game_phases`. `None` means the chain falls back to
+     * `T::DefaultPhaseDurations`.
+     *
+     * @param {Callback<IndivPalletGamePhaseDurationValues | undefined> =} callback
+     **/
+    storedPhaseDurations: GenericStorageQuery<() => IndivPalletGamePhaseDurationValues | undefined>;
+
+    /**
+     * The configured native balance held as deposit when an account player signs up.
+     *
+     * This value is only used for new deposit creations; existing active deposits
+     * retain the amount they were created with.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    playDepositAmount: GenericStorageQuery<() => bigint>;
+
+    /**
+     * All the player with zero score but still onboarded in indiv_pallet_score.
+     *
+     * @param {IndivSupportIdentityAccountOrPerson} arg
+     * @param {Callback<IndivPalletGameArchivedPlayer | undefined> =} callback
+     **/
+    archivedPlayers: GenericStorageQuery<
+      (arg: IndivSupportIdentityAccountOrPerson) => IndivPalletGameArchivedPlayer | undefined,
+      IndivSupportIdentityAccountOrPerson
+    >;
+
+    /**
+     * All the player in the game.
+     *
+     * Account-based player accounts in this storage and statement accounts in
+     * [`StmtAccountToAlias`] must not overlap.
+     *
+     * @param {IndivSupportIdentityAccountOrPerson} arg
+     * @param {Callback<IndivPalletGamePlayer | undefined> =} callback
+     **/
+    players: GenericStorageQuery<
+      (arg: IndivSupportIdentityAccountOrPerson) => IndivPalletGamePlayer | undefined,
+      IndivSupportIdentityAccountOrPerson
+    >;
+
+    /**
+     * The current game index.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    gameIndex: GenericStorageQuery<() => number>;
+
+    /**
+     * The information for the next game or ongoing game.
+     *
+     * @param {Callback<IndivPalletGameGameInfo | undefined> =} callback
+     **/
+    game: GenericStorageQuery<() => IndivPalletGameGameInfo | undefined>;
+
+    /**
+     * The mapping from past games, identified by their game index, to the start timestamp, in
+     * seconds since the UNIX epoch.
+     *
+     * @param {number} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    gameHistory: GenericStorageQuery<(arg: number) => number | undefined, number>;
+
+    /**
+     * Entries of previously attended games of each player. Retained on `offboard`
+     * and `kickout`. Bounded by `MaxAttendanceHistoryDepth` per player.
+     *
+     * @param {IndivSupportIdentityAccountOrPerson} arg
+     * @param {Callback<Array<number>> =} callback
+     **/
+    playerAttendanceHistory: GenericStorageQuery<
+      (arg: IndivSupportIdentityAccountOrPerson) => Array<number>,
+      IndivSupportIdentityAccountOrPerson
+    >;
+
+    /**
+     * Count of confirmed attendees per game index. Incremented by
+     * [`Pallet::note_attendance`] for every attendance entry, regardless of
+     * whether the player is recorded as `AccountOrPerson::Person` or
+     * `AccountOrPerson::Account`. Exposed for off-chain consumers.
+     *
+     * @param {number} arg
+     * @param {Callback<number> =} callback
+     **/
+    gameParticipantCount: GenericStorageQuery<(arg: number) => number, number>;
+
+    /**
+     * The mapping from round index and player index to player.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<IndivSupportIdentityAccountOrPerson | undefined> =} callback
+     **/
+    indexToPlayer: GenericStorageQuery<
+      (arg: [number, number]) => IndivSupportIdentityAccountOrPerson | undefined,
+      [number, number]
+    >;
+
+    /**
+     * The mapping from player to their indices in each round.
+     *
+     * @param {IndivSupportIdentityAccountOrPerson} arg
+     * @param {Callback<Array<number> | undefined> =} callback
+     **/
+    playerToIndex: GenericStorageQuery<
+      (arg: IndivSupportIdentityAccountOrPerson) => Array<number> | undefined,
+      IndivSupportIdentityAccountOrPerson
+    >;
+
+    /**
+     * Storage used to compute the shuffle order of recognized people.
+     *
+     * @param {[number, FixedBytes<32>]} arg
+     * @param {Callback<IndivSupportIdentityAccountOrPerson | undefined> =} callback
+     **/
+    shuffleRecognized: GenericStorageQuery<
+      (arg: [number, FixedBytes<32>]) => IndivSupportIdentityAccountOrPerson | undefined,
+      [number, FixedBytes<32>]
+    >;
+
+    /**
+     * Storage used to compute the shuffle order of not recognized people, i.e. candidates.
+     *
+     * @param {[number, FixedBytes<32>]} arg
+     * @param {Callback<IndivSupportIdentityAccountOrPerson | undefined> =} callback
+     **/
+    shuffleNotRecognized: GenericStorageQuery<
+      (arg: [number, FixedBytes<32>]) => IndivSupportIdentityAccountOrPerson | undefined,
+      [number, FixedBytes<32>]
+    >;
+
+    /**
+     *
+     * @param {Callback<Array<IndivPalletGameGameSchedule>> =} callback
+     **/
+    gameSchedules: GenericStorageQuery<() => Array<IndivPalletGameGameSchedule>>;
+
+    /**
+     * Number of invites available to distribute for an account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    availableInvites: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Pending invites for each inviter.
+     *
+     * If the key `(inviter, ticket)` exists then the ticket is currently a pending invite, from
+     * the inviter.
+     *
+     * @param {[AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    pendingInvites: GenericStorageQuery<
+      (arg: [AccountId32Like, AccountId32Like]) => [] | undefined,
+      [AccountId32, AccountId32]
+    >;
+
+    /**
+     * The account each lite person designated to play with, keyed by the lite person's alias in
+     * [`indiv_pallet_score::Pallet::score_context`].
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    liteInvites: GenericStorageQuery<(arg: FixedBytes<32>) => AccountId32 | undefined, FixedBytes<32>>;
+
+    /**
+     * Mapping from alias to the account id to use for interacting with the statement store.
+     *
+     * Account-based player simply use their account and are not part of this mapping.
+     * Reverse mapping is available in storage [`StmtAccountToAlias`].
+     *
+     * This is removed when the alias-based player gets archived.
+     * This is updated when the alias-based player signs up with another statement account.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    aliasToStmtAccount: GenericStorageQuery<(arg: FixedBytes<32>) => AccountId32 | undefined, FixedBytes<32>>;
+
+    /**
+     * Mapping from the account id to use for interacting with statement store to the alias.
+     *
+     * Account-based player simply use their account and are not part of this mapping.
+     * Reverse mapping is available in storage [`AliasToStmtAccount`].
+     * This is removed when the alias-based player gets archived.
+     * This is updated when the alias-based player signs up with another statement account.
+     *
+     * Statement accounts in this storage and account-based player accounts in [`Players`] must
+     * not overlap.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<FixedBytes<32> | undefined> =} callback
+     **/
+    stmtAccountToAlias: GenericStorageQuery<(arg: AccountId32Like) => FixedBytes<32> | undefined, AccountId32>;
+
+    /**
+     * The communication identifiers used by players to establish an encrypted P2P connection in
+     * order to play the game. The account under which the communication identifier is registered
+     * should be the same account used to interact with the statement store.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<FixedBytes<65> | undefined> =} callback
+     **/
+    communicationIdentifiers: GenericStorageQuery<(arg: AccountId32Like) => FixedBytes<65> | undefined, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Score`'s storage queries
+   **/
+  score: {
+    /**
+     * The participants informations.
+     *
+     * @param {IndivSupportIdentityAccountOrPerson} arg
+     * @param {Callback<IndivPalletScoreParticipant | undefined> =} callback
+     **/
+    participants: GenericStorageQuery<
+      (arg: IndivSupportIdentityAccountOrPerson) => IndivPalletScoreParticipant | undefined,
+      IndivSupportIdentityAccountOrPerson
+    >;
+
+    /**
+     * The score threshold required to reach personhood.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    personhoodThreshold: GenericStorageQuery<() => number>;
+
+    /**
+     * Runtime-configurable schedule of personhood-threshold tiers, sorted by
+     * ascending `population_size_threshold`. Each tier specifies the score a
+     * participant must reach to be recognized as a person at that population
+     * level.
+     *
+     * Defaults to [`DefaultPersonhoodThresholdTiers`] until governance
+     * overrides it via [`Pallet::set_personhood_threshold_schedule`].
+     *
+     * A new schedule takes effect at the start of the next report session
+     * when `update_thresholds()` recalculates `PersonhoodThreshold`.
+     *
+     * @param {Callback<Array<IndivPalletScorePersonhoodThresholdTier>> =} callback
+     **/
+    personhoodThresholdSchedule: GenericStorageQuery<() => Array<IndivPalletScorePersonhoodThresholdTier>>;
+
+    /**
+     * Runtime-configurable schedule of absence-grace tiers, sorted by ascending
+     * population size threshold. Each tier specifies how many misses are
+     * tolerated within recent games before a participant's personhood is
+     * suspended.
+     *
+     * Defaults to [`DefaultAbsenceGraceTiers`] until governance overrides it
+     * via [`Pallet::set_absence_grace_schedule`]. An empty schedule (set
+     * explicitly by governance) disables the grace period entirely.
+     *
+     * @param {Callback<Array<IndivPalletScoreAbsenceGraceTier>> =} callback
+     **/
+    absenceGraceSchedule: GenericStorageQuery<() => Array<IndivPalletScoreAbsenceGraceTier>>;
+
+    /**
+     * The currently active absence-grace ratio `(allowed_misses, window)`,
+     * derived from `AbsenceGraceSchedule` and the current active-person count.
+     *
+     * Updated each time `update_thresholds()` runs (at the start of every
+     * attendance report session). Read by `set_attendance` to decide whether
+     * a participant should be suspended.
+     *
+     * @param {Callback<[number, number]> =} callback
+     **/
+    absenceGraceRatio: GenericStorageQuery<() => [number, number]>;
+
+    /**
+     * The accumulated points in the current round.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    currentRoundPoints: GenericStorageQuery<() => number>;
+
+    /**
+     * The index of the current round.
+     *
+     * This must be the sum of all points accumulated in `RoundsPointsForParticipant` for the
+     * current round.
+     *
+     * **WARNING**: This storage must be consistent with `RoundsPointsForParticipant`, use
+     * `fn add_points_to_participant` to update it.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    currentRoundIndex: GenericStorageQuery<() => number>;
+
+    /**
+     * The points accumulated by a participant in a round.
+     *
+     * For the current round, this storage must be updated alongside `CurrentRoundPoints`.
+     *
+     * **WARNING**: This storage must be consistent with `CurrentRoundPoints`, use
+     * `fn add_points_to_participant` to update it.
+     *
+     * @param {[number, IndivSupportIdentityAccountOrPerson]} arg
+     * @param {Callback<number> =} callback
+     **/
+    roundsPointsForParticipant: GenericStorageQuery<
+      (arg: [number, IndivSupportIdentityAccountOrPerson]) => number,
+      [number, IndivSupportIdentityAccountOrPerson]
+    >;
+
+    /**
+     * The rounds that are currently paying out.
+     *
+     * Rounds are paying out after they have finished accumulating points.
+     * When all their points have been paid out, they are removed from storage.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletScoreRoundPayout | undefined> =} callback
+     **/
+    roundPayouts: GenericStorageQuery<(arg: number) => IndivPalletScoreRoundPayout | undefined, number>;
+
+    /**
+     * The planning of the current round that is accumulating points.
+     *
+     * If none the current round is ongoing and will be planned on the next schedule.
+     *
+     * @param {Callback<IndivPalletScoreRoundInfo | undefined> =} callback
+     **/
+    roundPlanning: GenericStorageQuery<() => IndivPalletScoreRoundInfo | undefined>;
+
+    /**
+     * Describes the schedules of the payout rounds.
+     *
+     * @param {Callback<Array<IndivPalletScorePayoutSchedule>> =} callback
+     **/
+    roundSchedules: GenericStorageQuery<() => Array<IndivPalletScorePayoutSchedule>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `NftCredits`'s storage queries
+   **/
+  nftCredits: {
+    /**
+     * Which credits a game has already awarded a claimant, keyed by game index and claimant.
+     * The value marks the slots of [`Pallet::credit_slot`] that are taken.
+     *
+     * Bookkeeping for [`Pallet::award_nft_claim_credit`], its only reader, and what makes an
+     * award idempotent: `report` awards a `Person` vote's credit on the spot and
+     * `award_attendance_credits` later walks that same credit, which unguarded would give the
+     * claimant a second leaf, in a second block's tree, and two mints from one credit. Off
+     * chain it is not needed, Asset Hub minting against a root it is sent and a wallet reading
+     * [`NftClaimCreditBlocks`] and the blocks' `NftClaimCreditAwarded` events. One word per
+     * claimant rather than an entry per credit, because that entry count is what the backfill's
+     * proof size is made of.
+     *
+     * Only the current game is ever in here, entries being drained before
+     * `player_process_step2` kills the game and `new_game` refusing to start one while a game
+     * exists. The game key still earns its place: a slot means nothing outside the game whose
+     * groups it indexes, so were a drain left half done, an unkeyed entry would read as the
+     * next game's awarded slots and silently swallow those credits.
+     *
+     * @param {[number, IndivSupportIdentityAccountOrPerson]} arg
+     * @param {Callback<IndivPalletNftCreditsAwardedCredits> =} callback
+     **/
+    awardedNftClaimCredits: GenericStorageQuery<
+      (arg: [number, IndivSupportIdentityAccountOrPerson]) => IndivPalletNftCreditsAwardedCredits,
+      [number, IndivSupportIdentityAccountOrPerson]
+    >;
+
+    /**
+     * The tree blocks committing at least one of a claimant's NFT claim credits, in ascending
+     * order and without repeats.
+     *
+     * Each entry keys an [`NftClaimCreditRoots`] entry whose tree holds a leaf of the claimant's,
+     * so this answers which roots the claimant has something to mint against without scanning
+     * every block. The index states which blocks to fetch; the proof itself comes from the
+     * block's [`NftClaimCreditAwards`] entry, or from its `NftClaimCreditAwarded` events once the
+     * sweep has removed that entry. An entry can name a block that is still to come, because
+     * awarding spills into later buffers; that block gets its root, and its entry here becomes
+     * resolvable, once it is built.
+     *
+     * Blocks are appended as credits are awarded and never removed once minted. The list is
+     * therefore a ring bounded by [`Config::MaxCreditBlocksPerClaimant`]. A block it drops stays
+     * mintable, so a claimant past the ring finds their blocks from the events rather than from
+     * here.
+     *
+     * @param {IndivSupportIdentityAccountOrPerson} arg
+     * @param {Callback<Array<number>> =} callback
+     **/
+    nftClaimCreditBlocks: GenericStorageQuery<
+      (arg: IndivSupportIdentityAccountOrPerson) => Array<number>,
+      IndivSupportIdentityAccountOrPerson
+    >;
+
+    /**
+     * The NFT claim credits each retained tree commits to, in leaf order, which are the preimages
+     * of its Merkle leaves. The first key is the block whose tree holds them, the second the
+     * [`ChunkIndex`] within that block.
+     *
+     * A block's chunks double as the buffer the next block's `on_initialize` computes the root
+     * over: `Pallet::award_nft_claim_credit` appends to the last one, and once the root is
+     * recorded the chunks stay as they are, so a claim can be proven from state alone. Every chunk
+     * of a block is removed once [`Config::AwardRetentionTtl`] has run out on the wall-clock time
+     * of the block's first award, by the sweep [`NftClaimCreditAwardExpiries`] files it for.
+     *
+     * A block holds at most [`CHUNKS_PER_TREE`] chunks. The awards are chunked so that one award
+     * reads one chunk instead of a whole tree's leaves, which keeps a `report`'s declared proof
+     * size close to what it records.
+     *
+     * The awards are kept rather than the leaves they hash to, because a mint needs the credit
+     * itself: Asset Hub recomputes the leaf from the claimant and the credit the claimant
+     * presents, so a leaf alone would still leave the credit to be recovered from events.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<Array<IndivPalletNftCreditsNftClaimCreditAward>> =} callback
+     **/
+    nftClaimCreditAwards: GenericStorageQuery<
+      (arg: [number, number]) => Array<IndivPalletNftCreditsNftClaimCreditAward>,
+      [number, number]
+    >;
+
+    /**
+     * Every tree block whose [`NftClaimCreditAwards`] are still on chain, filed under the
+     * timestamp its root commits to.
+     *
+     * Keyed as [`RootExpiries`] is, from the same timestamp, so the two agree on when a block
+     * falls due. Kept apart from that map because the two run on different TTLs, and a sweep
+     * removes the entries it reads: sharing one map would have whichever sweep came first take
+     * the other's record with it.
+     *
+     * @param {[IndivSupportUtilsBigEndianU32, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    nftClaimCreditAwardExpiries: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU32, number]) => [] | undefined,
+      [IndivSupportUtilsBigEndianU32, number]
+    >;
+
+    /**
+     * The buffers that still owe a tree, keyed by the block whose tree commits each. An entry
+     * holds what its [`NftClaimCreditRoots`] entry will carry besides the root, and how many
+     * awards are in the buffer.
+     *
+     * Written when a buffer's first credit is awarded, updated by each one after it and taken
+     * once its root is recorded. Awarding and [`Pallet::build_credit_tree`] read the award count
+     * from here rather than scan the buffer's [`NftClaimCreditAwards`] chunks for its end.
+     *
+     * At most [`MAX_PENDING_CREDIT_TREES`] entries, which is the only bound on the awards no
+     * tree commits yet.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletNftCreditsCreditBuffer | undefined> =} callback
+     **/
+    creditBuffers: GenericStorageQuery<(arg: number) => IndivPalletNftCreditsCreditBuffer | undefined, number>;
+
+    /**
+     * The [`CreditBuffers`] entry the next awarded credit goes into, named by its block, which is
+     * the block whose tree commits it.
+     *
+     * Ahead of the current block when awarding has spilled. A value at or before the previous
+     * block, zero included, names a buffer whose tree is already built, so awarding starts a fresh
+     * one at the current block.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    creditBufferCursor: GenericStorageQuery<() => number>;
+
+    /**
+     * The Merkle commitment to the NFT claim credits a block committed, keyed by that block.
+     * A block whose buffer held nothing has no entry.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivSupportCreditTreesNftClaimCreditTree | undefined> =} callback
+     **/
+    nftClaimCreditRoots: GenericStorageQuery<
+      (arg: number) => IndivSupportCreditTreesNftClaimCreditTree | undefined,
+      number
+    >;
+
+    /**
+     * The tree blocks whose credit trees have not been delivered to the NFT claims chain yet,
+     * in ascending block order, each with the sequence number it is delivered under.
+     *
+     * Appended by [`Pallet::build_credit_tree`] and drained from the front by
+     * [`Pallet::send_credit_trees`] once the XCM carrying the trees has been accepted for
+     * delivery. The trees themselves stay in [`NftClaimCreditRoots`]; this only records what
+     * still owes a delivery.
+     *
+     * @param {Callback<Array<[bigint, number]>> =} callback
+     **/
+    creditTreeDeliveryQueue: GenericStorageQuery<() => Array<[bigint, number]>>;
+
+    /**
+     * The time of the last credit tree replay, in seconds.
+     *
+     * [`Pallet::replay_credit_trees`] refuses to run again within
+     * [`Config::ReplayCooldownSeconds`] of it.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    lastReplayTime: GenericStorageQuery<() => bigint | undefined>;
+
+    /**
+     * Every tree block whose root is still recorded, filed under the timestamp that root commits
+     * to.
+     *
+     * The key is hashed with `Identity` and encoded big-endian, so the map iterates from the
+     * oldest deadline to the newest, which [`NftClaimCreditRoots`] does not. A sweep takes the
+     * roots that are due and stops at the first that is not. Both removal paths remove a root's
+     * entry with the root.
+     *
+     * @param {[IndivSupportUtilsBigEndianU32, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    rootExpiries: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU32, number]) => [] | undefined,
+      [IndivSupportUtilsBigEndianU32, number]
+    >;
+
+    /**
+     * The sequence number the next queued credit tree is delivered under.
+     *
+     * Only a tree that made it into [`CreditTreeDeliveryQueue`] consumes one, so the sequence the
+     * claims chain sees stays contiguous even when the queue overflows. A gap there therefore
+     * means a message was lost, never that one was not sent.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    nextCreditTreeSequence: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `DummyDim`'s storage queries
+   **/
+  dummyDim: {
+    /**
+     * The personal IDs that are reserved by unproven people.
+     *
+     * @param {bigint} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    reservedIds: GenericStorageQuery<(arg: bigint) => [] | undefined, bigint>;
+
+    /**
+     * The people we track along with their records.
+     *
+     * @param {bigint} arg
+     * @param {Callback<IndivPalletDummyDimRecord | undefined> =} callback
+     **/
+    people: GenericStorageQuery<(arg: bigint) => IndivPalletDummyDimRecord | undefined, bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `StorageInitialization`'s storage queries
+   **/
+  storageInitialization: {
+    /**
+     * Current state of the initialization process in on_poll hook.
+     *
+     * @param {Callback<IndivPalletStorageInitializationOnPollState> =} callback
+     **/
+    onPollStatus: GenericStorageQuery<() => IndivPalletStorageInitializationOnPollState>;
+
+    /**
+     * Block number when XCM transfer was initiated.
+     * Used to track transfer timeout.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    xcmTransferInitiatedAt: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `PeopleLite`'s storage queries
+   **/
+  peopleLite: {
+    /**
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletPeopleLiteLitePersonInfo | undefined> =} callback
+     **/
+    litePeople: GenericStorageQuery<
+      (arg: AccountId32Like) => IndivPalletPeopleLiteLitePersonInfo | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Conversion of a lite contextual alias to an account ID.
+     *
+     * @param {IndivSupportRealityContextualAlias} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    aliasToAccount: GenericStorageQuery<
+      (arg: IndivSupportRealityContextualAlias) => AccountId32 | undefined,
+      IndivSupportRealityContextualAlias
+    >;
+
+    /**
+     * Conversion of an account ID to a lite contextual alias.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivSupportRealityRevisedContextualAlias | undefined> =} callback
+     **/
+    accountToAlias: GenericStorageQuery<
+      (arg: AccountId32Like) => IndivSupportRealityRevisedContextualAlias | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Whether the lite people member collection has been created.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    litePeopleCollectionCreated: GenericStorageQuery<() => boolean>;
+
+    /**
+     * Number of attestations available to distribute for a verifier account id.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    attestationAllowance: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Resources`'s storage queries
+   **/
+  resources: {
+    /**
+     * Accounts used to identify consumers mapped to their consumer information.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletResourcesConsumerInfo | undefined> =} callback
+     **/
+    consumers: GenericStorageQuery<(arg: AccountId32Like) => IndivPalletResourcesConsumerInfo | undefined, AccountId32>;
+
+    /**
+     * Accounts associated with a statement store slot through an anonymous allowance, per period.
+     *
+     * The period key is a big-endian encoded day number (seconds since Unix epoch / 86400) so
+     * that `Identity`-hashed iteration yields entries in chronological order to be removed by the
+     * offchain worker.
+     *
+     * @param {[IndivSupportUtilsBigEndianU32, FixedBytes<32>]} arg
+     * @param {Callback<IndivPalletResourcesStmtStoreAllowanceEntry | undefined> =} callback
+     **/
+    statementStoreAllowances: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU32, FixedBytes<32>]) => IndivPalletResourcesStmtStoreAllowanceEntry | undefined,
+      [IndivSupportUtilsBigEndianU32, FixedBytes<32>]
+    >;
+
+    /**
+     * Reverse lookup from a statement account to all its active anonymous allowances.
+     *
+     * Keyed by `(AccountId, (BigEndianU32 period, u32 seq, Alias))` → `()`. Multiple
+     * entries per account are possible when the same statement account is authorized by
+     * different aliases or across grace-window overlaps.
+     *
+     * @param {[AccountId32Like, [IndivSupportUtilsBigEndianU32, number, FixedBytes<32>]]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    stmtStoreAllowanceByAccount: GenericStorageQuery<
+      (arg: [AccountId32Like, [IndivSupportUtilsBigEndianU32, number, FixedBytes<32>]]) => [] | undefined,
+      [AccountId32, [IndivSupportUtilsBigEndianU32, number, FixedBytes<32>]]
+    >;
+
+    /**
+     * Notification allowance registration by anonymous alias.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletResourcesNotificationRegistration | undefined> =} callback
+     **/
+    notificationRegistrationByAlias: GenericStorageQuery<
+      (arg: FixedBytes<32>) => IndivPalletResourcesNotificationRegistration | undefined,
+      FixedBytes<32>
+    >;
+
+    /**
+     * Reverse lookup from notification statement account to anonymous alias.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<FixedBytes<32> | undefined> =} callback
+     **/
+    notificationAliasByAccount: GenericStorageQuery<(arg: AccountId32Like) => FixedBytes<32> | undefined, AccountId32>;
+
+    /**
+     * Aliases that have already been used to claim long-term storage in a given period.
+     *
+     * Keyed by `(period, alias)`. Each counter value in the proof context produces a unique
+     * alias, so a person can have up to `LongTermStorageClaimsPerPeriod` entries per period.
+     * Old periods can be cleaned up via `clear_expired_long_term_storage_aliases`.
+     *
+     * The period key is `BigEndianU32` with `Identity` so iteration yields entries in
+     * chronological order, matching `StatementStoreAllowances`.
+     *
+     * @param {[IndivSupportUtilsBigEndianU32, FixedBytes<32>]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    spentLongTermStorageAliases: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU32, FixedBytes<32>]) => [] | undefined,
+      [IndivSupportUtilsBigEndianU32, FixedBytes<32>]
+    >;
+
+    /**
+     * Reverse lookup from `username` to the `AccountId` that has registered it. The `owner` value
+     * should be a key in the `Consumers` map. There can be at most 2 usernames pointing to the
+     * same `owner`:
+     * - username associated with a consumer's lite person identity - this will always be present;
+     * - optionally another username associated with the consumer's full person identity, if
+     * applicable.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    usernameOwnerOf: GenericStorageQuery<(arg: BytesLike) => AccountId32 | undefined, Bytes>;
+
+    /**
+     * Reverse lookup from registered aliases to the `AccountId` used to register as a consumer.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    accountOfAlias: GenericStorageQuery<(arg: FixedBytes<32>) => AccountId32 | undefined, FixedBytes<32>>;
+
+    /**
+     * The amount of time for which a username reservation is valid, in seconds. After this
+     * time period elapses, the reservation can be voided.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    usernameReservationDuration: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Map from a reserved `username` to a queue of `ReservationQueueEntry` items, each holding an
+     * account and the timestamp when it joined. Old reservations can be removed from storage.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<Array<IndivPalletResourcesReservationQueueEntry> | undefined> =} callback
+     **/
+    usernameReservationQueue: GenericStorageQuery<
+      (arg: BytesLike) => Array<IndivPalletResourcesReservationQueueEntry> | undefined,
+      Bytes
+    >;
+
+    /**
+     * Reverse lookup from an account to the username it has reserved. Each account can have at
+     * most one active reservation at a time.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    reservationOf: GenericStorageQuery<(arg: AccountId32Like) => Bytes | undefined, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `ChunksManager`'s storage queries
+   **/
+  chunksManager: {
+    /**
+     * Paginated collection of chunks (RingExponent -> PageIndex -> Chunks).
+     *
+     * @param {[IndivSupportRealityRingExponent, number]} arg
+     * @param {Callback<Array<IndivPalletChunksManagerUncheckedChunk> | undefined> =} callback
+     **/
+    chunks: GenericStorageQuery<
+      (arg: [IndivSupportRealityRingExponent, number]) => Array<IndivPalletChunksManagerUncheckedChunk> | undefined,
+      [IndivSupportRealityRingExponent, number]
+    >;
+
+    /**
+     * The hash for each page of chunks.
+     *
+     * @param {[IndivSupportRealityRingExponent, number]} arg
+     * @param {Callback<FixedBytes<32> | undefined> =} callback
+     **/
+    chunkPageHashes: GenericStorageQuery<
+      (arg: [IndivSupportRealityRingExponent, number]) => FixedBytes<32> | undefined,
+      [IndivSupportRealityRingExponent, number]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Members`'s storage queries
+   **/
+  members: {
+    /**
+     * Information about each collection, keyed by identifier.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletMembersCollectionInfo | undefined> =} callback
+     **/
+    collections: GenericStorageQuery<
+      (arg: FixedBytes<32>) => IndivPalletMembersCollectionInfo | undefined,
+      FixedBytes<32>
+    >;
+
+    /**
+     * Identifiers of collections marked for deletion. No new collection can use them. Entries
+     * are never removed.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    retiredIdentifiers: GenericStorageQuery<(arg: FixedBytes<32>) => [] | undefined, FixedBytes<32>>;
+
+    /**
+     * Collections that have been marked for deletion and are being processed.
+     * Once a collection is moved here, normal operations will fail with CollectionNotFound.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletMembersCollectionInfo | undefined> =} callback
+     **/
+    suspendedCollections: GenericStorageQuery<
+      (arg: FixedBytes<32>) => IndivPalletMembersCollectionInfo | undefined,
+      FixedBytes<32>
+    >;
+
+    /**
+     * The identifiers of collections owned by an entity.
+     *
+     * @param {IndivPalletMembersCollectionOwner} arg
+     * @param {Callback<Array<FixedBytes<32>> | undefined> =} callback
+     **/
+    identifiersOf: GenericStorageQuery<
+      (arg: IndivPalletMembersCollectionOwner) => Array<FixedBytes<32>> | undefined,
+      IndivPalletMembersCollectionOwner
+    >;
+
+    /**
+     * The current members we recognise.
+     *
+     * @param {[FixedBytes<32>, number]} arg
+     * @param {Callback<IndivPalletMembersRingRoot | undefined> =} callback
+     **/
+    root: GenericStorageQuery<
+      (arg: [FixedBytes<32>, number]) => IndivPalletMembersRingRoot | undefined,
+      [FixedBytes<32>, number]
+    >;
+
+    /**
+     * Old ring roots are retained for a grace period so that proofs generated against
+     * previous revisions remain valid. Each root in the map is identified by the composite key
+     * `(collection, ring index, ring revision)`. Entries can be cleaned up after
+     * `OldRootRetentionDuration` has passed since the `archived_at` timestamp.
+     *
+     * This storage can contain some roots for deleted collections or removed rings.
+     * The call `verify_membership` and other operation using old roots must check the
+     * existence of the collection and the root in order to not validate against dust.
+     * The old roots will be removed after the retention duration.
+     *
+     * @param {[FixedBytes<32>, number, IndivSupportUtilsBigEndianU32]} arg
+     * @param {Callback<IndivPalletMembersOldRoot | undefined> =} callback
+     **/
+    oldRoots: GenericStorageQuery<
+      (arg: [FixedBytes<32>, number, IndivSupportUtilsBigEndianU32]) => IndivPalletMembersOldRoot | undefined,
+      [FixedBytes<32>, number, IndivSupportUtilsBigEndianU32]
+    >;
+
+    /**
+     * Keeps track of the ring index currently being populated.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<number> =} callback
+     **/
+    currentRingIndex: GenericStorageQuery<(arg: FixedBytes<32>) => number, FixedBytes<32>>;
+
+    /**
+     * Maximum number of members queued before onboarding to a ring.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<number> =} callback
+     **/
+    onboardingSize: GenericStorageQuery<(arg: FixedBytes<32>) => number, FixedBytes<32>>;
+
+    /**
+     * Both the keys that are included in built rings and the keys that will be used in future
+     * rings. Paginated by (Identifier, RingIndex, PageIndex) where each page contains up to
+     * `RingCapacityFromExponent` keys. The page size equals the flexible ring exponent's capacity,
+     * ensuring Flexible collections never need more than one page.
+     *
+     * @param {[FixedBytes<32>, number, number]} arg
+     * @param {Callback<Array<FixedBytes<32>>> =} callback
+     **/
+    ringKeys: GenericStorageQuery<
+      (arg: [FixedBytes<32>, number, number]) => Array<FixedBytes<32>>,
+      [FixedBytes<32>, number, number]
+    >;
+
+    /**
+     * Stores the meta information for each ring, the number of keys and how many are actually
+     * included in the root.
+     *
+     * @param {[FixedBytes<32>, number]} arg
+     * @param {Callback<IndivSupportRealityRingStatus> =} callback
+     **/
+    ringKeysStatus: GenericStorageQuery<
+      (arg: [FixedBytes<32>, number]) => IndivSupportRealityRingStatus,
+      [FixedBytes<32>, number]
+    >;
+
+    /**
+     * A map of all rings which currently have pending suspensions and need cleaning, along with
+     * their respective number of suspended keys which need to be removed.
+     * Note: Currently only supports single-page rings, so bounded by `RingCapacityFromExponent`.
+     *
+     * @param {[FixedBytes<32>, number]} arg
+     * @param {Callback<Array<number>> =} callback
+     **/
+    pendingSuspensions: GenericStorageQuery<(arg: [FixedBytes<32>, number]) => Array<number>, [FixedBytes<32>, number]>;
+
+    /**
+     * The number of members currently included in a ring.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<number> =} callback
+     **/
+    activeMembers: GenericStorageQuery<(arg: FixedBytes<32>) => number, FixedBytes<32>>;
+
+    /**
+     * The current members in each collection (either included in rings, suspended and queued
+     * for removal from a ring, suspended and not in any ring, or onboarding).
+     *
+     * Collection identifier to member public key to the member's status.
+     *
+     * A key can belong to multiple collections.
+     *
+     * @param {[FixedBytes<32>, FixedBytes<32>]} arg
+     * @param {Callback<IndivSupportRealityRingPosition | undefined> =} callback
+     **/
+    members: GenericStorageQuery<
+      (arg: [FixedBytes<32>, FixedBytes<32>]) => IndivSupportRealityRingPosition | undefined,
+      [FixedBytes<32>, FixedBytes<32>]
+    >;
+
+    /**
+     * The current state of all rings managed for a given identifier.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivSupportRealityRingMembersState> =} callback
+     **/
+    ringsState: GenericStorageQuery<(arg: FixedBytes<32>) => IndivSupportRealityRingMembersState, FixedBytes<32>>;
+
+    /**
+     * Set of rings which are stale and require building.
+     *
+     * @param {[FixedBytes<32>, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    staleRings: GenericStorageQuery<(arg: [FixedBytes<32>, number]) => [] | undefined, [FixedBytes<32>, number]>;
+
+    /**
+     * Keeps track of the page indices of the head and tail of the onboarding queue.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[number, number]> =} callback
+     **/
+    queuePageIndices: GenericStorageQuery<(arg: FixedBytes<32>) => [number, number], FixedBytes<32>>;
+
+    /**
+     * Paginated collection of member public keys ready to be included in a ring.
+     *
+     * @param {[FixedBytes<32>, number]} arg
+     * @param {Callback<Array<FixedBytes<32>>> =} callback
+     **/
+    onboardingQueue: GenericStorageQuery<
+      (arg: [FixedBytes<32>, number]) => Array<FixedBytes<32>>,
+      [FixedBytes<32>, number]
+    >;
+
+    /**
+     * Queue of ring pages pending deletion.
+     *
+     * This is used both by `remove_ring` (individual ring deletion) and by
+     * collection deletion. Ring pages are processed from this queue via OCW
+     * regardless of which operation queued them.
+     *
+     * @param {[FixedBytes<32>, number, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    ringDeletionQueue: GenericStorageQuery<
+      (arg: [FixedBytes<32>, number, number]) => [] | undefined,
+      [FixedBytes<32>, number, number]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Coinage`'s storage queries
+   **/
+  coinage: {
+    /**
+     * All the coins in all instances currently circulating, keyed by owner.
+     *
+     * A coin is minted when unloaded from a recycler, and destroyed when loaded into one.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletCoinageCoin | undefined> =} callback
+     **/
+    coinsByOwner: GenericStorageQuery<(arg: AccountId32Like) => IndivPalletCoinageCoin | undefined, AccountId32>;
+
+    /**
+     * Temporary lock expiry for coins that previously failed dispatch, keyed by owner.
+     *
+     * An entry is locked until the stored Unix timestamp, preventing repeated failed dispatch
+     * attempts in a short period.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletCoinageLockInfo | undefined> =} callback
+     **/
+    lockedCoins: GenericStorageQuery<(arg: AccountId32Like) => IndivPalletCoinageLockInfo | undefined, AccountId32>;
+
+    /**
+     * The total value of coins that were burnt, keyed by instance.
+     *
+     * This tracks value that is intentionally destroyed as part of protocol flows (for example:
+     * recycler expiration cleanup and fee remainder burning). This storage item keeps track of
+     * the total value of such destroyed coins.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    totalValueOfDestroyedCoins: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Consumed free unload tokens by period and alias.
+     *
+     * This storage keeps track of the free unload tokens that have been consumed by people
+     * and lite people, to avoid double spending.
+     *
+     * It is cleared periodically.
+     *
+     * @param {[number, FixedBytes<32>]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    consumedFreeUnloadTokens: GenericStorageQuery<
+      (arg: [number, FixedBytes<32>]) => [] | undefined,
+      [number, FixedBytes<32>]
+    >;
+
+    /**
+     * Tracks whether a recycler collection exists for a given instance and denomination.
+     *
+     * [`Pallet::create_sufficient_instance`] creates one recycler collection per denomination in
+     * `[MinimumExponent, MaximumExponent]`.
+     *
+     * **WARNING**: Do not use this storage directly, use [`RecyclerManager`] type instead.
+     *
+     * This storage item is managed by [`RecyclerManager`] and is part of a consistent set:
+     * * [RecyclerCollectionCreated] - whether the collection exists for an instance and
+     * denomination.
+     * * [RecyclersLastRemovedRingIndex] - the last removed ring index for each instance and
+     * denomination.
+     * * [RecyclersCoinToRecycler] - the mapping from member key to the instance and denomination
+     * it is in.
+     * * [RecyclerAliasStates] - per-alias lock/unloaded state, indexed by instance, denomination
+     * and ring index.
+     * * [RecyclersUnloadedCount] - the number of unloaded aliases of each ring.
+     * * [RecyclersDusting] - marks rings with deferred recycler dust pending removal.
+     * * [RecyclersArchives] - archival commitments for cleaned rings that still hold recoverable
+     * coins.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    recyclerCollectionCreated: GenericStorageQuery<(arg: [number, number]) => [] | undefined, [number, number]>;
+
+    /**
+     * Last removed ring index per instance and recycler denomination.
+     *
+     * Rings are removed sequentially starting from index 0. The next ring to check for
+     * expiration is `last_removed + 1` (or `0` if nothing has been removed yet).
+     *
+     * **WARNING**: Do not use this storage directly, use [`RecyclerManager`] type instead.
+     *
+     * This storage item is managed by [`RecyclerManager`] and is part of a consistent set:
+     * * [RecyclerCollectionCreated] - whether the collection exists for an instance and
+     * denomination.
+     * * [RecyclersLastRemovedRingIndex] - the last removed ring index for each instance and
+     * denomination.
+     * * [RecyclersCoinToRecycler] - the mapping from member key to the instance and denomination
+     * it is in.
+     * * [RecyclerAliasStates] - per-alias lock/unloaded state, indexed by instance, denomination
+     * and ring index.
+     * * [RecyclersUnloadedCount] - the number of unloaded aliases of each ring.
+     * * [RecyclersDusting] - marks rings with deferred recycler dust pending removal.
+     * * [RecyclersArchives] - archival commitments for cleaned rings that still hold recoverable
+     * coins.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    recyclersLastRemovedRingIndex: GenericStorageQuery<(arg: [number, number]) => number | undefined, [number, number]>;
+
+    /**
+     * Mapping from a recycler member key to the instance and denomination it belongs to.
+     *
+     * When a coin is loaded into a recycler, the member key is recorded here so that the
+     * pallet can look up which instance and denomination the member key corresponds to.
+     *
+     * **WARNING**: Do not use this storage directly, use [`RecyclerManager`] type instead.
+     *
+     * This storage item is managed by [`RecyclerManager`] and is part of a consistent set:
+     * * [RecyclerCollectionCreated] - whether the collection exists for an instance and
+     * denomination.
+     * * [RecyclersLastRemovedRingIndex] - the last removed ring index for each instance and
+     * denomination.
+     * * [RecyclersCoinToRecycler] - the mapping from member key to the instance and denomination
+     * it is in.
+     * * [RecyclerAliasStates] - per-alias lock/unloaded state, indexed by instance, denomination
+     * and ring index.
+     * * [RecyclersUnloadedCount] - the number of unloaded aliases of each ring.
+     * * [RecyclersDusting] - marks rings with deferred recycler dust pending removal.
+     * * [RecyclersArchives] - archival commitments for cleaned rings that still hold recoverable
+     * coins.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[number, number] | undefined> =} callback
+     **/
+    recyclersCoinToRecycler: GenericStorageQuery<(arg: FixedBytes<32>) => [number, number] | undefined, FixedBytes<32>>;
+
+    /**
+     * State of recycler aliases, indexed by `(instance, denomination, ring index, alias)`.
+     *
+     * Each entry records either a temporary failed-dispatch lock or a permanently consumed
+     * alias. Absence from the map means the alias is available.
+     *
+     * **WARNING**: Do not use this storage directly, use [`RecyclerManager`] type instead.
+     *
+     * This storage item is managed by [`RecyclerManager`] and is part of a consistent set:
+     * * [RecyclerCollectionCreated] - whether the collection exists for an instance and
+     * denomination.
+     * * [RecyclersLastRemovedRingIndex] - the last removed ring index for each instance and
+     * denomination.
+     * * [RecyclersCoinToRecycler] - the mapping from member key to the instance and denomination
+     * it is in.
+     * * [RecyclerAliasStates] - per-alias lock/unloaded state, indexed by instance, denomination
+     * and ring index.
+     * * [RecyclersUnloadedCount] - the number of unloaded aliases of each ring.
+     * * [RecyclersDusting] - marks rings with deferred recycler dust pending removal.
+     * * [RecyclersArchives] - archival commitments for cleaned rings that still hold recoverable
+     * coins.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {[number, number, number, FixedBytes<32>]} arg
+     * @param {Callback<IndivPalletCoinageAliasState | undefined> =} callback
+     **/
+    recyclerAliasStates: GenericStorageQuery<
+      (arg: [number, number, number, FixedBytes<32>]) => IndivPalletCoinageAliasState | undefined,
+      [number, number, number, FixedBytes<32>]
+    >;
+
+    /**
+     * Number of aliases unloaded from each recycler ring.
+     *
+     * Equals the number of [RecyclerAliasStates] entries of the ring in state
+     * [`AliasState::Unloaded`], so `RingStatus::total` minus this value is the number of coins the
+     * ring still holds. Absent for a ring that already had alias states when the count was
+     * introduced, because recovering its number needs a scan; such a ring is never counted.
+     *
+     * **WARNING**: Do not use this storage directly, use [`RecyclerManager`] type instead.
+     *
+     * This storage item is managed by [`RecyclerManager`] and is part of a consistent set:
+     * * [RecyclerCollectionCreated] - whether the collection exists for an instance and
+     * denomination.
+     * * [RecyclersLastRemovedRingIndex] - the last removed ring index for each instance and
+     * denomination.
+     * * [RecyclersCoinToRecycler] - the mapping from member key to the instance and denomination
+     * it is in.
+     * * [RecyclerAliasStates] - per-alias lock/unloaded state, indexed by instance, denomination
+     * and ring index.
+     * * [RecyclersUnloadedCount] - the number of unloaded aliases of each ring.
+     * * [RecyclersDusting] - marks rings with deferred recycler dust pending removal.
+     * * [RecyclersArchives] - archival commitments for cleaned rings that still hold recoverable
+     * coins.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {[number, number, number]} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    recyclersUnloadedCount: GenericStorageQuery<
+      (arg: [number, number, number]) => number | undefined,
+      [number, number, number]
+    >;
+
+    /**
+     * Marks recycler rings that have deferred recycler dust pending removal.
+     *
+     * When a recycler ring is removed, the cleanup of its leftover alias states in
+     * [RecyclerAliasStates] is performed gradually through this storage item. An entry here
+     * indicates that entries in [RecyclerAliasStates] for the given instance, denomination and
+     * ring index still exist and should be dusted.
+     *
+     * **WARNING**: Do not use this storage directly, use [`RecyclerManager`] type instead.
+     *
+     * This storage item is managed by [`RecyclerManager`] and is part of a consistent set:
+     * * [RecyclerCollectionCreated] - whether the collection exists for an instance and
+     * denomination.
+     * * [RecyclersLastRemovedRingIndex] - the last removed ring index for each instance and
+     * denomination.
+     * * [RecyclersCoinToRecycler] - the mapping from member key to the instance and denomination
+     * it is in.
+     * * [RecyclerAliasStates] - per-alias lock/unloaded state, indexed by instance, denomination
+     * and ring index.
+     * * [RecyclersUnloadedCount] - the number of unloaded aliases of each ring.
+     * * [RecyclersDusting] - marks rings with deferred recycler dust pending removal.
+     * * [RecyclersArchives] - archival commitments for cleaned rings that still hold recoverable
+     * coins.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {[number, number, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    recyclersDusting: GenericStorageQuery<(arg: [number, number, number]) => [] | undefined, [number, number, number]>;
+
+    /**
+     * Archival commitments for cleaned recycler rings that still hold recoverable coins.
+     *
+     * When a recycler ring is cleaned (see [`RecyclerManager::clean_unchecked`]) while it still
+     * has at least one not-unloaded alias, an [`ArchivedRecycler`] is recorded here keyed by
+     * `(instance, denomination, ring index)`. It commits to the trie of unloaded aliases and
+     * the recycler root. Not-unloaded coins can still be unloaded with
+     * [`Pallet::unload_archived_recycler_into_external_asset`], which updates the archive. The
+     * archive is removed once all coins have been unloaded.
+     *
+     * Only the commitments are stored on-chain. The unloaded-aliases trie and the ring can be
+     * reconstructed offchain to build the recovery proofs by listening to the
+     * [`Event::RecyclerAliasUnloaded`], [`Event::RecyclerArchived`] and
+     * [`Event::ArchivedRecyclerUnloadedIntoExternalAsset`] events.
+     *
+     * **WARNING**: Do not use this storage directly, use [`RecyclerManager`] type instead.
+     *
+     * This storage item is managed by [`RecyclerManager`] and is part of a consistent set:
+     * * [RecyclerCollectionCreated] - whether the collection exists for an instance and
+     * denomination.
+     * * [RecyclersLastRemovedRingIndex] - the last removed ring index for each instance and
+     * denomination.
+     * * [RecyclersCoinToRecycler] - the mapping from member key to the instance and denomination
+     * it is in.
+     * * [RecyclerAliasStates] - per-alias lock/unloaded state, indexed by instance, denomination
+     * and ring index.
+     * * [RecyclersUnloadedCount] - the number of unloaded aliases of each ring.
+     * * [RecyclersDusting] - marks rings with deferred recycler dust pending removal.
+     * * [RecyclersArchives] - archival commitments for cleaned rings that still hold recoverable
+     * coins.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {[number, number, number]} arg
+     * @param {Callback<IndivPalletCoinageArchivedRecycler | undefined> =} callback
+     **/
+    recyclersArchives: GenericStorageQuery<
+      (arg: [number, number, number]) => IndivPalletCoinageArchivedRecycler | undefined,
+      [number, number, number]
+    >;
+
+    /**
+     * Mapping from a paid token member key to the period it belongs to.
+     *
+     * When a user pays for a recycler unload token, the member key is recorded here so
+     * that the pallet can look up which period the member key corresponds to.
+     *
+     * **WARNING**: Do not use this storage directly, use [`PaidTknManager`] type instead.
+     *
+     * This storage item is managed by [`PaidTknManager`] and is part of a consistent set:
+     * * [PaidUnloadTokenMembers] - tracks registered member keys.
+     * * [PaidUnloadTokenConsumed] - the consumed paid unload token aliases.
+     * * [PaidTokenCollectionsCreated] - whether the collection exists for a period.
+     * * [PaidUnloadTokenDusting] - marks periods with consumed tokens pending removal.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    paidUnloadTokenMembers: GenericStorageQuery<(arg: FixedBytes<32>) => [] | undefined, FixedBytes<32>>;
+
+    /**
+     * Consumed paid unload tokens by period, ring index and alias.
+     *
+     * When a paid unload token is consumed, the alias produced by the ring-VRF proof is
+     * stored here to prevent double-spending within the same ring.
+     *
+     * **WARNING**: Do not use this storage directly, use [`PaidTknManager`] type instead.
+     *
+     * This storage item is managed by [`PaidTknManager`] and is part of a consistent set:
+     * * [PaidUnloadTokenMembers] - tracks registered member keys.
+     * * [PaidUnloadTokenConsumed] - the consumed paid unload token aliases.
+     * * [PaidTokenCollectionsCreated] - whether the collection exists for a period.
+     * * [PaidUnloadTokenDusting] - marks periods with consumed tokens pending removal.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {[IndivSupportUtilsBigEndianU32, number, FixedBytes<32>]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    paidUnloadTokenConsumed: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU32, number, FixedBytes<32>]) => [] | undefined,
+      [IndivSupportUtilsBigEndianU32, number, FixedBytes<32>]
+    >;
+
+    /**
+     * Tracks whether a paid token collection exists for a given period.
+     *
+     * Uses `Identity` hasher so that iteration yields periods in order, enabling efficient
+     * cleanup of expired periods.
+     *
+     * **WARNING**: Do not use this storage directly, use [`PaidTknManager`] type instead.
+     *
+     * This storage item is managed by [`PaidTknManager`] and is part of a consistent set:
+     * * [PaidUnloadTokenMembers] - tracks registered member keys.
+     * * [PaidUnloadTokenConsumed] - the consumed paid unload token aliases.
+     * * [PaidTokenCollectionsCreated] - whether the collection exists for a period.
+     * * [PaidUnloadTokenDusting] - marks periods with consumed tokens pending removal.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {IndivSupportUtilsBigEndianU32} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    paidTokenCollectionsCreated: GenericStorageQuery<
+      (arg: IndivSupportUtilsBigEndianU32) => [] | undefined,
+      IndivSupportUtilsBigEndianU32
+    >;
+
+    /**
+     * Marks paid unload token periods that have consumed tokens pending removal.
+     *
+     * When a paid unload token collection is removed, the cleanup of its consumed tokens in
+     * [PaidUnloadTokenConsumed] is performed gradually through this storage item. An entry
+     * here indicates that consumed tokens for the given period still exist and should be
+     * dusted.
+     *
+     * **WARNING**: Do not use this storage directly, use [`PaidTknManager`] type instead.
+     *
+     * This storage item is managed by [`PaidTknManager`] and is part of a consistent set:
+     * * [PaidUnloadTokenMembers] - tracks registered member keys.
+     * * [PaidUnloadTokenConsumed] - the consumed paid unload token aliases.
+     * * [PaidTokenCollectionsCreated] - whether the collection exists for a period.
+     * * [PaidUnloadTokenDusting] - marks periods with consumed tokens pending removal.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {IndivSupportUtilsBigEndianU32} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    paidUnloadTokenDusting: GenericStorageQuery<
+      (arg: IndivSupportUtilsBigEndianU32) => [] | undefined,
+      IndivSupportUtilsBigEndianU32
+    >;
+
+    /**
+     * Tracks the next ring index to clean for each expired period.
+     *
+     * Used by the OCW to determine cleanup progress and by the collection deletion
+     * extrinsic to verify all rings have been cleaned.
+     *
+     * Rings are cleaned sequentially (one per OCW interval) rather than all at once.
+     * This is intentional: a single storage cursor enables O(1) completion checks in
+     * both [`PaidTknManager::ensure_can_clean_ring`] and
+     * [`PaidTknManager::ensure_can_delete_collection`]. The alternative — submitting
+     * all ring cleans in parallel — would require fetching ring members to check whether
+     * each ring was already cleaned (since `ring_status` still reports `total > 0` after
+     * cleanup because rings are not removed until collection deletion). Cleanup of expired
+     * collections is not time-critical, so the simpler sequential approach is preferred.
+     *
+     * **WARNING**: Do not use this storage directly, use [`PaidTknManager`] type instead.
+     *
+     * This storage item is managed by [`PaidTknManager`] and is part of a consistent set:
+     * * [PaidUnloadTokenMembers] - tracks registered member keys.
+     * * [PaidUnloadTokenConsumed] - the consumed paid unload token aliases.
+     * * [PaidTokenCollectionsCreated] - whether the collection exists for a period.
+     * * [PaidUnloadTokenDusting] - marks periods with consumed tokens pending removal.
+     * * [PaidUnloadTokenNextRingToClean] - sequential ring cleanup progress.
+     *
+     * Ring members, pending members, and ring state are managed by [`Config::MemberService`].
+     *
+     * @param {IndivSupportUtilsBigEndianU32} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    paidUnloadTokenNextRingToClean: GenericStorageQuery<
+      (arg: IndivSupportUtilsBigEndianU32) => number | undefined,
+      IndivSupportUtilsBigEndianU32
+    >;
+
+    /**
+     * The coinage instances, keyed by [`InstanceId`].
+     *
+     * Created by [`Pallet::create_sufficient_instance`]. Entries are never removed: the coins and
+     * recyclers of an instance can outlive any single operation.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletCoinageInstanceRecord | undefined> =} callback
+     **/
+    instances: GenericStorageQuery<(arg: number) => IndivPalletCoinageInstanceRecord | undefined, number>;
+
+    /**
+     * The [`InstanceId`] that [`Pallet::create_sufficient_instance`] allocates next.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    nextInstanceId: GenericStorageQuery<() => number>;
+
+    /**
+     * Reverse lookup from an underlying asset to the instances wrapping it, as a set.
+     *
+     * An asset may be wrapped by multiple instances with different
+     * [`InstanceRecord::asset_unit`]s.
+     *
+     * @param {[StagingXcmV5Location, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    assetToInstance: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, number]) => [] | undefined,
+      [StagingXcmV5Location, number]
+    >;
+
+    /**
+     * What each funder has put into an instance's pot through [`Pallet::fund_pot`].
+     *
+     * @param {[number, AccountId32Like, StagingXcmV5Location]} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    potContributions: GenericStorageQuery<
+      (arg: [number, AccountId32Like, StagingXcmV5Location]) => bigint,
+      [number, AccountId32, StagingXcmV5Location]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MembersNotifier`'s storage queries
+   **/
+  membersNotifier: {
+    /**
+     * Subscriber registry with their subscribed collections and initialization state.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<IndivPalletMembersNotifierSubscriberInfo | undefined> =} callback
+     **/
+    subscribers: GenericStorageQuery<
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => IndivPalletMembersNotifierSubscriberInfo | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForSubscribers: GenericStorageQuery<() => number>;
+
+    /**
+     * Subscriptions anyone may activate.
+     *
+     * An entry is consumed the first time the parachain subscribes, through either
+     * `subscribe_whitelisted` or `subscribe`. Once consumed, only `ManageOrigin` can
+     * subscribe that parachain again.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<IndivPalletMembersNotifierWhitelistedSubscription | undefined> =} callback
+     **/
+    subscriptionWhitelist: GenericStorageQuery<
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => IndivPalletMembersNotifierWhitelistedSubscription | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
+     * Collections at least one subscriber is subscribed to.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    subscribedCollections: GenericStorageQuery<(arg: FixedBytes<32>) => [] | undefined, FixedBytes<32>>;
+
+    /**
+     * Sequence number for sealed batch.
+     * Incremented when a batch is sealed - ready for distribution.
+     * Serves as the batch identifier for replay and distribution.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    sealedBatchSequence: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Paging state: write page, send page, and last update block.
+     *
+     * @param {Callback<IndivPalletMembersNotifierPagingState> =} callback
+     **/
+    pageState: GenericStorageQuery<() => IndivPalletMembersNotifierPagingState>;
+
+    /**
+     * Changed ring root keys, paged.
+     * Key: (page_index, identifier, ring_index). Populated by `OnRingRootChange`,
+     * consumed by `enqueue_updates` one page at a time from `PageState::send_page`.
+     *
+     * @param {[number, FixedBytes<32>, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    pendingUpdates: GenericStorageQuery<
+      (arg: [number, FixedBytes<32>, number]) => [] | undefined,
+      [number, FixedBytes<32>, number]
+    >;
+
+    /**
+     * Per-page count of entries in PendingUpdates.
+     *
+     * @param {number} arg
+     * @param {Callback<number> =} callback
+     **/
+    pageUpdatesCount: GenericStorageQuery<(arg: number) => number, number>;
+
+    /**
+     * State for paginated subscriber initialization.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<IndivPalletMembersNotifierPendingInitState | undefined> =} callback
+     **/
+    pendingInit: GenericStorageQuery<
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => IndivPalletMembersNotifierPendingInitState | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPendingInit: GenericStorageQuery<() => number>;
+
+    /**
+     * Indices per collection for the sealed (current) batch.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<Array<number> | undefined> =} callback
+     **/
+    sealedBatchIndices: GenericStorageQuery<(arg: FixedBytes<32>) => Array<number> | undefined, FixedBytes<32>>;
+
+    /**
+     * Current batch distribution state.
+     *
+     * @param {Callback<IndivPalletMembersNotifierBatchDistributionState | undefined> =} callback
+     **/
+    currentBatch: GenericStorageQuery<() => IndivPalletMembersNotifierBatchDistributionState | undefined>;
+
+    /**
+     * Tracks which subscribers have received the current batch.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    subscribersWithCurrentBatch: GenericStorageQuery<
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => [] | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
+     * Last replay time per (subscriber, collection) pair.
+     * Used to enforce a cooldown between replay requests.
+     *
+     * @param {[PolkadotParachainPrimitivesPrimitivesId, FixedBytes<32>]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    lastReplayTime: GenericStorageQuery<
+      (arg: [PolkadotParachainPrimitivesPrimitivesId, FixedBytes<32>]) => bigint | undefined,
+      [PolkadotParachainPrimitivesPrimitivesId, FixedBytes<32>]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Airdrop`'s storage queries
+   **/
+  airdrop: {
+    /**
+     * Registered airdrop events, keyed by their identifier.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletAirdropActiveEvent | undefined> =} callback
+     **/
+    events: GenericStorageQuery<(arg: FixedBytes<32>) => IndivPalletAirdropActiveEvent | undefined, FixedBytes<32>>;
+
+    /**
+     * Pending lifecycle actions for registered events, ordered by the timestamp at which the
+     * action should take place.
+     *
+     * @param {[IndivSupportUtilsBigEndianU64, FixedBytes<32>]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    actionSchedule: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU64, FixedBytes<32>]) => [] | undefined,
+      [IndivSupportUtilsBigEndianU64, FixedBytes<32>]
+    >;
+
+    /**
+     * Per-event participant registrations, keyed by 32-byte entropy slot
+     * in big-endian order under `Identity`.
+     *
+     * @param {[FixedBytes<32>, IndivSupportUtilsBigEndianU256]} arg
+     * @param {Callback<IndivPalletAirdropRegistrationEntry | undefined> =} callback
+     **/
+    registrations: GenericStorageQuery<
+      (arg: [FixedBytes<32>, IndivSupportUtilsBigEndianU256]) => IndivPalletAirdropRegistrationEntry | undefined,
+      [FixedBytes<32>, IndivSupportUtilsBigEndianU256]
+    >;
+
+    /**
+     * Winners for an event, keyed by the event identifier and their registration entry. This maps
+     * to the participant's ticket for offchain lookup purposes.
+     *
+     * @param {[FixedBytes<32>, IndivPalletAirdropRegistrationEntry]} arg
+     * @param {Callback<IndivSupportUtilsBigEndianU256 | undefined> =} callback
+     **/
+    winners: GenericStorageQuery<
+      (arg: [FixedBytes<32>, IndivPalletAirdropRegistrationEntry]) => IndivSupportUtilsBigEndianU256 | undefined,
+      [FixedBytes<32>, IndivPalletAirdropRegistrationEntry]
+    >;
+
+    /**
+     * Entropy seed captured at draw time, per event. This serves as a partition point in the
+     * participation ticket ordered list in order to pick winners.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivSupportUtilsBigEndianU256 | undefined> =} callback
+     **/
+    eventEntropy: GenericStorageQuery<
+      (arg: FixedBytes<32>) => IndivSupportUtilsBigEndianU256 | undefined,
+      FixedBytes<32>
+    >;
+
+    /**
+     * Per-asset enablement gate. An asset is usable for scheduling events iff it is present in
+     * this map; the stored value is the amount the pallet transferred into its pot to keep the
+     * pot's asset account alive (the asset's ED at the time of enabling). `enable_asset` /
+     * `disable_asset` are the only ways to mutate this.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    supportedAssets: GenericStorageQuery<(arg: StagingXcmV5Location) => bigint | undefined, StagingXcmV5Location>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Honour`'s storage queries
+   **/
+  honour: {
+    /**
+     * Points that have been used by voters.
+     *
+     * Records in [`Points`] track used points to prevent double-spending and enforce rate-limiting
+     * based on the last usage time.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletHonourPointInfo | undefined> =} callback
+     **/
+    points: GenericStorageQuery<(arg: FixedBytes<32>) => IndivPalletHonourPointInfo | undefined, FixedBytes<32>>;
+
+    /**
+     * Votes that have been bestowed.
+     *
+     * Prevents double-voting on the same subject by the same voter, as [`SubjectAlias`] is
+     * uniquely derived from [`SubjectId`] for each voter.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    votes: GenericStorageQuery<(arg: FixedBytes<32>) => [] | undefined, FixedBytes<32>>;
+
+    /**
+     * Absolute honour score of a subject. Initialized to -1 to offset self-votes.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    tally: GenericStorageQuery<(arg: FixedBytes<32>) => number | undefined, FixedBytes<32>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `PeopleAirdrops`'s storage queries
+   **/
+  peopleAirdrops: {
+    /**
+     * Index of the next draw to schedule. Feeds [`Pallet::draw_event_id`].
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    nextDrawIndex: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Per-draw slot salt, captured from the randomness source at scheduling time, together with
+     * the draw's end time. The salt is only read during registration, which closes strictly
+     * before the end time, so an entry whose end time has passed is dead and is removed by the
+     * offchain worker via [`Pallet::clean_up_draw_salt`].
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[FixedBytes<32>, bigint] | undefined> =} callback
+     **/
+    drawSalts: GenericStorageQuery<(arg: FixedBytes<32>) => [FixedBytes<32>, bigint] | undefined, FixedBytes<32>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     * Stored parameters.
+     *
+     * @param {PeoplePaseoRuntimeParametersRuntimeParametersKey} arg
+     * @param {Callback<PeoplePaseoRuntimeParametersRuntimeParametersValue | undefined> =} callback
+     **/
+    parameters: GenericStorageQuery<
+      (
+        arg: PeoplePaseoRuntimeParametersRuntimeParametersKey,
+      ) => PeoplePaseoRuntimeParametersRuntimeParametersValue | undefined,
+      PeoplePaseoRuntimeParametersRuntimeParametersKey
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `NetworkSuffix`'s storage queries
+   **/
+  networkSuffix: {
+    /**
+     * Network suffix appended to product names when deriving product contexts.
+     *
+     * @param {Callback<Bytes> =} callback
+     **/
+    networkSuffix: GenericStorageQuery<() => Bytes>;
 
     /**
      * Generic pallet storage query

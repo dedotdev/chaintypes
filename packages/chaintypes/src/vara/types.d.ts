@@ -854,6 +854,7 @@ export type VaraRuntimeRuntimeCall =
   | { pallet: 'Bounties'; palletCall: PalletBountiesCall }
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
   | { pallet: 'Gear'; palletCall: PalletGearCall }
   | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCall }
   | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCall }
@@ -887,6 +888,7 @@ export type VaraRuntimeRuntimeCallLike =
   | { pallet: 'Bounties'; palletCall: PalletBountiesCallLike }
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
   | { pallet: 'Gear'; palletCall: PalletGearCallLike }
   | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCallLike }
   | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCallLike }
@@ -1481,6 +1483,7 @@ export type PalletSessionCall =
    * This doesn't take effect until the next session.
    *
    * The dispatch origin of this function must be signed.
+   * `proof` must prove possession of every key for the SCALE-encoded signed account.
    *
    * ## Complexity
    * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
@@ -1510,6 +1513,7 @@ export type PalletSessionCallLike =
    * This doesn't take effect until the next session.
    *
    * The dispatch origin of this function must be signed.
+   * `proof` must prove possession of every key for the SCALE-encoded signed account.
    *
    * ## Complexity
    * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
@@ -1537,9 +1541,12 @@ export type VaraRuntimeSessionKeys = {
   grandpa: SpConsensusGrandpaAppPublic;
   imOnline: PalletImOnlineSr25519AppSr25519Public;
   authorityDiscovery: SpAuthorityDiscoveryAppPublic;
+  beefy: SpConsensusBeefyEcdsaCryptoPublic;
 };
 
 export type SpAuthorityDiscoveryAppPublic = FixedBytes<32>;
+
+export type SpConsensusBeefyEcdsaCryptoPublic = FixedBytes<33>;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1724,8 +1731,7 @@ export type PalletUtilityCallLike =
 
 export type VaraRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
-  | { type: 'Origins'; value: VaraRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
-  | { type: 'Void'; value: SpCoreVoid };
+  | { type: 'Origins'; value: VaraRuntimeGovernanceOriginsPalletCustomOriginsOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -1758,8 +1764,6 @@ export type VaraRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'Fellowship7Dan'
   | 'Fellowship8Dan'
   | 'Fellowship9Dan';
-
-export type SpCoreVoid = null;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2512,7 +2516,16 @@ export type PalletStakingPalletCall =
         maybeTotal?: bigint | undefined;
         maybeUnlocking?: Array<PalletStakingUnlockChunk> | undefined;
       };
-    };
+    }
+  /**
+   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   *
+   * This function corrects cases where a user's recorded stake in the ledger
+   * exceeds their actual staked funds. This situation can arise due to cases such as
+   * external slashing by another pallet, leading to an inconsistency between the ledger
+   * and the actual stake.
+   **/
+  | { name: 'WithdrawOverstake'; params: { stash: AccountId32 } };
 
 export type PalletStakingPalletCallLike =
   /**
@@ -2958,7 +2971,16 @@ export type PalletStakingPalletCallLike =
         maybeTotal?: bigint | undefined;
         maybeUnlocking?: Array<PalletStakingUnlockChunk> | undefined;
       };
-    };
+    }
+  /**
+   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   *
+   * This function corrects cases where a user's recorded stake in the ledger
+   * exceeds their actual staked funds. This situation can arise due to cases such as
+   * external slashing by another pallet, leading to an inconsistency between the ledger
+   * and the actual stake.
+   **/
+  | { name: 'WithdrawOverstake'; params: { stash: AccountId32Like } };
 
 export type PalletStakingPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
@@ -6365,8 +6387,10 @@ export type PalletNominationPoolsCall =
    * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
    * [`adapter::StakeStrategyType::Delegate`].
    *
-   * This call can be dispatched permissionlessly (i.e. by any account). If the member has
-   * slash to be applied, caller may be rewarded with the part of the slash.
+   * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
+   * This call can be dispatched permissionlessly (i.e. by any account). If the execution
+   * is successful, fee is refunded and caller may be rewarded with a part of the slash
+   * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
    **/
   | { name: 'ApplySlash'; params: { memberAccount: MultiAddress } }
   /**
@@ -6728,8 +6752,10 @@ export type PalletNominationPoolsCallLike =
    * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
    * [`adapter::StakeStrategyType::Delegate`].
    *
-   * This call can be dispatched permissionlessly (i.e. by any account). If the member has
-   * slash to be applied, caller may be rewarded with the part of the slash.
+   * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
+   * This call can be dispatched permissionlessly (i.e. by any account). If the execution
+   * is successful, fee is refunded and caller may be rewarded with a part of the slash
+   * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
    **/
   | { name: 'ApplySlash'; params: { memberAccount: MultiAddressLike } }
   /**
@@ -6786,6 +6812,205 @@ export type PalletNominationPoolsCommissionChangeRate = { maxIncrease: Perbill; 
 export type PalletNominationPoolsCommissionClaimPermission =
   | { type: 'Permissionless' }
   | { type: 'Account'; value: AccountId32 };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletBeefyCall =
+  /**
+   * Report voter equivocation/misbehavior. This method will verify the
+   * equivocation proof and validate the given key ownership proof
+   * against the extracted offender. If both are valid, the offence
+   * will be reported.
+   **/
+  | {
+      name: 'ReportDoubleVoting';
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report voter equivocation/misbehavior. This method will verify the
+   * equivocation proof and validate the given key ownership proof
+   * against the extracted offender. If both are valid, the offence
+   * will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportDoubleVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Reset BEEFY consensus by setting a new BEEFY genesis at `delay_in_blocks` blocks in the
+   * future.
+   *
+   * Note: `delay_in_blocks` has to be at least 1.
+   **/
+  | { name: 'SetNewGenesis'; params: { delayInBlocks: number } }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportForkVoting';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportForkVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportFutureBlockVoting';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportFutureBlockVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    };
+
+export type PalletBeefyCallLike =
+  /**
+   * Report voter equivocation/misbehavior. This method will verify the
+   * equivocation proof and validate the given key ownership proof
+   * against the extracted offender. If both are valid, the offence
+   * will be reported.
+   **/
+  | {
+      name: 'ReportDoubleVoting';
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report voter equivocation/misbehavior. This method will verify the
+   * equivocation proof and validate the given key ownership proof
+   * against the extracted offender. If both are valid, the offence
+   * will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportDoubleVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Reset BEEFY consensus by setting a new BEEFY genesis at `delay_in_blocks` blocks in the
+   * future.
+   *
+   * Note: `delay_in_blocks` has to be at least 1.
+   **/
+  | { name: 'SetNewGenesis'; params: { delayInBlocks: number } }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportForkVoting';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportForkVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportFutureBlockVoting';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportFutureBlockVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    };
+
+export type SpConsensusBeefyDoubleVotingProof = {
+  first: SpConsensusBeefyVoteMessage;
+  second: SpConsensusBeefyVoteMessage;
+};
+
+export type SpConsensusBeefyEcdsaCryptoSignature = FixedBytes<65>;
+
+export type SpConsensusBeefyVoteMessage = {
+  commitment: SpConsensusBeefyCommitment;
+  id: SpConsensusBeefyEcdsaCryptoPublic;
+  signature: SpConsensusBeefyEcdsaCryptoSignature;
+};
+
+export type SpConsensusBeefyCommitment = {
+  payload: SpConsensusBeefyPayload;
+  blockNumber: number;
+  validatorSetId: bigint;
+};
+
+export type SpConsensusBeefyPayload = Array<[FixedBytes<2>, Bytes]>;
+
+export type SpConsensusBeefyForkVotingProof = {
+  vote: SpConsensusBeefyVoteMessage;
+  ancestryProof: SpMmrPrimitivesAncestryProof;
+  header: Header;
+};
+
+export type SpMmrPrimitivesAncestryProof = {
+  prevPeaks: Array<H256>;
+  prevLeafCount: bigint;
+  leafCount: bigint;
+  items: Array<[bigint, H256]>;
+};
+
+export type SpConsensusBeefyFutureBlockVotingProof = { vote: SpConsensusBeefyVoteMessage };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6873,6 +7098,8 @@ export type PalletGearCall =
    * - `init_payload`: encoded parameters of the wasm module `init` function.
    * - `gas_limit`: maximum amount of gas the program can spend before it is halted.
    * - `value`: balance to be transferred to the program once it's been created.
+   * - `keep_alive`: whether to ensure that the original account balance will stay above
+   * the existential deposit.
    *
    * Emits the following events:
    * - `InitMessageEnqueued(MessageInfo)` when init message is placed in the queue.
@@ -7068,6 +7295,8 @@ export type PalletGearCallLike =
    * - `init_payload`: encoded parameters of the wasm module `init` function.
    * - `gas_limit`: maximum amount of gas the program can spend before it is halted.
    * - `value`: balance to be transferred to the program once it's been created.
+   * - `keep_alive`: whether to ensure that the original account balance will stay above
+   * the existential deposit.
    *
    * Emits the following events:
    * - `InitMessageEnqueued(MessageInfo)` when init message is placed in the queue.
@@ -7480,7 +7709,11 @@ export type PalletGearEthBridgeCall =
    * Extrinsic that verifies some block finality that resets
    * overflowed within the current era queue.
    **/
-  | { name: 'ResetOverflowedQueue'; params: { encodedFinalityProof: Bytes } };
+  | { name: 'ResetOverflowedQueue'; params: { encodedFinalityProof: Bytes } }
+  /**
+   * Bind the original destination once while paused, independently of BEEFY activation.
+   **/
+  | { name: 'BindDestination'; params: { chainId: H256; queue: H160 } };
 
 export type PalletGearEthBridgeCallLike =
   /**
@@ -7506,7 +7739,11 @@ export type PalletGearEthBridgeCallLike =
    * Extrinsic that verifies some block finality that resets
    * overflowed within the current era queue.
    **/
-  | { name: 'ResetOverflowedQueue'; params: { encodedFinalityProof: BytesLike } };
+  | { name: 'ResetOverflowedQueue'; params: { encodedFinalityProof: BytesLike } }
+  /**
+   * Bind the original destination once while paused, independently of BEEFY activation.
+   **/
+  | { name: 'BindDestination'; params: { chainId: H256; queue: H160 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8837,7 +9074,34 @@ export type PalletGearEthBridgeEvent =
    *
    * Related to bridge clearing on initialization of the second block in a new era.
    **/
-  | { name: 'QueueReset' };
+  | { name: 'QueueReset' }
+  /**
+   * Immutable source/destination lane was bound by governance.
+   **/
+  | {
+      name: 'DestinationBound';
+      data: {
+        /**
+         * Vara block-zero hash, preventing cross-network replay.
+         **/
+        sourceGenesis: H256;
+
+        /**
+         * Ethereum chain ID encoded as a big-endian 256-bit value.
+         **/
+        chainId: H256;
+
+        /**
+         * Only destination permitted to consume this lane's commitments.
+         **/
+        queue: H160;
+
+        /**
+         * Keccak commitment to the source genesis and destination.
+         **/
+        domain: H256;
+      };
+    };
 
 export type PalletGearEthBridgePrimitivesEthMessage = { nonce: U256; source: H256; destination: H160; payload: Bytes };
 
@@ -10395,6 +10659,10 @@ export type PalletNominationPoolsError =
    **/
   | { name: 'NothingToSlash' }
   /**
+   * The slash amount is too low to be applied.
+   **/
+  | { name: 'SlashTooLow' }
+  /**
    * The pool or member delegation has already migrated to delegate stake.
    **/
   | { name: 'AlreadyMigrated' }
@@ -10415,6 +10683,41 @@ export type PalletNominationPoolsDefensiveError =
   | 'BondedStashKilledPrematurely'
   | 'DelegationUnsupported'
   | 'SlashNotApplied';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletBeefyError =
+  /**
+   * A key ownership proof provided as part of an equivocation report is invalid.
+   **/
+  | 'InvalidKeyOwnershipProof'
+  /**
+   * A double voting proof provided as part of an equivocation report is invalid.
+   **/
+  | 'InvalidDoubleVotingProof'
+  /**
+   * A fork voting proof provided as part of an equivocation report is invalid.
+   **/
+  | 'InvalidForkVotingProof'
+  /**
+   * A future block voting proof provided as part of an equivocation report is invalid.
+   **/
+  | 'InvalidFutureBlockVotingProof'
+  /**
+   * The session of the equivocation proof is invalid
+   **/
+  | 'InvalidEquivocationProofSession'
+  /**
+   * A given equivocation report is valid but already previously reported.
+   **/
+  | 'DuplicateOffenceReport'
+  /**
+   * Submitted configuration is invalid.
+   **/
+  | 'InvalidConfiguration';
+
+export type SpConsensusBeefyMmrBeefyAuthoritySet = { id: bigint; len: number; keysetCommitment: H256 };
 
 export type GearCoreCodeInstrumentedInstrumentedCode = {
   bytes: Bytes;
@@ -11209,7 +11512,15 @@ export type PalletGearEthBridgeError =
    * The error happens when attempted to reset overflowed queue, but
    * queue isn't overflowed or incorrect finality proof provided.
    **/
-  | 'InvalidQueueReset';
+  | 'InvalidQueueReset'
+  /**
+   * A lane is already bound, is not paused, or an identity is zero.
+   **/
+  | 'InvalidDestinationBinding'
+  /**
+   * The lane or its source consensus state is not ready.
+   **/
+  | 'BridgeNotReady';
 
 export type PalletGrandpaSignerSigningRequest = {
   id: number;
@@ -11260,6 +11571,8 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
+export type SpRuntimeOpaqueValue = Bytes;
+
 export type SpConsensusBabeBabeConfiguration = {
   slotDuration: bigint;
   epochLength: bigint;
@@ -11279,6 +11592,30 @@ export type SpConsensusBabeEpoch = {
 };
 
 export type SpConsensusBabeOpaqueKeyOwnershipProof = Bytes;
+
+export type SpConsensusBeefyValidatorSet = { validators: Array<SpConsensusBeefyEcdsaCryptoPublic>; id: bigint };
+
+export type SpConsensusBeefyForkVotingProofOpaqueValue = {
+  vote: SpConsensusBeefyVoteMessage;
+  ancestryProof: SpRuntimeOpaqueValue;
+  header: Header;
+};
+
+export type SpMmrPrimitivesError =
+  | 'InvalidNumericOp'
+  | 'Push'
+  | 'GetRoot'
+  | 'Commit'
+  | 'GenerateProof'
+  | 'Verify'
+  | 'LeafNotFound'
+  | 'PalletNotIncluded'
+  | 'InvalidLeafIndex'
+  | 'InvalidBestKnownBlock';
+
+export type SpMmrPrimitivesEncodableOpaqueLeaf = Bytes;
+
+export type SpMmrPrimitivesLeafProof = { leafIndices: Array<bigint>; leafCount: bigint; items: Array<H256> };
 
 export type PalletTransactionPaymentRuntimeDispatchInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -11345,9 +11682,14 @@ export type SpRuntimeTransactionValidityValidTransaction = {
   propagate: boolean;
 };
 
-export type SpRuntimeOpaqueValue = Bytes;
+export type SpSessionRuntimeApiOpaqueGeneratedSessionKeys = { keys: Bytes; proof: Bytes };
 
 export type GearCoreRpcReplyInfo = { payload: Bytes; value: bigint; code: GearCoreErrorsSimpleReplyCode };
+
+export type GearCoreRpcCalculateReplyForHandleResult = {
+  reply: GearCoreRpcReplyInfo;
+  messages: Array<GearCoreMessageUserUserMessage>;
+};
 
 export type PalletGearManagerHandleKind =
   | { type: 'Init'; value: Bytes }
@@ -11390,6 +11732,7 @@ export type VaraRuntimeRuntimeError =
   | { pallet: 'Bounties'; palletError: PalletBountiesError }
   | { pallet: 'ChildBounties'; palletError: PalletChildBountiesError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
+  | { pallet: 'Beefy'; palletError: PalletBeefyError }
   | { pallet: 'GearProgram'; palletError: PalletGearProgramError }
   | { pallet: 'GearMessenger'; palletError: PalletGearMessengerError }
   | { pallet: 'GearScheduler'; palletError: PalletGearSchedulerError }

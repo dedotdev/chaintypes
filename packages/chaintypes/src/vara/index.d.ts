@@ -50,7 +50,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: VaraApi
- * @specVersion: 11000
+ * @specVersion: 20101
  **/
 export interface VaraApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

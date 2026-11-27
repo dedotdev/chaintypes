@@ -4,7 +4,7 @@ import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { MultiAddress } from 'dedot/codecs';
 import type {
   FrameSystemEventRecord,
-  AssetHubPolkadotRuntimeRuntimeCall,
+  AssetHubPaseoRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsAuthorizeCall,
   FrameSystemExtensionsCheckNonZeroSender,
@@ -19,6 +19,7 @@ import type {
   FrameMetadataHashExtensionCheckMetadataHash,
   PalletReviveEvmTxExtensionSetOrigin,
   PalletVerifySignatureExtensionVerifySignature,
+  IndivPalletScarcityExtensionAsScarcity,
   IndivPalletPgasExtensionAsPgas,
   IndivPalletDotnsGatewayExtensionAsDotnsGateway,
   IndivPalletOriginRestrictionRestrictOrigin,
@@ -38,7 +39,7 @@ export * from './types.js';
 interface ChainKnownTypes extends GenericChainKnownTypes {
   Address: MultiAddress;
   Signature: SpRuntimeMultiSignature;
-  RuntimeCall: AssetHubPolkadotRuntimeRuntimeCall;
+  RuntimeCall: AssetHubPaseoRuntimeRuntimeCall;
   Extra: [
     FrameSystemExtensionsAuthorizeCall,
     FrameSystemExtensionsCheckNonZeroSender,
@@ -55,6 +56,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     [],
     [],
     PalletVerifySignatureExtensionVerifySignature,
+    IndivPalletScarcityExtensionAsScarcity,
     IndivPalletPgasExtensionAsPgas,
     IndivPalletDotnsGatewayExtensionAsDotnsGateway,
     IndivPalletOriginRestrictionRestrictOrigin,
@@ -65,7 +67,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoAssetHubApi
- * @specVersion: 2006000
+ * @specVersion: 2005006
  **/
 export interface PaseoAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

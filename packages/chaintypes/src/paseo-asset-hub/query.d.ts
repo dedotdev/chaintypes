@@ -44,8 +44,8 @@ import type {
   PalletPreimageRequestStatus,
   PalletSchedulerScheduled,
   PalletSchedulerRetryConfig,
-  AssetHubPolkadotRuntimeRuntimeParametersValue,
-  AssetHubPolkadotRuntimeRuntimeParametersKey,
+  AssetHubPaseoRuntimeRuntimeParametersValue,
+  AssetHubPaseoRuntimeRuntimeParametersKey,
   PalletMigrationsMigrationCursor,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
@@ -58,10 +58,10 @@ import type {
   PalletVestingReleases,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletCollatorSelectionCandidateInfo,
-  AssetHubPolkadotRuntimeSessionKeys,
+  AssetHubPaseoRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
-  SpConsensusAuraEd25519AppEd25519Public,
+  SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
@@ -101,6 +101,11 @@ import type {
   StagingXcmV5Location,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletAssetConversionPoolInfo,
+  IndivPalletScarcityCollectionInfo,
+  IndivPalletScarcityItemDefinition,
+  IndivPalletScarcityMetadataEntry,
+  IndivPalletScarcityNft,
+  IndivPalletScarcityLockInfo,
   PalletPsmPsmInfo,
   PalletPsmPsmAdminInfo,
   PalletPsmExternalAssetInfo,
@@ -114,6 +119,8 @@ import type {
   PalletMultiAssetBountiesBounty,
   PalletMultiAssetBountiesChildBounty,
   FrameSupportTokensFungibleHoldConsideration,
+  PalletStateTrieMigrationMigrationTask,
+  PalletStateTrieMigrationMigrationLimits,
   PalletNominationPoolsPoolMember,
   PalletNominationPoolsBondedPoolInner,
   PalletNominationPoolsRewardPool,
@@ -131,8 +138,7 @@ import type {
   PalletElectionProviderMultiBlockVerifierImplsPartialBackings,
   SpNposElectionsElectionScore,
   PalletElectionProviderMultiBlockVerifierImplsStatus,
-  PalletElectionProviderMultiBlockSignedUnpaidReward,
-  AssetHubPolkadotRuntimeStakingNposCompactSolution16,
+  AssetHubPaseoRuntimeStakingNposCompactSolution16,
   PalletElectionProviderMultiBlockSignedSubmissionMetadata,
   PalletStakingAsyncLedgerStakingLedger,
   PalletStakingAsyncRewardDestination,
@@ -147,15 +153,9 @@ import type {
   PalletStakingAsyncUnappliedSlash,
   PalletStakingAsyncSnapshotStatus,
   PalletStakingAsyncPalletPruningStep,
-  PalletReviveVmCodeInfo,
-  PalletReviveStorageAccountInfo,
-  PalletReviveStorageDeletionQueueItem,
-  PalletReviveStorageDeletionQueueManager,
-  PalletReviveEvmApiBlock,
-  PalletReviveEvmBlockHashReceiptGasInfo,
-  PalletReviveEvmBlockHashReceiptCommittedReceiptLogs,
-  PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
-  PalletReviveDebugDebugSettings,
+  IndivSupportCreditTreesNftClaimCreditTree,
+  IndivPalletNftClaimsCollectionMinter,
+  IndivSupportUtilsBigEndianU32,
   IndivPalletMembersSubscriberRingCommitmentRecord,
   IndivPalletMembersSubscriberRingPurgeProgress,
   IndivPalletMembersSubscriberRingCollectionState,
@@ -164,12 +164,19 @@ import type {
   IndivPalletMembersSubscriberUpdatesProcessingState,
   IndivSupportRealityContextualAlias,
   IndivPalletAliasAccountsAliasAccountInfo,
-  IndivSupportUtilsBigEndianU32,
+  PalletReviveVmCodeInfo,
+  PalletReviveStorageAccountInfo,
+  PalletReviveStorageDeletionQueueItem,
+  PalletReviveStorageDeletionQueueManager,
+  PalletReviveEvmApiRpcTypesGenBlock,
+  PalletReviveEvmBlockHashReceiptGasInfo,
+  PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
+  PalletReviveDebugDebugSettings,
   IndivPalletDotnsGatewayRegistrationRecord,
   IndivPalletDotnsGatewayBaseLabel,
   IndivPalletDotnsGatewayAccountNameRecord,
   IndivPalletOriginRestrictionUsage,
-  AssetHubPolkadotRuntimeIndividualityRestrictedEntity,
+  AssetHubPaseoRuntimeRestrictedEntity,
 } from './types.js';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -789,12 +796,12 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Stored parameters.
      *
-     * @param {AssetHubPolkadotRuntimeRuntimeParametersKey} arg
-     * @param {Callback<AssetHubPolkadotRuntimeRuntimeParametersValue | undefined> =} callback
+     * @param {AssetHubPaseoRuntimeRuntimeParametersKey} arg
+     * @param {Callback<AssetHubPaseoRuntimeRuntimeParametersValue | undefined> =} callback
      **/
     parameters: GenericStorageQuery<
-      (arg: AssetHubPolkadotRuntimeRuntimeParametersKey) => AssetHubPolkadotRuntimeRuntimeParametersValue | undefined,
-      AssetHubPolkadotRuntimeRuntimeParametersKey
+      (arg: AssetHubPaseoRuntimeRuntimeParametersKey) => AssetHubPaseoRuntimeRuntimeParametersValue | undefined,
+      AssetHubPaseoRuntimeRuntimeParametersKey
     >;
 
     /**
@@ -844,10 +851,6 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * The total units of outstanding deactivated balance in the system.
-     *
-     * This is not guaranteed to be less than or equal to [`TotalIssuance`]. Total issuance may be
-     * reduced independently of this value, including while a reversible imbalance is outstanding.
-     * Active issuance is therefore derived using saturating subtraction.
      *
      * @param {Callback<bigint> =} callback
      **/
@@ -1165,9 +1168,9 @@ export interface ChainStorage extends GenericChainStorage {
      * The queued keys for the next session. When the next session begins, these keys
      * will be used to determine the validator's session keys.
      *
-     * @param {Callback<Array<[AccountId32, AssetHubPolkadotRuntimeSessionKeys]>> =} callback
+     * @param {Callback<Array<[AccountId32, AssetHubPaseoRuntimeSessionKeys]>> =} callback
      **/
-    queuedKeys: GenericStorageQuery<() => Array<[AccountId32, AssetHubPolkadotRuntimeSessionKeys]>>;
+    queuedKeys: GenericStorageQuery<() => Array<[AccountId32, AssetHubPaseoRuntimeSessionKeys]>>;
 
     /**
      * Indices of disabled validators.
@@ -1184,12 +1187,9 @@ export interface ChainStorage extends GenericChainStorage {
      * The next session keys for a validator.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<AssetHubPolkadotRuntimeSessionKeys | undefined> =} callback
+     * @param {Callback<AssetHubPaseoRuntimeSessionKeys | undefined> =} callback
      **/
-    nextKeys: GenericStorageQuery<
-      (arg: AccountId32Like) => AssetHubPolkadotRuntimeSessionKeys | undefined,
-      AccountId32
-    >;
+    nextKeys: GenericStorageQuery<(arg: AccountId32Like) => AssetHubPaseoRuntimeSessionKeys | undefined, AccountId32>;
 
     /**
      * The owner of a key. The key is the `KeyTypeId` + the encoded key.
@@ -1225,9 +1225,9 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The current authority set.
      *
-     * @param {Callback<Array<SpConsensusAuraEd25519AppEd25519Public>> =} callback
+     * @param {Callback<Array<SpConsensusAuraSr25519AppSr25519Public>> =} callback
      **/
-    authorities: GenericStorageQuery<() => Array<SpConsensusAuraEd25519AppEd25519Public>>;
+    authorities: GenericStorageQuery<() => Array<SpConsensusAuraSr25519AppSr25519Public>>;
 
     /**
      * The current slot of this block.
@@ -1254,9 +1254,9 @@ export interface ChainStorage extends GenericChainStorage {
      * but we require the old authorities to verify the seal when validating a PoV. This will
      * always be updated to the latest AuRa authorities in `on_finalize`.
      *
-     * @param {Callback<Array<SpConsensusAuraEd25519AppEd25519Public>> =} callback
+     * @param {Callback<Array<SpConsensusAuraSr25519AppSr25519Public>> =} callback
      **/
-    authorities: GenericStorageQuery<() => Array<SpConsensusAuraEd25519AppEd25519Public>>;
+    authorities: GenericStorageQuery<() => Array<SpConsensusAuraSr25519AppSr25519Public>>;
 
     /**
      * Current relay chain slot paired with a number of authored blocks.
@@ -2150,19 +2150,187 @@ export interface ChainStorage extends GenericChainStorage {
     nextPoolAssetId: GenericStorageQuery<() => number | undefined>;
 
     /**
-     * Per-pool swap fee overrides.
-     *
-     * When a pool has no entry here, the global [`Config::LPFee`] applies. This storage is purely
-     * additive: existing pools and runtimes that never set a per-pool fee behave exactly as before
-     * and require no migration. See [`Pallet::pool_fee`] for the resolution logic.
-     *
-     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
-     * @param {Callback<Permill | undefined> =} callback
+     * Generic pallet storage query
      **/
-    poolFees: GenericStorageQuery<
-      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill | undefined,
-      [StagingXcmV5Location, StagingXcmV5Location]
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsFreezer`'s storage queries
+   **/
+  assetsFreezer: {
+    /**
+     * A map that stores freezes applied on an account for a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
+     **/
+    freezes: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      [number, AccountId32]
     >;
+
+    /**
+     * A map that stores the current total frozen balance for every account on a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    frozenBalances: GenericStorageQuery<(arg: [number, AccountId32Like]) => bigint | undefined, [number, AccountId32]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsHolder`'s storage queries
+   **/
+  assetsHolder: {
+    /**
+     * A map that stores holds applied on an account for a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
+     **/
+    holds: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmount>,
+      [number, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total balance on hold for every account on a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    balancesOnHold: GenericStorageQuery<(arg: [number, AccountId32Like]) => bigint | undefined, [number, AccountId32]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Scarcity`'s storage queries
+   **/
+  scarcity: {
+    /**
+     * The next collection identifier to allocate.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    nextCollectionId: GenericStorageQuery<() => number>;
+
+    /**
+     * Immutable item catalogues, grouped by their collection.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletScarcityCollectionInfo | undefined> =} callback
+     **/
+    collections: GenericStorageQuery<(arg: number) => IndivPalletScarcityCollectionInfo | undefined, number>;
+
+    /**
+     * Immutable item definitions, indexed within their collection.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<IndivPalletScarcityItemDefinition | undefined> =} callback
+     **/
+    itemDefs: GenericStorageQuery<
+      (arg: [number, number]) => IndivPalletScarcityItemDefinition | undefined,
+      [number, number]
+    >;
+
+    /**
+     * Collection-wide defaults inherited by every item in a collection.
+     *
+     * Entries must be removed individually before the collection can be deleted.
+     *
+     * @param {[number, BytesLike]} arg
+     * @param {Callback<IndivPalletScarcityMetadataEntry | undefined> =} callback
+     **/
+    collectionMetadata: GenericStorageQuery<
+      (arg: [number, BytesLike]) => IndivPalletScarcityMetadataEntry | undefined,
+      [number, Bytes]
+    >;
+
+    /**
+     * Per-item defaults which override collection defaults for the same key.
+     *
+     * These entries are shared by every instance minted from the item definition. Item
+     * definitions outlive minted instances, so burning an instance never removes them. Entries
+     * must be removed individually before the item definition can be deleted.
+     *
+     * @param {[number, number, BytesLike]} arg
+     * @param {Callback<IndivPalletScarcityMetadataEntry | undefined> =} callback
+     **/
+    itemMetadata: GenericStorageQuery<
+      (arg: [number, number, BytesLike]) => IndivPalletScarcityMetadataEntry | undefined,
+      [number, number, Bytes]
+    >;
+
+    /**
+     * The next permanent instance identifier to allocate.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    nextInstanceId: GenericStorageQuery<() => bigint>;
+
+    /**
+     * One NFT per owner key — the coinage model.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletScarcityNft | undefined> =} callback
+     **/
+    nftsByOwner: GenericStorageQuery<(arg: AccountId32Like) => IndivPalletScarcityNft | undefined, AccountId32>;
+
+    /**
+     * Stable reverse index from instance identifier to its current owner key.
+     *
+     * @param {bigint} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    instances: GenericStorageQuery<(arg: bigint) => AccountId32 | undefined, bigint>;
+
+    /**
+     * Exact per-instance storage deposits, present only for deposit-paying mints.
+     *
+     * @param {bigint} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    instanceDeposits: GenericStorageQuery<(arg: bigint) => bigint | undefined, bigint>;
+
+    /**
+     * Number of metadata overrides stored for each live instance.
+     *
+     * This entry exists even when the count is zero so burn cleanup remains bounded and
+     * `try_state` can verify that every live instance has explicit metadata accounting.
+     *
+     * @param {bigint} arg
+     * @param {Callback<number> =} callback
+     **/
+    instanceMetadataCount: GenericStorageQuery<(arg: bigint) => number, bigint>;
+
+    /**
+     * Per-instance entries which override item and collection metadata for the same key.
+     *
+     * @param {[bigint, BytesLike]} arg
+     * @param {Callback<IndivPalletScarcityMetadataEntry | undefined> =} callback
+     **/
+    instanceMetadata: GenericStorageQuery<
+      (arg: [bigint, BytesLike]) => IndivPalletScarcityMetadataEntry | undefined,
+      [bigint, Bytes]
+    >;
+
+    /**
+     * Post-failure backoff locks for NFT purse keys.
+     *
+     * A separate lock explicitly rejects transactions during backoff. Updating `last_moved`
+     * would only lower transaction priority and would not enforce a delay.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletScarcityLockInfo | undefined> =} callback
+     **/
+    locked: GenericStorageQuery<(arg: AccountId32Like) => IndivPalletScarcityLockInfo | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -2251,62 +2419,6 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletPsmExternalAssetInfo | undefined,
       [StagingXcmV5Location, StagingXcmV5Location]
     >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `AssetsFreezer`'s storage queries
-   **/
-  assetsFreezer: {
-    /**
-     * A map that stores freezes applied on an account for a given AssetId.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
-     **/
-    freezes: GenericStorageQuery<
-      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
-      [number, AccountId32]
-    >;
-
-    /**
-     * A map that stores the current total frozen balance for every account on a given AssetId.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    frozenBalances: GenericStorageQuery<(arg: [number, AccountId32Like]) => bigint | undefined, [number, AccountId32]>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `AssetsHolder`'s storage queries
-   **/
-  assetsHolder: {
-    /**
-     * A map that stores holds applied on an account for a given AssetId.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
-     **/
-    holds: GenericStorageQuery<
-      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmount>,
-      [number, AccountId32]
-    >;
-
-    /**
-     * A map that stores the current total balance on hold for every account on a given AssetId.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    balancesOnHold: GenericStorageQuery<(arg: [number, AccountId32Like]) => bigint | undefined, [number, AccountId32]>;
 
     /**
      * Generic pallet storage query
@@ -2479,15 +2591,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined, H256>;
-
-    /**
-     * Deferred dispatches, mapping a call hash to the provided block number at which the deferral
-     * expires and the entry can be permissionlessly removed.
-     *
-     * @param {H256} arg
-     * @param {Callback<number | undefined> =} callback
-     **/
-    deferredDispatch: GenericStorageQuery<(arg: H256) => number | undefined, H256>;
 
     /**
      * Generic pallet storage query
@@ -2713,6 +2816,43 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [number, number | undefined]) => FrameSupportTokensFungibleHoldConsideration | undefined,
       [number, number | undefined]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s storage queries
+   **/
+  stateTrieMigration: {
+    /**
+     * Migration progress.
+     *
+     * This stores the snapshot of the last migrated keys. It can be set into motion and move
+     * forward by any of the means provided by this pallet.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationTask> =} callback
+     **/
+    migrationProcess: GenericStorageQuery<() => PalletStateTrieMigrationMigrationTask>;
+
+    /**
+     * The limits that are imposed on automatic migrations.
+     *
+     * If set to None, then no automatic migration happens.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    autoLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
+
+    /**
+     * The maximum limits that the signed migration could use.
+     *
+     * If not set, no signed submission is allowed.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    signedMigrationMaxLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
 
     /**
      * Generic pallet storage query
@@ -3260,24 +3400,11 @@ export interface ChainStorage extends GenericChainStorage {
      * [`Config::InvulnerableDeposit`]. They pay no page deposit.
      * * If _ejected_ by better solution from [`SortedScores`], they will get their full deposit
      * back.
-     * * They always get their tx-fee back even if they are _discarded_, up to
-     * [`Config::MaxFeeRefund`].
+     * * They always get their tx-fee back even if they are _discarded_.
      *
      * @param {Callback<Array<AccountId32>> =} callback
      **/
     invulnerables: GenericStorageQuery<() => Array<AccountId32>>;
-
-    /**
-     * Round-winner rewards that failed to pay out of [`Config::RewardSource`], pending a
-     * permissionless claim via [`Pallet::claim_unpaid_reward`].
-     *
-     * Expected to stay empty in normal operation; only grows when the pot is depleted. Bounded
-     * to [`MAX_UNPAID_REWARDS`] entries, pushed in round order, so if full, the oldest one is
-     * evicted (see [`Pallet::pay_reward`]).
-     *
-     * @param {Callback<Array<PalletElectionProviderMultiBlockSignedUnpaidReward>> =} callback
-     **/
-    unpaidRewards: GenericStorageQuery<() => Array<PalletElectionProviderMultiBlockSignedUnpaidReward>>;
 
     /**
      *
@@ -3290,10 +3417,10 @@ export interface ChainStorage extends GenericChainStorage {
      * Triple map from (round, account, page) to a solution page.
      *
      * @param {[number, AccountId32Like, number]} arg
-     * @param {Callback<AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined> =} callback
+     * @param {Callback<AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined> =} callback
      **/
     submissionStorage: GenericStorageQuery<
-      (arg: [number, AccountId32Like, number]) => AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined,
+      (arg: [number, AccountId32Like, number]) => AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined,
       [number, AccountId32, number]
     >;
 
@@ -3944,249 +4071,81 @@ export interface ChainStorage extends GenericChainStorage {
     eraPruningState: GenericStorageQuery<(arg: number) => PalletStakingAsyncPalletPruningStep | undefined, number>;
 
     /**
-     * The number of eras a validator can remain inactive during the last
-     * [`Config::HistoryDepth`] before being subject to chilling because of inactivity.
-     *
-     * This must be less than or equal [`Config::HistoryDepth`] and bigger than 1.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    chillInactiveThreshold: GenericStorageQuery<() => number>;
-
-    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `Revive`'s storage queries
+   * Pallet `NftClaims`'s storage queries
    **/
-  revive: {
+  nftClaims: {
     /**
-     * A mapping from a contract's code hash to its code.
-     * The code's size is bounded by [`crate::limits::BLOB_BYTES`] for PVM and
-     * [`revm::primitives::eip170::MAX_CODE_SIZE`] for EVM bytecode.
+     * The Merkle commitment to the NFT claim credits awarded in one People-chain block, keyed
+     * by that block.
      *
-     * @param {H256} arg
-     * @param {Callback<Bytes | undefined> =} callback
+     * @param {number} arg
+     * @param {Callback<IndivSupportCreditTreesNftClaimCreditTree | undefined> =} callback
      **/
-    pristineCode: GenericStorageQuery<(arg: H256) => Bytes | undefined, H256>;
+    creditTrees: GenericStorageQuery<(arg: number) => IndivSupportCreditTreesNftClaimCreditTree | undefined, number>;
 
     /**
-     * A mapping from a contract's code hash to its code info.
+     * The sequence number of the next tree expected from the game pallet's live stream.
      *
-     * @param {H256} arg
-     * @param {Callback<PalletReviveVmCodeInfo | undefined> =} callback
-     **/
-    codeInfoOf: GenericStorageQuery<(arg: H256) => PalletReviveVmCodeInfo | undefined, H256>;
-
-    /**
-     * The data associated to a contract or externally owned account.
+     * A batch starting above it means the trees in between were lost on the way.
      *
-     * @param {H160} arg
-     * @param {Callback<PalletReviveStorageAccountInfo | undefined> =} callback
-     **/
-    accountInfoOf: GenericStorageQuery<(arg: H160) => PalletReviveStorageAccountInfo | undefined, H160>;
-
-    /**
-     * Native currency storage deposit contributed by a user into a contract.
-     *
-     * Bounds how much native value the user can receive back from that contract's
-     * storage deposit.
-     *
-     * Keys: `(holder, contributor) -> amount`
-     * - `holder`: account on which the deposit is held (a contract, or the pallet's own account
-     * for code-upload deposits).
-     * - `contributor`: user that funded the deposit. Receives the native portion on refund, capped
-     * at this entry's `amount`.
-     *
-     * @param {[AccountId32Like, AccountId32Like]} arg
      * @param {Callback<bigint> =} callback
      **/
-    nativeDepositOf: GenericStorageQuery<
-      (arg: [AccountId32Like, AccountId32Like]) => bigint,
-      [AccountId32, AccountId32]
+    nextExpectedSequence: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Which of a tree block's leaves have been claimed, bit `leaf_index` per leaf, least
+     * significant bit first.
+     *
+     * A proof binds a leaf to its index, so the index names the claim as the leaf itself does.
+     * The bitmap outlives the tree, because a replay on the game chain can deliver the tree again
+     * until its deadline; the sweep of the block's expiry entry is what removes it.
+     *
+     * @param {number} arg
+     * @param {Callback<Bytes> =} callback
+     **/
+    claimedLeaves: GenericStorageQuery<(arg: number) => Bytes, number>;
+
+    /**
+     * The collections whose owners accept claims, each bound to the registering owner and the
+     * [`ItemSelection`] deciding the item. A collection with no entry cannot be claimed into.
+     *
+     * @param {number} arg
+     * @param {Callback<IndivPalletNftClaimsCollectionMinter | undefined> =} callback
+     **/
+    collectionMinters: GenericStorageQuery<(arg: number) => IndivPalletNftClaimsCollectionMinter | undefined, number>;
+
+    /**
+     * Every tree block a sweep still has to reach, filed under the timestamp its tree commits to.
+     *
+     * The key is hashed with `Identity` and encoded big-endian, so the map iterates from the
+     * oldest deadline to the newest, which [`CreditTrees`] does not. A sweep takes the trees that
+     * are due and stops at the first that is not. Only a sweep removes an entry. A fully claimed
+     * tree leaves its entry behind, and the sweep of that entry removes its bitmap.
+     *
+     * @param {[IndivSupportUtilsBigEndianU32, number]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    treeExpiries: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU32, number]) => [] | undefined,
+      [IndivSupportUtilsBigEndianU32, number]
     >;
 
     /**
-     * The immutable data associated with a given account.
+     * The tree blocks whose deletion the game chain has not been told about yet, in the order
+     * this chain removed them.
      *
-     * @param {H160} arg
-     * @param {Callback<Bytes | undefined> =} callback
+     * Both removal paths add to it, and [`Pallet::send_tree_deletions`] drains it from the front.
+     * A block that does not fit is dropped, because the deletion only saves the game chain from
+     * waiting out its own TTL; that TTL is what removes its copy.
+     *
+     * @param {Callback<Array<number>> =} callback
      **/
-    immutableDataOf: GenericStorageQuery<(arg: H160) => Bytes | undefined, H160>;
-
-    /**
-     * Terminated contracts that await lazy cleanup.
-     *
-     * Each entry pairs a child trie ID with the contract account so that `on_idle` can
-     * drain both the child trie and any [`NativeDepositOf`] entries that named the contract
-     * as `holder`. Both can be arbitrarily large, so cleanup runs lazily in `on_idle`.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletReviveStorageDeletionQueueItem | undefined> =} callback
-     **/
-    deletionQueue: GenericStorageQuery<(arg: number) => PalletReviveStorageDeletionQueueItem | undefined, number>;
-
-    /**
-     * A pair of monotonic counters used to track the latest contract marked for deletion
-     * and the latest deleted contract in queue.
-     *
-     * @param {Callback<PalletReviveStorageDeletionQueueManager> =} callback
-     **/
-    deletionQueueCounter: GenericStorageQuery<() => PalletReviveStorageDeletionQueueManager>;
-
-    /**
-     * Map a Ethereum address to its original `AccountId32`.
-     *
-     * When deriving a `H160` from an `AccountId32` we use a hash function. In order to
-     * reconstruct the original account we need to store the reverse mapping here.
-     * Register your `AccountId32` using [`Pallet::map_account`] in order to
-     * use it with this pallet.
-     *
-     * @param {H160} arg
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    originalAccount: GenericStorageQuery<(arg: H160) => AccountId32 | undefined, H160>;
-
-    /**
-     * The current Ethereum block that is stored in the `on_finalize` method.
-     *
-     * # Note
-     *
-     * This could be further optimized into the future to store only the minimum
-     * information needed to reconstruct the Ethereum block at the RPC level.
-     *
-     * Since the block is convenient to have around, and the extra details are capped
-     * by a few hashes and the vector of transaction hashes, we store the block here.
-     *
-     * @param {Callback<PalletReviveEvmApiBlock> =} callback
-     **/
-    ethereumBlock: GenericStorageQuery<() => PalletReviveEvmApiBlock>;
-
-    /**
-     * Mapping for block number and hashes.
-     *
-     * The maximum number of elements stored is capped by the block hash count `BLOCK_HASH_COUNT`.
-     *
-     * @param {number} arg
-     * @param {Callback<H256> =} callback
-     **/
-    blockHash: GenericStorageQuery<(arg: number) => H256, number>;
-
-    /**
-     * The details needed to reconstruct the receipt info offchain.
-     *
-     * This contains valuable information about the gas used by the transaction.
-     *
-     * NOTE: The item is unbound and should therefore never be read on chain.
-     * It could otherwise inflate the PoV size of a block.
-     *
-     * @param {Callback<Array<PalletReviveEvmBlockHashReceiptGasInfo>> =} callback
-     **/
-    receiptInfoData: GenericStorageQuery<() => Array<PalletReviveEvmBlockHashReceiptGasInfo>>;
-
-    /**
-     * What the open ethereum transaction has committed to its receipt, see
-     * `block_storage::capture_into_receipt`. Taken when the transaction's receipt is built, so it
-     * is empty between transactions.
-     *
-     * Accessed only while a receipt is open, in an ethereum transaction or its dry run. Read on
-     * every log, and written as well until a log overflows the receipt. Read for its overflow
-     * flag at the successful end of every contract frame, see
-     * `block_storage::ensure_receipt_within_limit`.
-     *
-     * Whitelisted like `frame_system::Events`: accessed this often, yet never in a block's
-     * pre-state, so a block pays one absence lookup for it however many logs and frames it holds.
-     * Without the whitelist the benchmark bills each `LOG` and each frame for that lookup as if it
-     * were the first access of the block.
-     *
-     * @param {Callback<PalletReviveEvmBlockHashReceiptCommittedReceiptLogs> =} callback
-     **/
-    receiptLogsCommitted: GenericStorageQuery<() => PalletReviveEvmBlockHashReceiptCommittedReceiptLogs>;
-
-    /**
-     * Incremental ethereum block builder.
-     *
-     * @param {Callback<PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR> =} callback
-     **/
-    ethBlockBuilderIR: GenericStorageQuery<() => PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR>;
-
-    /**
-     * The first transaction and receipt of the ethereum block.
-     *
-     * These values are moved out of the `EthBlockBuilderIR` to avoid serializing and
-     * deserializing them on every transaction. Instead, they are loaded when needed.
-     *
-     * @param {Callback<[Bytes, Bytes] | undefined> =} callback
-     **/
-    ethBlockBuilderFirstValues: GenericStorageQuery<() => [Bytes, Bytes] | undefined>;
-
-    /**
-     * Debugging settings that can be configured when DebugEnabled config is true.
-     *
-     * @param {Callback<PalletReviveDebugDebugSettings> =} callback
-     **/
-    debugSettingsOf: GenericStorageQuery<() => PalletReviveDebugDebugSettings>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `AssetsPrecompiles`'s storage queries
-   **/
-  assetsPrecompiles: {
-    /**
-     * The next available asset index for foreign assets.
-     * This is incremented each time a new foreign asset mapping is created.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    nextAssetIndex: GenericStorageQuery<() => number>;
-
-    /**
-     * Mapping an asset index (derived from the precompile address) to a `ForeignAssetId`.
-     *
-     * @param {number} arg
-     * @param {Callback<StagingXcmV5Location | undefined> =} callback
-     **/
-    assetIndexToForeignAssetId: GenericStorageQuery<(arg: number) => StagingXcmV5Location | undefined, number>;
-
-    /**
-     * Mapping a `ForeignAssetId` to an asset index (used for deriving precompile addresses).
-     *
-     * @param {StagingXcmV5Location} arg
-     * @param {Callback<number | undefined> =} callback
-     **/
-    foreignAssetIdToAssetIndex: GenericStorageQuery<
-      (arg: StagingXcmV5Location) => number | undefined,
-      StagingXcmV5Location
-    >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `AssetsPrecompilesPermit`'s storage queries
-   **/
-  assetsPrecompilesPermit: {
-    /**
-     * Nonces for permit signatures.
-     * Mapping: (verifying_contract, owner_address) => nonce
-     *
-     * Uses Blake2_128Concat for the first key to prevent storage collision attacks
-     * when the verifying_contract address could be influenced by an attacker.
-     *
-     * Note: EIP-2612 specifies uint256 nonce. We store as U256 for compatibility.
-     *
-     * @param {[H160, H160]} arg
-     * @param {Callback<U256> =} callback
-     **/
-    nonces: GenericStorageQuery<(arg: [H160, H160]) => U256, [H160, H160]>;
+    pendingTreeDeletions: GenericStorageQuery<() => Array<number>>;
 
     /**
      * Generic pallet storage query
@@ -4350,6 +4309,222 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Revive`'s storage queries
+   **/
+  revive: {
+    /**
+     * A mapping from a contract's code hash to its code.
+     * The code's size is bounded by [`crate::limits::BLOB_BYTES`] for PVM and
+     * [`revm::primitives::eip170::MAX_CODE_SIZE`] for EVM bytecode.
+     *
+     * @param {H256} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pristineCode: GenericStorageQuery<(arg: H256) => Bytes | undefined, H256>;
+
+    /**
+     * A mapping from a contract's code hash to its code info.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletReviveVmCodeInfo | undefined> =} callback
+     **/
+    codeInfoOf: GenericStorageQuery<(arg: H256) => PalletReviveVmCodeInfo | undefined, H256>;
+
+    /**
+     * The data associated to a contract or externally owned account.
+     *
+     * @param {H160} arg
+     * @param {Callback<PalletReviveStorageAccountInfo | undefined> =} callback
+     **/
+    accountInfoOf: GenericStorageQuery<(arg: H160) => PalletReviveStorageAccountInfo | undefined, H160>;
+
+    /**
+     * Native currency storage deposit contributed by a user into a contract.
+     *
+     * Bounds how much native value the user can receive back from that contract's
+     * storage deposit.
+     *
+     * Keys: `(holder, contributor) -> amount`
+     * - `holder`: account on which the deposit is held (a contract, or the pallet's own account
+     * for code-upload deposits).
+     * - `contributor`: user that funded the deposit. Receives the native portion on refund, capped
+     * at this entry's `amount`.
+     *
+     * @param {[AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    nativeDepositOf: GenericStorageQuery<
+      (arg: [AccountId32Like, AccountId32Like]) => bigint,
+      [AccountId32, AccountId32]
+    >;
+
+    /**
+     * The immutable data associated with a given account.
+     *
+     * @param {H160} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    immutableDataOf: GenericStorageQuery<(arg: H160) => Bytes | undefined, H160>;
+
+    /**
+     * Terminated contracts that await lazy cleanup.
+     *
+     * Each entry pairs a child trie ID with the contract account so that `on_idle` can
+     * drain both the child trie and any [`NativeDepositOf`] entries that named the contract
+     * as `holder`. Both can be arbitrarily large, so cleanup runs lazily in `on_idle`.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletReviveStorageDeletionQueueItem | undefined> =} callback
+     **/
+    deletionQueue: GenericStorageQuery<(arg: number) => PalletReviveStorageDeletionQueueItem | undefined, number>;
+
+    /**
+     * A pair of monotonic counters used to track the latest contract marked for deletion
+     * and the latest deleted contract in queue.
+     *
+     * @param {Callback<PalletReviveStorageDeletionQueueManager> =} callback
+     **/
+    deletionQueueCounter: GenericStorageQuery<() => PalletReviveStorageDeletionQueueManager>;
+
+    /**
+     * Map a Ethereum address to its original `AccountId32`.
+     *
+     * When deriving a `H160` from an `AccountId32` we use a hash function. In order to
+     * reconstruct the original account we need to store the reverse mapping here.
+     * Register your `AccountId32` using [`Pallet::map_account`] in order to
+     * use it with this pallet.
+     *
+     * @param {H160} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    originalAccount: GenericStorageQuery<(arg: H160) => AccountId32 | undefined, H160>;
+
+    /**
+     * The current Ethereum block that is stored in the `on_finalize` method.
+     *
+     * # Note
+     *
+     * This could be further optimized into the future to store only the minimum
+     * information needed to reconstruct the Ethereum block at the RPC level.
+     *
+     * Since the block is convenient to have around, and the extra details are capped
+     * by a few hashes and the vector of transaction hashes, we store the block here.
+     *
+     * @param {Callback<PalletReviveEvmApiRpcTypesGenBlock> =} callback
+     **/
+    ethereumBlock: GenericStorageQuery<() => PalletReviveEvmApiRpcTypesGenBlock>;
+
+    /**
+     * Mapping for block number and hashes.
+     *
+     * The maximum number of elements stored is capped by the block hash count `BLOCK_HASH_COUNT`.
+     *
+     * @param {number} arg
+     * @param {Callback<H256> =} callback
+     **/
+    blockHash: GenericStorageQuery<(arg: number) => H256, number>;
+
+    /**
+     * The details needed to reconstruct the receipt info offchain.
+     *
+     * This contains valuable information about the gas used by the transaction.
+     *
+     * NOTE: The item is unbound and should therefore never be read on chain.
+     * It could otherwise inflate the PoV size of a block.
+     *
+     * @param {Callback<Array<PalletReviveEvmBlockHashReceiptGasInfo>> =} callback
+     **/
+    receiptInfoData: GenericStorageQuery<() => Array<PalletReviveEvmBlockHashReceiptGasInfo>>;
+
+    /**
+     * Incremental ethereum block builder.
+     *
+     * @param {Callback<PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR> =} callback
+     **/
+    ethBlockBuilderIR: GenericStorageQuery<() => PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR>;
+
+    /**
+     * The first transaction and receipt of the ethereum block.
+     *
+     * These values are moved out of the `EthBlockBuilderIR` to avoid serializing and
+     * deserializing them on every transaction. Instead, they are loaded when needed.
+     *
+     * @param {Callback<[Bytes, Bytes] | undefined> =} callback
+     **/
+    ethBlockBuilderFirstValues: GenericStorageQuery<() => [Bytes, Bytes] | undefined>;
+
+    /**
+     * Debugging settings that can be configured when DebugEnabled config is true.
+     *
+     * @param {Callback<PalletReviveDebugDebugSettings> =} callback
+     **/
+    debugSettingsOf: GenericStorageQuery<() => PalletReviveDebugDebugSettings>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsPrecompiles`'s storage queries
+   **/
+  assetsPrecompiles: {
+    /**
+     * The next available asset index for foreign assets.
+     * This is incremented each time a new foreign asset mapping is created.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    nextAssetIndex: GenericStorageQuery<() => number>;
+
+    /**
+     * Mapping an asset index (derived from the precompile address) to a `ForeignAssetId`.
+     *
+     * @param {number} arg
+     * @param {Callback<StagingXcmV5Location | undefined> =} callback
+     **/
+    assetIndexToForeignAssetId: GenericStorageQuery<(arg: number) => StagingXcmV5Location | undefined, number>;
+
+    /**
+     * Mapping a `ForeignAssetId` to an asset index (used for deriving precompile addresses).
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    foreignAssetIdToAssetIndex: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => number | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsPrecompilesPermit`'s storage queries
+   **/
+  assetsPrecompilesPermit: {
+    /**
+     * Nonces for permit signatures.
+     * Mapping: (verifying_contract, owner_address) => nonce
+     *
+     * Uses Blake2_128Concat for the first key to prevent storage collision attacks
+     * when the verifying_contract address could be influenced by an attacker.
+     *
+     * Note: EIP-2612 specifies uint256 nonce. We store as U256 for compatibility.
+     *
+     * @param {[H160, H160]} arg
+     * @param {Callback<U256> =} callback
+     **/
+    nonces: GenericStorageQuery<(arg: [H160, H160]) => U256, [H160, H160]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `DotnsGateway`'s storage queries
    **/
   dotnsGateway: {
@@ -4440,12 +4615,12 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The current usage for each entity.
      *
-     * @param {AssetHubPolkadotRuntimeIndividualityRestrictedEntity} arg
+     * @param {AssetHubPaseoRuntimeRestrictedEntity} arg
      * @param {Callback<IndivPalletOriginRestrictionUsage | undefined> =} callback
      **/
     usages: GenericStorageQuery<
-      (arg: AssetHubPolkadotRuntimeIndividualityRestrictedEntity) => IndivPalletOriginRestrictionUsage | undefined,
-      AssetHubPolkadotRuntimeIndividualityRestrictedEntity
+      (arg: AssetHubPaseoRuntimeRestrictedEntity) => IndivPalletOriginRestrictionUsage | undefined,
+      AssetHubPaseoRuntimeRestrictedEntity
     >;
 
     /**
@@ -4463,6 +4638,22 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Bytes> =} callback
      **/
     networkSuffix: GenericStorageQuery<() => Bytes>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Sudo`'s storage queries
+   **/
+  sudo: {
+    /**
+     * The `AccountId` of the sudo key.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    key: GenericStorageQuery<() => AccountId32 | undefined>;
 
     /**
      * Generic pallet storage query

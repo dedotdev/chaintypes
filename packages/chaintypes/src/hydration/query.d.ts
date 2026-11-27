@@ -38,11 +38,6 @@ import type {
   PalletIdentityAuthorityProperties,
   PalletIdentityUsernameInformation,
   PalletIdentityProvider,
-  FrameSupportPreimagesBounded,
-  PalletDemocracyReferendumInfo,
-  PalletDemocracyVoteVoting,
-  PalletDemocracyVoteThreshold,
-  PalletDemocracyMetadataOwner,
   HydradxRuntimeRuntimeCall,
   PalletCollectiveVotes,
   PalletProxyProxyDefinition,
@@ -91,8 +86,19 @@ import type {
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
   PalletHsmCollateralInfo,
+  PalletParametersAaveGasLimits,
   PalletSignetSignetConfigData,
   PalletDispenserDispenserConfigData,
+  PalletGigahdxStakeRecord,
+  PalletGigahdxPendingUnstake,
+  PalletGigahdxRewardsReferendumLiveTally,
+  PalletGigahdxRewardsReferendaReward,
+  PalletGigahdxRewardsUserVoteRecord,
+  PalletLazyExecutorStoredForward,
+  PalletIntentIntent,
+  IceSupportSolverMode,
+  IceSupportRoutingState,
+  IceSupportRoutingTarget,
   OrmlTokensBalanceLock,
   OrmlTokensAccountData,
   OrmlTokensReserveData,
@@ -700,126 +706,6 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `Democracy`'s storage queries
-   **/
-  democracy: {
-    /**
-     * The number of (public) proposals that have been made so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    publicPropCount: GenericStorageQuery<() => number>;
-
-    /**
-     * The public proposals. Unsorted. The second item is the proposal.
-     *
-     * @param {Callback<Array<[number, FrameSupportPreimagesBounded, AccountId32]>> =} callback
-     **/
-    publicProps: GenericStorageQuery<() => Array<[number, FrameSupportPreimagesBounded, AccountId32]>>;
-
-    /**
-     * Those who have locked a deposit.
-     *
-     * TWOX-NOTE: Safe, as increasing integer keys are safe.
-     *
-     * @param {number} arg
-     * @param {Callback<[Array<AccountId32>, bigint] | undefined> =} callback
-     **/
-    depositOf: GenericStorageQuery<(arg: number) => [Array<AccountId32>, bigint] | undefined, number>;
-
-    /**
-     * The next free referendum index, aka the number of referenda started so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    referendumCount: GenericStorageQuery<() => number>;
-
-    /**
-     * The lowest referendum index representing an unbaked referendum. Equal to
-     * `ReferendumCount` if there isn't a unbaked referendum.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    lowestUnbaked: GenericStorageQuery<() => number>;
-
-    /**
-     * Information concerning any given referendum.
-     *
-     * TWOX-NOTE: SAFE as indexes are not under an attacker’s control.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletDemocracyReferendumInfo | undefined> =} callback
-     **/
-    referendumInfoOf: GenericStorageQuery<(arg: number) => PalletDemocracyReferendumInfo | undefined, number>;
-
-    /**
-     * All votes for a particular voter. We store the balance for the number of votes that we
-     * have recorded. The second item is the total amount of delegations, that will be added.
-     *
-     * TWOX-NOTE: SAFE as `AccountId`s are crypto hashes anyway.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletDemocracyVoteVoting> =} callback
-     **/
-    votingOf: GenericStorageQuery<(arg: AccountId32Like) => PalletDemocracyVoteVoting, AccountId32>;
-
-    /**
-     * True if the last referendum tabled was submitted externally. False if it was a public
-     * proposal.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    lastTabledWasExternal: GenericStorageQuery<() => boolean>;
-
-    /**
-     * The referendum to be tabled whenever it would be valid to table an external proposal.
-     * This happens when a referendum needs to be tabled and one of two conditions are met:
-     * - `LastTabledWasExternal` is `false`; or
-     * - `PublicProps` is empty.
-     *
-     * @param {Callback<[FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined> =} callback
-     **/
-    nextExternal: GenericStorageQuery<() => [FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined>;
-
-    /**
-     * A record of who vetoed what. Maps proposal hash to a possible existent block number
-     * (until when it may not be resubmitted) and who vetoed it.
-     *
-     * @param {H256} arg
-     * @param {Callback<[number, Array<AccountId32>] | undefined> =} callback
-     **/
-    blacklist: GenericStorageQuery<(arg: H256) => [number, Array<AccountId32>] | undefined, H256>;
-
-    /**
-     * Record of all proposals that have been subject to emergency cancellation.
-     *
-     * @param {H256} arg
-     * @param {Callback<boolean> =} callback
-     **/
-    cancellations: GenericStorageQuery<(arg: H256) => boolean, H256>;
-
-    /**
-     * General information concerning any proposal or referendum.
-     * The `Hash` refers to the preimage of the `Preimages` provider which can be a JSON
-     * dump or IPFS hash of a JSON file.
-     *
-     * Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
-     * large preimages.
-     *
-     * @param {PalletDemocracyMetadataOwner} arg
-     * @param {Callback<H256 | undefined> =} callback
-     **/
-    metadataOf: GenericStorageQuery<
-      (arg: PalletDemocracyMetadataOwner) => H256 | undefined,
-      PalletDemocracyMetadataOwner
-    >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s storage queries
    **/
   technicalCommittee: {
@@ -1252,14 +1138,6 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: HydradxRuntimeXcmAssetLocation) => number | undefined,
       HydradxRuntimeXcmAssetLocation
     >;
-
-    /**
-     * Number of accounts that paid existential deposits for insufficient assets.
-     * This storage is used by `SufficiencyCheck`.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    existentialDepositCounter: GenericStorageQuery<() => bigint>;
 
     /**
      * Generic pallet storage query
@@ -1737,25 +1615,6 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
-     * Legacy storage! - Used to handle democracy votes until democracy pallet is fully removed.
-     *
-     * @param {bigint} arg
-     * @param {Callback<PalletStakingVoting> =} callback
-     **/
-    positionVotes: GenericStorageQuery<(arg: bigint) => PalletStakingVoting, bigint>;
-
-    /**
-     * Legacy storage! - Used to handle democracy processed votes until democracy pallet is fully removed.
-     *
-     * @param {[AccountId32Like, number]} arg
-     * @param {Callback<PalletStakingVote | undefined> =} callback
-     **/
-    processedVotes: GenericStorageQuery<
-      (arg: [AccountId32Like, number]) => PalletStakingVote | undefined,
-      [AccountId32, number]
-    >;
-
-    /**
      * Block number when we switched to 6 sec. blocks.
      *
      * @param {Callback<number> =} callback
@@ -1810,6 +1669,16 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Permill | undefined> =} callback
      **/
     blockFee: GenericStorageQuery<(arg: number) => Permill | undefined, number>;
+
+    /**
+     * Pallet-tracked issuance of pool share tokens ("virtual issuance").
+     * Updated only when this pallet mints/burns shares, so external mints/burns
+     * of the share token cannot influence pool math.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    shareIssuance: GenericStorageQuery<(arg: number) => bigint, number>;
 
     /**
      * Generic pallet storage query
@@ -2072,6 +1941,49 @@ export interface ChainStorage extends GenericChainStorage {
     relayParentOffsetOverride: GenericStorageQuery<() => boolean>;
 
     /**
+     * Block number at which the runtime switched from 6-second to 2-second blocks.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    twoSecBlocksSince: GenericStorageQuery<() => number>;
+
+    /**
+     *
+     * @param {Callback<PalletParametersAaveGasLimits | undefined> =} callback
+     **/
+    aaveGasLimitsOverride: GenericStorageQuery<() => PalletParametersAaveGasLimits | undefined>;
+
+    /**
+     *
+     * @param {Callback<H160 | undefined> =} callback
+     **/
+    uniswapV3Factory: GenericStorageQuery<() => H160 | undefined>;
+
+    /**
+     *
+     * @param {Callback<H160 | undefined> =} callback
+     **/
+    uniswapV3SwapRouter: GenericStorageQuery<() => H160 | undefined>;
+
+    /**
+     *
+     * @param {Callback<H160 | undefined> =} callback
+     **/
+    uniswapV3Quoter: GenericStorageQuery<() => H160 | undefined>;
+
+    /**
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    xcmSendSuspended: GenericStorageQuery<() => boolean>;
+
+    /**
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    xcmExecutionSuspended: GenericStorageQuery<() => boolean>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -2116,6 +2028,256 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     usedRequestIds: GenericStorageQuery<(arg: FixedBytes<32>) => [] | undefined, FixedBytes<32>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `GigaHdx`'s storage queries
+   **/
+  gigaHdx: {
+    /**
+     * Per-account stake record. Absent if the account has never staked or
+     * has fully unstaked.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletGigahdxStakeRecord | undefined> =} callback
+     **/
+    stakes: GenericStorageQuery<(arg: AccountId32Like) => PalletGigahdxStakeRecord | undefined, AccountId32>;
+
+    /**
+     * Sum of all `Stakes[a].hdx`.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    totalLocked: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Aave V3 Pool contract address. Must be set explicitly by
+     * `AuthorityOrigin` before any stake/unstake — the pallet refuses to
+     * silently default to the zero address.
+     *
+     * @param {Callback<H160 | undefined> =} callback
+     **/
+    gigaHdxPoolContract: GenericStorageQuery<() => H160 | undefined>;
+
+    /**
+     * Pending unstake positions, keyed by `(account, originating_block)`.
+     * Same-block unstakes by the same account compound into one entry.
+     * Per-account count bounded by `Config::MaxPendingUnstakes`.
+     *
+     * @param {[AccountId32Like, number]} arg
+     * @param {Callback<PalletGigahdxPendingUnstake | undefined> =} callback
+     **/
+    pendingUnstakes: GenericStorageQuery<
+      (arg: [AccountId32Like, number]) => PalletGigahdxPendingUnstake | undefined,
+      [AccountId32, number]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `GigaHdxRewards`'s storage queries
+   **/
+  gigaHdxRewards: {
+    /**
+     * Live tally maintained during the voting period. Deleted at allocation
+     * time; the values move into `ReferendaRewardPool`.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletGigahdxRewardsReferendumLiveTally | undefined> =} callback
+     **/
+    referendaTotalWeightedVotes: GenericStorageQuery<
+      (arg: number) => PalletGigahdxRewardsReferendumLiveTally | undefined,
+      number
+    >;
+
+    /**
+     * Track id cached at vote time. Deleted at allocation; lives on in
+     * `ReferendaRewardPool[ref].track_id`.
+     *
+     * @param {number} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    referendumTracks: GenericStorageQuery<(arg: number) => number | undefined, number>;
+
+    /**
+     * Per-referendum frozen snapshot. Presence doubles as "allocation has
+     * run." Deleted when the last voter claims their share.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletGigahdxRewardsReferendaReward | undefined> =} callback
+     **/
+    referendaRewardPool: GenericStorageQuery<(arg: number) => PalletGigahdxRewardsReferendaReward | undefined, number>;
+
+    /**
+     * Per (user, referendum) snapshot of the eligible vote weight at cast
+     * time. Updated on vote edits; taken on `on_remove_vote`.
+     *
+     * @param {[AccountId32Like, number]} arg
+     * @param {Callback<PalletGigahdxRewardsUserVoteRecord | undefined> =} callback
+     **/
+    userVoteRecords: GenericStorageQuery<
+      (arg: [AccountId32Like, number]) => PalletGigahdxRewardsUserVoteRecord | undefined,
+      [AccountId32, number]
+    >;
+
+    /**
+     * Number of `UserVoteRecords` entries held by `who`, maintained on insert
+     * and removal. Lets the gigahdx liquidation charge exact weight for the
+     * vote-clearance loop from the borrower's count, without an O(n) scan at
+     * weight-calculation time.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    userVoteCount: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Running sum of HDX owed to `who` across all completed referenda.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    pendingRewards: GenericStorageQuery<(arg: AccountId32Like) => bigint, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `LazyExecutor`'s storage queries
+   **/
+  lazyExecutor: {
+    /**
+     *
+     * @param {Callback<number> =} callback
+     **/
+    maxTxPerBlock: GenericStorageQuery<() => number>;
+
+    /**
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    maxCallWeight: GenericStorageQuery<() => SpWeightsWeightV2Weight>;
+
+    /**
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    sequencer: GenericStorageQuery<() => bigint>;
+
+    /**
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    dispatchNextId: GenericStorageQuery<() => bigint>;
+
+    /**
+     *
+     * @param {bigint} arg
+     * @param {Callback<PalletLazyExecutorStoredForward | undefined> =} callback
+     **/
+    callQueue: GenericStorageQuery<(arg: bigint) => PalletLazyExecutorStoredForward | undefined, bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Intent`'s storage queries
+   **/
+  intent: {
+    /**
+     *
+     * @param {bigint} arg
+     * @param {Callback<PalletIntentIntent | undefined> =} callback
+     **/
+    intents: GenericStorageQuery<(arg: bigint) => PalletIntentIntent | undefined, bigint>;
+
+    /**
+     *
+     * @param {bigint} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    intentOwner: GenericStorageQuery<(arg: bigint) => AccountId32 | undefined, bigint>;
+
+    /**
+     * Intent id sequencer
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    nextIncrementalId: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Reverse index mapping account to its intent ids for easy lookup.
+     *
+     * @param {[AccountId32Like, bigint]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    accountIntents: GenericStorageQuery<(arg: [AccountId32Like, bigint]) => [] | undefined, [AccountId32, bigint]>;
+
+    /**
+     * Number of intents per account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    accountIntentCount: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `ICE`'s storage queries
+   **/
+  ice: {
+    /**
+     * Matched-volume protocol fee.
+     *
+     * Applied only to the share of each intent's volume that was matched
+     * intent-to-intent (without an AMM hop). Defaults to `T::MatchedFee`.
+     * Can be overridden via `set_protocol_fee`.
+     *
+     * @param {Callback<Permill> =} callback
+     **/
+    protocolFee: GenericStorageQuery<() => Permill>;
+
+    /**
+     * Active solver mode. Absent storage means `SolverMode::V4` — the status quo.
+     *
+     * @param {Callback<IceSupportSolverMode> =} callback
+     **/
+    currentSolverMode: GenericStorageQuery<() => IceSupportSolverMode>;
+
+    /**
+     * Routing rules the solver is told about.
+     *
+     * Omnipool and stableswap are the only venues the simulators enumerate on
+     * their own, so for those an absent entry means included and `Excluded` is the
+     * only rule worth storing. Every other venue is opt-in — an `Included` entry is
+     * what makes it visible at all — and is normally registered in batches.
+     *
+     * A venue's set is the union of every `Included` entry naming it, minus every
+     * `Excluded` one. Exclusion wins, so a single wrap can be vetoed out of a batch
+     * without rewriting the batch.
+     *
+     * @param {IceSupportRoutingTarget} arg
+     * @param {Callback<IceSupportRoutingState | undefined> =} callback
+     **/
+    solverRouting: GenericStorageQuery<
+      (arg: IceSupportRoutingTarget) => IceSupportRoutingState | undefined,
+      IceSupportRoutingTarget
+    >;
 
     /**
      * Generic pallet storage query
@@ -2342,6 +2504,15 @@ export interface ChainStorage extends GenericChainStorage {
     allowances: GenericStorageQuery<(arg: [number, H160, H160]) => bigint, [number, H160, H160]>;
 
     /**
+     * NTT spoke manager allowed to mint/burn an asset via the MultiCurrency precompile.
+     * asset_id -> minter (H160)
+     *
+     * @param {number} arg
+     * @param {Callback<H160 | undefined> =} callback
+     **/
+    nttMinters: GenericStorageQuery<(arg: number) => H160 | undefined, number>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -2486,6 +2657,13 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<bigint> =} callback
      **/
     scheduleExtraGas: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Whether schedules convert into DCA intents when their execution slot arrives.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    migrationEnabled: GenericStorageQuery<() => boolean>;
 
     /**
      * Generic pallet storage query
@@ -3422,6 +3600,41 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     swapper: GenericStorageQuery<() => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `FeeProcessor`'s storage queries
+   **/
+  feeProcessor: {
+    /**
+     * Assets pending conversion to HDX.
+     *
+     * @param {number} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    pendingConversions: GenericStorageQuery<(arg: number) => [] | undefined, number>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPendingConversions: GenericStorageQuery<() => number>;
+
+    /**
+     * HDX held in the pot for a `hold_until_ed` receiver whose account is still
+     * below the existential deposit. The HDX physically lives in
+     * `pot_account_id()`; this map only earmarks how much of it belongs to each
+     * destination. Flushed to the destination once `balance + held + slice ≥ ED`.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    heldFees: GenericStorageQuery<(arg: AccountId32Like) => bigint, AccountId32>;
 
     /**
      * Generic pallet storage query
